@@ -7,6 +7,7 @@
 ## Clean up
 
 - remove pytest.ini & conftest.py (make sure does not affect anything)
+- restructure cmake to be target based, such that calling for test harness to compile is more clean and extendable
 
 ## Done
 
