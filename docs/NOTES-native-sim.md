@@ -22,5 +22,12 @@ uart connected to pseudotty: /dev/pts/3
 - by default, this is set to `n`, so no need to be explicit
 
 ```bash
+# use this to use zephyr.exe like a console application
 CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+# or, use this to use zephyr.exe as a virtual uart device
+CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY=y
 ```
+
+### Additional Resources
+- Native Sim: https://docs.zephyrproject.org/latest/boards/native/native_sim/doc/index.html
+- PTY UART: https://docs.zephyrproject.org/latest/boards/native/native_sim/doc/index.html#pty-uart

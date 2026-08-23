@@ -15,8 +15,6 @@ west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hell
 build_hello_world\zephyr\zephyr.exe
 ```
 
-[[add section regarding using a different board  add tech docs ref links of boards and setups for all these current boards]]
-
 ## On-Target
 
 ## Searching for boards
@@ -41,12 +39,14 @@ export BOARD="nrf5340dk/nrf5340/cpuapp"
 west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -d build_hello_world -p always
 
 # Flash & Reset
+west flash -d build_hello_world
+# Or use nrfutil directly
 nrfutil device erase
-nrfutil device program --firmware build/zephyr/zephyr.hex
+nrfutil device program --firmware build_hello_world/zephyr/zephyr.hex
 nrfutil device reset
 
 # Monitor (press Ctrl+] to exit)
-python3 -m serial.tools.miniterm /dev/ttyACM0 115200 --raw
+python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
 ```
 
 ### Additional Resources
@@ -91,6 +91,8 @@ Solution: you must install the correct sdk for your board using the `west sdk in
 
 ## ST Microelectronics
 
+Additional setup to be able to compile to board
+
 ```bash
 pyocd list # find the target for your board
 pyocd list --targets # or, list all available targets to install
@@ -131,7 +133,7 @@ root@d9bcb3911f2d:/workspaces/zephyr-docker-project# pyocd list
       NUCLEO-G474RE                                              
 ```
 
-Solution: you do not have the correct board sdk installed, use `pack install` command with the appropriate board
+Solution: you do not have the correct board sdk installed, use `pyocd pack install [target]` command with the appropriate board
 
 ### Additional Resources:
 - https://docs.zephyrproject.org/latest/boards/st/nucleo_g474re/doc/index.html
