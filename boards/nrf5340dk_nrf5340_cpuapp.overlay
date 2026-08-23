@@ -1,9 +1,0 @@
-/* boards/nrf5340dk_nrf5340_cpuapp.overlay */
-/* this is just for demonstration, in reality, these aliases were already assigned */
-
-/ {
-    aliases {
-        led0 = &led0;
-        sw0 = &button0;
-    };
-};

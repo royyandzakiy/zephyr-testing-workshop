@@ -1,9 +1,0 @@
-/* boards/nucleo_g474re.overlay */
-/* this is just for demonstration, in reality, these aliases were already assigned */
-
-/ {
-    aliases {
-        led0 = &user_led;
-        sw0 = &user_button;
-    };
-};

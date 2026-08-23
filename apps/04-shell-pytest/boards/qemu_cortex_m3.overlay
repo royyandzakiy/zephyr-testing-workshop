@@ -4,7 +4,6 @@
     aliases {
         led0 = &test_led;
         sw0 = &test_button;
-        hal0 = &test_hall;
     };
 
     leds {
@@ -20,10 +19,6 @@
         test_button: btn_0 {
             /* Pin 1 on GPIO port 0 */
             gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-        };
-        test_hall: hall_0 {
-            /* Pin 2 on GPIO port 0 */
-            gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
         };
     };
 };
