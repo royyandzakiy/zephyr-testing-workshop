@@ -1,7 +1,9 @@
 {
-  "name": "Zephyr & NCS Build Environment",
+  "name": "Zephyr & NCS Build Environment (macOS, no USB)",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "../Dockerfile",
+    "context": "..",
+    "options": ["--platform=linux/amd64"]
   },
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1"
@@ -15,17 +17,15 @@
   "mounts": [
     "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",
-    "source=actions-runner-state,target=/actions-runner,type=volume",
-    "source=/dev,target=/dev,type=bind,bind-propagation=rslave"
+    "source=actions-runner-state,target=/actions-runner,type=volume"
   ],
   "customizations": {
     "vscode": {
       "extensions": [
-        "llvm-vs-code-extensions.vscode-clangd",
+        // "llvm-vs-code-extensions.vscode-clangd",
         "ms-vscode.cpptools",
         "twxs.cmake",
-        "nordic-semiconductor.nrf-connect",
-        "thecreativedodo.usbip-connect"
+        "nordic-semiconductor.nrf-connect"
       ]
     }
   },

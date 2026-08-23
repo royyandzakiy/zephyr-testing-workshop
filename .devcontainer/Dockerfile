@@ -1,16 +1,17 @@
 FROM zephyrprojectrtos/zephyr-build:v0.29.3
 
 USER root
-ENV DEBIAN_FRONTEND=noninteractive
+
+ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # ----------- SETTING UP TOOLS
 
 # 1. Base dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl wget unzip jq python3-pip file \
-    clang-format clangd gcc-multilib make libffi8 \
-    git python3-venv cmake ninja-build libyaml-0-2 \
+    curl wget unzip jq file \
+    clang-format clangd gcc-multilib \
+    libffi8 libyaml-0-2 \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. nrfutil & plugins
@@ -19,12 +20,11 @@ RUN curl -fSL "https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfu
     && nrfutil install toolchain-manager \
     && nrfutil install device
 
-# 3. Nordic Command Line Tools (nrfjprog, mergehex, J-Link)
+# 3. SEGGER J-Link runtime
 ARG NORDIC_COMMAND_LINE_TOOLS_VERSION="10-24-0/nrf-command-line-tools-10.24.0"
 RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x && \
     NCLT_TMP=$(mktemp -d) && cd "${NCLT_TMP}" && \
     wget -qO - "${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-amd64.tar.gz" | tar --no-same-owner -xz && \
-    ls -la && \
     mkdir -p /opt/SEGGER && \
     tar xzf JLink_Linux_*x86_64.tgz -C /opt/SEGGER && \
     mv /opt/SEGGER/JLink_Linux* /opt/SEGGER/JLink && \
@@ -34,10 +34,6 @@ RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-othe
     echo "Linking against ${JLINK_SO}" && \
     ln -sf "${JLINK_SO}" libjlinkarm.so.7 && \
     ln -sf libjlinkarm.so.7 libjlinkarm.so && \
-    cd "${NCLT_TMP}" && \
-    cp -r ./nrf-command-line-tools /opt && \
-    ln -s /opt/nrf-command-line-tools/bin/nrfjprog /usr/local/bin/nrfjprog && \
-    ln -s /opt/nrf-command-line-tools/bin/mergehex /usr/local/bin/mergehex && \
     ln -s /opt/SEGGER/JLink/JLinkExe /usr/local/bin/JLinkExe && \
     echo "/opt/SEGGER/JLink" > /etc/ld.so.conf.d/SEGGER_JLink.conf && ldconfig && \
     cd / && rm -rf "${NCLT_TMP}"
@@ -46,7 +42,7 @@ RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-othe
 RUN JLINK_LIB="$(ldconfig -p | awk '/libjlinkarm\.so\.7/ {print $NF; exit}')" && \
     echo "Resolved libjlinkarm: ${JLINK_LIB}" && \
     file -L "${JLINK_LIB}" | grep -q 'ELF 64-bit' && \
-    nrfjprog --version
+    nrfutil device --version
 
 # ----------- SETTING UP GITHUB ACTIONS RUNNER
 WORKDIR /actions-runner

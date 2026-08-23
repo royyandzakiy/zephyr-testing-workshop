@@ -1,13 +1,5 @@
 # clangd configuration.
-#
-# Flags come from the compilation database CMake generates, not from a
-# hand-maintained include list. Build once and the language server is correct:
-#
-#   west build -b native_sim -d build
-#
-# If you see "file not found" on <zephyr/...> headers, you have not built yet.
-# To point the language server at a different target instead, change the
-# CompilationDatabase path below (e.g. build_nrf53).
+# change CompilationDatabase to whichever build folder with compile_commands.json you want to use
 
 CompileFlags:
   CompilationDatabase: twister-out/esp32s3_devkitc_esp32s3_procpu/zephyr/drivers.gpio.button_toggle
