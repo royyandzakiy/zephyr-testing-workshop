@@ -1,12 +1,12 @@
 ## To Do
 
-- create proper readme for workshop
 - complete all the apps/
 - add ubsan to one build option (CI one)
 
 ## Done
 
-- cleaned up project
+- created placeholder folders for all apps
+- cleaned up project NOTES
 - successfully run on nrf53, esp32s3, nucleog4, nativesim
 - implement emul based shell test for btn, modify pytest_shell
 - prepared dockerfile devcontainer. get and use ncs/vanilla is working. west build, twister is working

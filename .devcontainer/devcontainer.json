@@ -1,5 +1,5 @@
 {
-  "name": "Zephyr & NCS Build Environment",
+  "name": "Zephyr Development",
   "build": {
     "dockerfile": "Dockerfile"
   },
