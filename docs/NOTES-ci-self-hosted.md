@@ -5,7 +5,7 @@
 Activate runners by opening the settings for self-hosted runner
 
 ```bash
-https://github.com/YOUR_USERNAME/zephyr-docker-project/settings/actions/runners/new?arch=x64&os=linux
+https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runners/new?arch=x64&os=linux
 ```
 
 Download the actions runner for linux to `/`
@@ -31,7 +31,7 @@ Run the actions-runner NOT as root (here we create a user called runner)
 cd /actions-runner
 
 # config if not yet
-./config.sh --url https://github.com/YOUR_USERNAME/zephyr-docker-project --token YOUR_TOKEN_HERE" --ephemeral
+./config.sh --url https://github.com/YOUR_USERNAME/zephyr-testing-workshop --token YOUR_TOKEN_HERE" --ephemeral
 
 ./run.sh
 ```
@@ -79,6 +79,6 @@ west build -b nrf5340dk/nrf5340/cpuapp -d build_nrf -p always
 
 west flash -r nrfjprog --snr 1050073602 -d build_nrf
 # or
-nrfjprog --snr 1050073602 --program /workspaces/zephyr-docker-project/build_nrf/zephyr/zephyr.hex --ch
+nrfjprog --snr 1050073602 --program /workspaces/zephyr-testing-workshop/build_nrf/zephyr/zephyr.hex --ch
 iperase --reset
 ```

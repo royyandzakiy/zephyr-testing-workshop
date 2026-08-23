@@ -61,7 +61,7 @@ west build -b esp32s3_devkitc/esp32s3/procpu \
   -s tests/drivers/gpio_button_toggle \
   -p always \
   -d build_esp32s3_test_gpio_toggle \
-  -- -DEXTRA_DTC_OVERLAY_FILE="/workspaces/zephyr-docker-project/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+  -- -DEXTRA_DTC_OVERLAY_FILE="/workspaces/zephyr-testing-workshop/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
 
 west flash --runner esp32 --esp-device /dev/ttyACM0 -d build_esp32s3_test_gpio_toggle
 
@@ -80,8 +80,8 @@ west twister \
   --west-flash="--esp-device=/dev/ttyACM0" \
   --west-runner esp32 \
   -T tests/drivers/gpio_button_toggle \
-  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-docker-project/boards/esp32s3_devkitc_esp32s3_procpu.overlay \
-  --extra-args=EXTRA_DTC_OVERLAY_FILE=/workspaces/zephyr-docker-project/tests/drivers/gpio_button_toggle/app.overlay
+  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/boards/esp32s3_devkitc_esp32s3_procpu.overlay \
+  --extra-args=EXTRA_DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/tests/drivers/gpio_button_toggle/app.overlay
 ```
 
 added flags:
@@ -157,7 +157,7 @@ west build \
   -b native_sim/native \
   -s tests/drivers/gpio_button_toggle \
   -d build_nativesim_test_gpio_toggle -- \
-  -DEXTRA_CONF_FILE="/workspaces/zephyr-docker-project/boards/native_sim_native.conf"
+  -DEXTRA_CONF_FILE="/workspaces/zephyr-testing-workshop/boards/native_sim_native.conf"
 
 build_nativesim_test_gpio_toggle/zephyr/zephyr.exe
 ```
@@ -168,8 +168,8 @@ Automated testing via Twister
 west twister \
   -p native_sim/native \
   -T tests/drivers/gpio_button_toggle \
-  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-docker-project/boards/native_sim_native.overlay \
-  --extra-args=EXTRA_CONF_FILE="/workspaces/zephyr-docker-project/boards/native_sim_native.conf"
+  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/boards/native_sim_native.overlay \
+  --extra-args=EXTRA_CONF_FILE="/workspaces/zephyr-testing-workshop/boards/native_sim_native.conf"
 ```
 
 added flags:

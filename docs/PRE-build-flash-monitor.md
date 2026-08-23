@@ -126,7 +126,7 @@ FATAL ERROR: command exited with status 1: pyocd flash -e sector -a 0x8000000 -t
 ```
 
 ```bash
-root@d9bcb3911f2d:/workspaces/zephyr-docker-project# pyocd list
+root@d9bcb3911f2d:/workspaces/zephyr-testing-workshop# pyocd list
   #   Probe/Board     Unique ID                  Target           
 ------------------------------------------------------------------
   0   STLINK-V3       0046002E3234510A37333934   ✖︎ stm32g474retx  

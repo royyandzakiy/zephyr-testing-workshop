@@ -1,8 +1,7 @@
 ## To Do
 
-- create seperate standalone projects
-    - consider how is best? their own project? all in one project and called with setting west build target?
-- add makefile to compile & run native_sim
+- create proper readme for workshop
+- complete all the apps/
 - add ubsan to one build option (CI one)
 
 ## Done

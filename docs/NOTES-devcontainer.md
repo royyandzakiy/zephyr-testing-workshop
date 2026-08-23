@@ -67,7 +67,7 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
 
 ### Workspace and lifecycle
 
-- `workspaceFolder`: where the repo appears inside the container. `${localWorkspaceFolderBasename}` expands to the host folder name, giving `/workspaces/zephyr-docker-project`.
+- `workspaceFolder`: where the repo appears inside the container. `${localWorkspaceFolderBasename}` expands to the host folder name, giving `/workspaces/zephyr-testing-workshop`.
 - Lifecycle hooks, in execution order:
 
 | Hook | When | Use for |
