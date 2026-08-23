@@ -2,7 +2,7 @@
 # change CompilationDatabase to whichever build folder with compile_commands.json you want to use
 
 CompileFlags:
-  CompilationDatabase: twister-out/esp32s3_devkitc_esp32s3_procpu/zephyr/drivers.gpio.button_toggle
+  CompilationDatabase: build*/
 
   Remove:
     - -Werror
