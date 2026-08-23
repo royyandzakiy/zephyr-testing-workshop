@@ -63,7 +63,7 @@ west blobs fetch hal_espressif
 ```
 
 ```bash
-export BOARD="esp32s3_devkitm/esp32s3/procpu"
+export BOARD="esp32s3_devkitc/esp32s3/procpu"
 
 # Build
 west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -d build_hello_world -p always
