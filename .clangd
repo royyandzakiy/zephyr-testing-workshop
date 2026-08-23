@@ -1,14 +1,21 @@
 # clangd configuration.
-# change CompilationDatabase to whichever build folder with compile_commands.json you want to use
+# .clangd - applies repo-wide.
+#
+# No CompilationDatabase key on purpose. clangd discovers
+# apps/<app>/build/compile_commands.json by walking up from the source file.
+# Just build the app once and the language server is correct:
+#
+#   cd apps/01-blinky && west build -b native_sim/native
+#
+# "file not found" on <zephyr/...> means you haven't built that app yet.
 
 CompileFlags:
-  CompilationDatabase: build/
-
   Remove:
     - -Werror
     - -pedantic
     - -fno-reorder-functions
     - -fno-defer-pop
+    - -fno-freestanding
     - --param=min-pagesize=*
     - -mfp16-format=*
     - -fno-printf-return-value

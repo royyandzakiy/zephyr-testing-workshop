@@ -6,6 +6,39 @@
 - All boards that runs `tests/drivers/gpio_button_toggle` will automatically use `app.overlay` (the default overlay used by all boards, unless specified)
 - If a board dts or overlay does not yet have sw0 and btn0, it will fail to compile with showing device tree symbol errors
 
+## Off-Target Testing
+
+This tests runs purely on the PC, without any board connected
+
+### Testing on Native Sim (off-target)
+
+Build, Flash, Monitor
+
+```bash
+west build \
+  -p always \
+  -b native_sim/native \
+  -s tests/drivers/gpio_button_toggle \
+  -d build_nativesim_test_gpio_toggle -- \
+  -DEXTRA_CONF_FILE=../../../boards/native_sim_native.conf
+
+build_nativesim_test_gpio_toggle/zephyr/zephyr.exe
+```
+
+Automated testing via Twister
+
+```bash
+west twister \
+  -p native_sim/native \
+  -T tests/drivers/gpio_button_toggle \
+  --extra-args=DTC_OVERLAY_FILE=../../../boards/native_sim_native.overlay \
+  --extra-args=EXTRA_CONF_FILE="../../../boards/native_sim_native.conf"
+```
+
+added flags:
+- `--extra-args=DTC_OVERLAY_FILE`: native_sim (obviously) does NOT have a built in switch0 and led0 in its default .dts files, hence the overlay needs to be called explicitly. another thing is, currently the native_sim overlay is stored inside the root/boards, hence does NOT get automatically captured because our target is not to root, but instead to `tests/drivers/gpio_button_toggle`. also, native_sim MUST NOT automatically use `app.overlay`, because in app.overlay, led is never defined, hence it needs to use this overlay instead
+- [[explain the need to use the added .conf]]
+
 ## On-Target Testing
 
 These tests use real boards connected to the PC
@@ -61,7 +94,7 @@ west build -b esp32s3_devkitc/esp32s3/procpu \
   -s tests/drivers/gpio_button_toggle \
   -p always \
   -d build_esp32s3_test_gpio_toggle \
-  -- -DEXTRA_DTC_OVERLAY_FILE="/workspaces/zephyr-testing-workshop/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+  -- -DEXTRA_DTC_OVERLAY_FILE="../../../boards/esp32s3_devkitc_esp32s3_procpu.overlay"
 
 west flash --runner esp32 --esp-device /dev/ttyACM0 -d build_esp32s3_test_gpio_toggle
 
@@ -80,8 +113,8 @@ west twister \
   --west-flash="--esp-device=/dev/ttyACM0" \
   --west-runner esp32 \
   -T tests/drivers/gpio_button_toggle \
-  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/boards/esp32s3_devkitc_esp32s3_procpu.overlay \
-  --extra-args=EXTRA_DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/tests/drivers/gpio_button_toggle/app.overlay
+  --extra-args=DTC_OVERLAY_FILE=../../../boards/esp32s3_devkitc_esp32s3_procpu.overlay \
+  --extra-args=EXTRA_DTC_OVERLAY_FILE=app.overlay
 ```
 
 added flags:
@@ -142,36 +175,3 @@ west twister \
   serial: /dev/ttyACM0
   baud: 115200
 ```
-
-## Off-Target Testing
-
-This tests runs purely on the PC, without any board connected
-
-### Testing on Native Sim (off-target)
-
-Build, Flash, Monitor
-
-```bash
-west build \
-  -p always \
-  -b native_sim/native \
-  -s tests/drivers/gpio_button_toggle \
-  -d build_nativesim_test_gpio_toggle -- \
-  -DEXTRA_CONF_FILE="/workspaces/zephyr-testing-workshop/boards/native_sim_native.conf"
-
-build_nativesim_test_gpio_toggle/zephyr/zephyr.exe
-```
-
-Automated testing via Twister
-
-```bash
-west twister \
-  -p native_sim/native \
-  -T tests/drivers/gpio_button_toggle \
-  --extra-args=DTC_OVERLAY_FILE=/workspaces/zephyr-testing-workshop/boards/native_sim_native.overlay \
-  --extra-args=EXTRA_CONF_FILE="/workspaces/zephyr-testing-workshop/boards/native_sim_native.conf"
-```
-
-added flags:
-- `--extra-args=DTC_OVERLAY_FILE`: native_sim (obviously) does NOT have a built in switch0 and led0 in its default .dts files, hence the overlay needs to be called explicitly. another thing is, currently the native_sim overlay is stored inside the root/boards, hence does NOT get automatically captured because our target is not to root, but instead to `tests/drivers/gpio_button_toggle`. also, native_sim MUST NOT automatically use `app.overlay`, because in app.overlay, led is never defined, hence it needs to use this overlay instead
-- [[explain the need to use the added .conf]]
