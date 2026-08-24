@@ -21,8 +21,10 @@ jobs:
         uses: actions/cache@v4
         id: zephyr-cache
         with:
-          path: zephyr-workspace
-          key: ${{ runner.os }}-zephyr-${{ env.ZEPHYR_VERSION }}
+          path: |
+            zephyr-workspace
+            !zephyr-workspace/build
+          key: ${{ runner.os }}-${{ github.repository_id }}-zephyr-${{ env.ZEPHYR_VERSION }}-v2
 
       - name: Fetch vanilla Zephyr
         if: steps.zephyr-cache.outputs.cache-hit != 'true'
@@ -55,17 +57,19 @@ jobs:
       - name: Cache ccache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ccache
+          path: /__w/.ccache
           key: ${{ runner.os }}-ccache-${{ env.BOARD_TYPE }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-ccache-${{ env.BOARD_TYPE }}-
+          restore-keys: ${{ runner.os }}-ccache-${{ env.BOARD_TYPE }}-
 
       - name: Build blinky
         env:
-          CCACHE_DIR: ~/.cache/ccache
+          CCACHE_DIR: /__w/.ccache
         run: |
+          set -eu
           cd zephyr-workspace
-          west build -b $BOARD_TYPE $ZEPHYR_BASE/zephyr/samples/basic/blinky -d build -p -- -DZEPHYR_SCACHE=ccache
+          rm -rf build
+          west build -b "$BOARD_TYPE" zephyr/samples/basic/blinky -d build \
+            -- -DZEPHYR_SCACHE=ccache
           ccache -s || true
 
       - name: Create build tarball
