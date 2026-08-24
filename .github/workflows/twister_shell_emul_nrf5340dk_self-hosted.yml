@@ -170,7 +170,7 @@ jobs:
             serial: ${SERIAL_PORT}
           EOF
 
-          west twister --device-testing --hardware-map hardware-map.yaml -T tests/drivers/gpio_button_toggle
+          west twister --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 
       - name: Recover on failure
         if: failure()
