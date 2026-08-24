@@ -18,7 +18,7 @@ Build, Flash, Monitor
 west build \
   -p always \
   -b native_sim/native \
-  -s tests/drivers/gpio_button_toggle \
+  -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle \
   -d build_nativesim_test_gpio_toggle -- \
   -DEXTRA_CONF_FILE=../../../boards/native_sim_native.conf
 
@@ -30,7 +30,7 @@ Automated testing via Twister
 ```bash
 west twister \
   -p native_sim/native \
-  -T tests/drivers/gpio_button_toggle \
+  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle \
   --extra-args=DTC_OVERLAY_FILE=../../../boards/native_sim_native.overlay \
   --extra-args=EXTRA_CONF_FILE="../../../boards/native_sim_native.conf"
 ```
@@ -50,7 +50,7 @@ These tests use real boards connected to the PC
 Build, Flash, Monitor
 
 ```bash
-west build -b nrf5340dk/nrf5340/cpuapp -p always -d build_nrf53_test_gpio_toggle -s tests/drivers/gpio_button_toggle -p always
+west build -b nrf5340dk/nrf5340/cpuapp -p always -d build_nrf53_test_gpio_toggle -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -p always
 
 west flash -d build_nrf53_test_gpio_toggle --runner nrfutil -- --dev-id 1050073602
 # or
@@ -62,7 +62,7 @@ python3 -m serial.tools.miniterm --raw /dev/ttyACM1 115200
 Automated testing via Twister
 
 ```bash
-west twister --device-testing --hardware-map hardware-map.yaml -T tests/drivers/gpio_button_toggle
+west twister --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 
 # or, without hardware-map
 west twister \
@@ -72,7 +72,7 @@ west twister \
   --device-serial-baud 115200 \
   --west-flash="--dev-id=1050073602" \
   --west-runner nrfutil \
-  -T tests/drivers/gpio_button_toggle
+  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 ```
 
 ```bash
@@ -91,7 +91,7 @@ Build, Flash, Monitor
 
 ```bash
 west build -b esp32s3_devkitc/esp32s3/procpu \
-  -s tests/drivers/gpio_button_toggle \
+  -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle \
   -p always \
   -d build_esp32s3_test_gpio_toggle \
   -- -DEXTRA_DTC_OVERLAY_FILE="../../../boards/esp32s3_devkitc_esp32s3_procpu.overlay"
@@ -112,7 +112,7 @@ west twister \
   --flash-before \
   --west-flash="--esp-device=/dev/ttyACM0" \
   --west-runner esp32 \
-  -T tests/drivers/gpio_button_toggle \
+  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle \
   --extra-args=DTC_OVERLAY_FILE=../../../boards/esp32s3_devkitc_esp32s3_procpu.overlay \
   --extra-args=EXTRA_DTC_OVERLAY_FILE=app.overlay
 ```
@@ -140,7 +140,7 @@ added flags:
 Build, Flash, Monitor
 
 ```bash
-west build -b nucleo_g474re -s tests/drivers/gpio_button_toggle -p always -d build_nucleog4_test_gpio_toggle
+west build -b nucleo_g474re -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -p always -d build_nucleog4_test_gpio_toggle
 
 west flash --runner pyocd -d build_nucleog4_test_gpio_toggle/
 # or, to be specific
@@ -152,7 +152,7 @@ python3 -m serial.tools.miniterm --raw /dev/ttyACM0 115200
 Automated testing via Twister
 
 ```bash
-west twister --device-testing --hardware-map hardware-map.yaml -T tests/drivers/gpio_button_toggle
+west twister --device-testing --hardware-map hardware-map.yaml -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 
 # or, without hardware-map
 west twister \
@@ -162,7 +162,7 @@ west twister \
   --device-serial-baud 115200 \
   --west-flash \
   --west-runner pyocd \
-  -T tests/drivers/gpio_button_toggle
+  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 ```
 
 ```bash

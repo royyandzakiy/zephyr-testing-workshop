@@ -65,7 +65,7 @@ jobs:
           CCACHE_DIR: ~/.cache/ccache
         run: |
           cd zephyr-workspace
-          west build -b $BOARD_TYPE zephyr/samples/basic/blinky -d build -p -- -DZEPHYR_SCACHE=ccache
+          west build -b $BOARD_TYPE $ZEPHYR_BASE/zephyr/samples/basic/blinky -d build -p -- -DZEPHYR_SCACHE=ccache
           ccache -s || true
 
       - name: Create build tarball

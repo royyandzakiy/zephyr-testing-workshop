@@ -21,4 +21,6 @@
 
 ## Known Issue
 
+- fix bad paths caused by changing of folderings
+
 ## Docs
