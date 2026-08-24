@@ -161,15 +161,6 @@ jobs:
             SERIAL_PORT="/dev/ttyACM1"
           fi
 
-          cat << EOF > hardware-map.yaml
-          - connected: true
-            id: "${CI_NRF5340DK_SNR}"
-            platform: nrf5340dk/nrf5340/cpuapp
-            product: J-Link
-            runner: nrfutil
-            serial: ${SERIAL_PORT}
-          EOF
-
           west twister --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
 
       - name: Recover on failure
