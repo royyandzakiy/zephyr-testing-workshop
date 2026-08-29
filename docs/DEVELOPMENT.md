@@ -1,5 +1,7 @@
 ## To Do
 
+- solve inability to add project to ncs extension
+- solve sdks and toolchains not showing in ncs extension
 - complete all the apps/
 - add ubsan to one build option (CI one)
 
