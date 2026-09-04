@@ -1,0 +1,166 @@
+name: Sanitizers_CI
+
+# Build ONE app for native_sim with AddressSanitizer + UndefinedBehaviorSanitizer
+# compiled in, run it to a clean exit, and fail if any sanitizer says anything.
+#
+# native_sim is the only platform in this repo where this is possible -- the
+# sanitizers are host-toolchain features, so there is no equivalent for a
+# cross-compiled Cortex-M build.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_run_sanitized:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    container:
+      image: zephyrprojectrtos/ci:v0.29.3
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      ZEPHYR_VERSION: v4.2.2
+      ZEPHYR_TOOLCHAIN_VERSION: 0.17.0
+      BOARD_TYPE: "native_sim/native"
+      # Any app under apps/ works. 01-blinky is the smallest one that actually
+      # gives the sanitizers something to chew on -- it pulls in the GPIO
+      # driver, gpio_emul and an interrupt callback. 00-hello is two printk
+      # calls, so a green run there would prove nothing.
+      APP: apps/01-blinky
+      # Simulated seconds before native_sim stops itself. Without this the app
+      # sits in k_sleep(K_FOREVER), has to be killed, and LeakSanitizer never
+      # runs -- it only reports at a clean exit.
+      STOP_AT: 2
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          path: workshop
+
+      - name: Cache Zephyr workspace
+        uses: actions/cache@v4
+        id: zephyr-cache
+        with:
+          path: zephyr-workspace
+          key: ${{ runner.os }}-zephyr-${{ env.ZEPHYR_VERSION }}
+
+      - name: Fetch vanilla Zephyr
+        if: steps.zephyr-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p zephyr-workspace
+          git clone --depth 1 --branch "$ZEPHYR_VERSION" \
+            https://github.com/zephyrproject-rtos/zephyr.git zephyr-workspace/zephyr
+          cd zephyr-workspace
+          west init -l zephyr
+          west update --narrow -o=--depth=1
+
+      - name: Cache Zephyr SDK
+        uses: actions/cache@v4
+        id: cache-zephyr-sdk
+        with:
+          path: /opt/toolchains/zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}
+          key: ${{ runner.os }}-zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}-arm
+
+      - name: Download & Extract Zephyr SDK
+        if: steps.cache-zephyr-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p /opt/toolchains
+          wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_TOOLCHAIN_VERSION}/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}_linux-x86_64_minimal.tar.xz" | tar -xJ -C /opt/toolchains
+
+      - name: Register SDK CMake Package
+        run: |
+          set -euo pipefail
+          cd "/opt/toolchains/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}"
+          ./setup.sh -c -t arm-zephyr-eabi
+
+      - name: Preflight — sanitizer runtimes present
+        run: |
+          set -euo pipefail
+          # native_sim/native is a 32-BIT build, so the runtimes it needs are
+          # the ones under /lib32, not the x86-64 pair. Switching BOARD_TYPE to
+          # native_sim/native/64 would need libc6-dev-amd64 variants instead.
+          echo "--- available sanitizer runtimes ---"
+          ldconfig -p | grep -E "libasan|libubsan" || true
+          missing=0
+          ldconfig -p | grep -q "libasan.*lib32"  || { echo "::error::32-bit libasan not found"; missing=1; }
+          ldconfig -p | grep -q "libubsan.*lib32" || { echo "::error::32-bit libubsan not found"; missing=1; }
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::install gcc-multilib / lib32asan before running sanitized native_sim builds"
+            exit 1
+          fi
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-san-${{ env.BOARD_TYPE }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-san-${{ env.BOARD_TYPE }}-
+
+      - name: Build with ASAN + UBSAN
+        env:
+          CCACHE_DIR: ~/.cache/ccache
+        run: |
+          set -euo pipefail
+          cd zephyr-workspace
+          west build -b "$BOARD_TYPE" -d build -p always \
+            "$GITHUB_WORKSPACE/workshop/$APP" \
+            -- -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/workshop/.github/sanitize.conf" \
+               -DZEPHYR_SCACHE=ccache
+          ccache -s || true
+
+      - name: Assert the sanitizers actually got enabled
+        run: |
+          set -euo pipefail
+          cfg=zephyr-workspace/build/zephyr/.config
+          echo "--- sanitizer config in the build ---"
+          grep -E "^CONFIG_(ASAN|UBSAN|LSAN)" "$cfg" || true
+          # A wrong EXTRA_CONF_FILE path is silently ignored by CMake, which
+          # would leave this job passing while sanitizing nothing.
+          grep -q '^CONFIG_ASAN=y'  "$cfg" || { echo "::error::CONFIG_ASAN not set — sanitize.conf was not applied"; exit 1; }
+          grep -q '^CONFIG_UBSAN=y' "$cfg" || { echo "::error::CONFIG_UBSAN not set — sanitize.conf was not applied"; exit 1; }
+          echo "--- runtimes linked into the binary ---"
+          ldd zephyr-workspace/build/zephyr/zephyr.exe | grep -E "libasan|libubsan"
+
+      - name: Run under sanitizers
+        run: |
+          set -uo pipefail
+          cd zephyr-workspace
+          export ASAN_OPTIONS="halt_on_error=1:detect_leaks=1:print_summary=1"
+          export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1"
+          ./build/zephyr/zephyr.exe "-stop_at=$STOP_AT" 2>&1 | tee run.log
+          rc=${PIPESTATUS[0]}
+          echo "--- exit code: $rc ---"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::sanitized binary exited $rc (see run.log)"
+            exit 1
+          fi
+
+      - name: Fail on any sanitizer report
+        run: |
+          set -uo pipefail
+          cd zephyr-workspace
+          # The load-bearing check. ASAN can be built to report and continue,
+          # so a clean exit code on its own is not evidence of a clean run.
+          if grep -nE "AddressSanitizer|LeakSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY: " run.log; then
+            echo "::error::sanitizer reported the findings above"
+            exit 1
+          fi
+          echo "No sanitizer findings."
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanitizer-logs
+          path: |
+            zephyr-workspace/run.log
+            zephyr-workspace/build/zephyr/.config
+          if-no-files-found: warn
