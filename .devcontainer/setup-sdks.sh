@@ -12,7 +12,9 @@ if [ ! -d "$ZEPHYR_SDK_DIR" ]; then
     echo "=== Installing Zephyr SDK $ZEPHYR_SDK_VER ==="
     mkdir -p /workdir/zephyr-sdks/toolchains
     wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VER}/zephyr-sdk-${ZEPHYR_SDK_VER}_linux-x86_64_minimal.tar.xz" | tar -xJ -C /workdir/zephyr-sdks/toolchains
-    (cd "$ZEPHYR_SDK_DIR" && ./setup.sh -h -t x86_64-zephyr-elf -t arm-zephyr-eabi)
+    # -c registers the SDK as a CMake package (~/.cmake/packages/Zephyr-sdk), which
+    # is how the nRF Connect extension finds the toolchain. See register-sdks.sh.
+    (cd "$ZEPHYR_SDK_DIR" && ./setup.sh -h -c -t x86_64-zephyr-elf -t arm-zephyr-eabi)
 fi
 
 # Clone Vanilla Zephyr if missing
@@ -20,7 +22,10 @@ if [ ! -d "$ZEPHYR_BASE" ]; then
     echo "=== Fetching Vanilla Zephyr $ZEPHYR_VAN_VER ==="
     mkdir -p "/workdir/zephyr-sdks/$ZEPHYR_VAN_VER"
     git clone --depth 1 --branch "$ZEPHYR_VAN_VER" https://github.com/zephyrproject-rtos/zephyr.git "$ZEPHYR_BASE"
-    (cd "$ZEPHYR_BASE/.." && west init -l "$ZEPHYR_BASE" && west update --narrow -o=--depth=1)
+    # zephyr-export publishes this workspace to the CMake package registry, so the
+    # nRF Connect extension lists it as an SDK. register-sdks.sh redoes it on every
+    # start, because ~/.cmake does not survive a container rebuild.
+    (cd "$ZEPHYR_BASE/.." && west init -l "$ZEPHYR_BASE" && west update --narrow -o=--depth=1 && west zephyr-export)
 else
     echo "=== Vanilla Zephyr $ZEPHYR_VAN_VER is ready ==="
 fi
@@ -36,3 +41,8 @@ fi
 #     echo "Error: Could not locate ncs.py inside /workspaces" >&2
 #     exit 1
 # fi
+
+# --- 3. Register everything in the CMake user package registry ---
+# OUTSIDE the guards above on purpose: the SDKs live in named volumes and persist,
+# but ~/.cmake does not, so this has to run on EVERY container start.
+bash "$(dirname "$0")/register-sdks.sh"

@@ -85,6 +85,7 @@ This repo uses `postStartCommand`, which is exactly why `setup-sdks.sh` is writt
 
 - `customizations.vscode.extensions`: auto-installed on attach. Purely editor-side, ignored by everything else.
   - `nordic-semiconductor.nrf-connect` — board and DTS tooling
+- `customizations.vscode.settings`: `nrf-connect.toolchainManager.installDirectory` points the extension's bundled nrfutil at `/workdir/ncs-sdks`. See [`register-sdks.sh`](#register-sdkssh--why-the-nrf-connect-extension-sees-the-sdks).
   - `thecreativedodo.usbip-connect` — attaches WSL2 USB devices from inside the editor
   - `ms-vscode.cpptools` is installed, but `.clangd` is the config actually in use. Pick one — running IntelliSense and clangd together produces duplicate, contradictory diagnostics.
 
@@ -116,11 +117,14 @@ Runs on every container start, guarded so it is a no-op once provisioned. Provis
 ```bash
 # 1. Zephyr SDK toolchain (0.17.0), if missing
 wget -qO- ".../zephyr-sdk-0.17.0_linux-x86_64_minimal.tar.xz" | tar -xJ -C /workdir/zephyr-sdks/toolchains
-./setup.sh -h -t x86_64-zephyr-elf -t arm-zephyr-eabi
+./setup.sh -h -c -t x86_64-zephyr-elf -t arm-zephyr-eabi
 
 # 2. Zephyr source (v4.2.2), if missing
 git clone --depth 1 --branch v4.2.2 https://github.com/zephyrproject-rtos/zephyr.git "$ZEPHYR_BASE"
-west init -l "$ZEPHYR_BASE" && west update --narrow -o=--depth=1
+west init -l "$ZEPHYR_BASE" && west update --narrow -o=--depth=1 && west zephyr-export
+
+# 3. Register both in the CMake user package registry, on EVERY start
+bash .devcontainer/register-sdks.sh
 ```
 
 Flags:
@@ -135,6 +139,60 @@ Flags:
 - `-o=--depth=1`: pass `--depth=1` through to the underlying `git clone`. Shallow, much faster, no history.
 
 To change Zephyr version: edit `ZEPHYR_VAN_VER` here **and** the `use-vanilla` default in the Dockerfile, then `docker volume rm zephyr-sdks-cache`. Two places, easy to desync.
+
+---
+
+## `register-sdks.sh` — why the nRF Connect extension sees the SDKs
+
+The extension does **not** scan an install directory for SDKs. It reads the CMake
+*user package registry* under `~/.cmake/packages/`, where each file contains a single
+path:
+
+| Registry entry | Path it holds | What the extension shows |
+|---|---|---|
+| `Zephyr/<md5>` | `<topdir>/zephyr/share/zephyr-package/cmake` | the SDK, in the SDK picker (it walks four levels up to get the west topdir) |
+| `Zephyr-sdk/<md5>` | `<zephyr-sdk-x.y.z>/cmake` | a **Zephyr SDK** toolchain |
+| `ZephyrUnittest/<md5>` | `<topdir>/zephyr/share/zephyrunittest-package/cmake` | nothing directly — but `find_package(ZephyrUnittest)` needs it, which is what `unit_testing` ztest builds use |
+
+`west zephyr-export` writes the first and third; `zephyr-sdk-x.y.z/setup.sh -c` writes
+the second. Both run only at provisioning time — and `~/.cmake` is **not** on a
+volume, so it dies with the container while the SDKs themselves survive in
+`zephyr-sdks-cache` / `ncs-sdks-cache`. That is the mismatch: SDKs present, picker
+empty.
+
+`register-sdks.sh` closes it. It runs from `setup-sdks.sh` (i.e. `postStartCommand`)
+on every start, globs `/workdir/*/*/zephyr/share/zephyr-package/cmake` and
+`/workdir/*/toolchains/zephyr-sdk-*/cmake`, writes an entry per hit (filename is the
+`md5sum` of the path, content is the bare path), and prunes entries whose target no
+longer exists. The `/workdir/*/*/` shape picks up both `zephyr-sdks/` and `ncs-sdks/`
+and skips nrfutil's `toolchains/`, `downloads/` and `tmp/` for free.
+
+**nRF Connect SDK toolchains are the one exception** — those come from the
+extension's bundled nrfutil, not from the registry, and it only looks where
+`nrf-connect.toolchainManager.installDirectory` points. `devcontainer.json` sets it
+to `/workdir/ncs-sdks`. Without that setting an NCS installed by `use-ncs` is present
+on disk but never listed. Cross-check from a terminal:
+
+```bash
+nrfutil toolchain-manager list --install-dir /workdir/ncs-sdks
+```
+
+**Two Zephyr SDKs will list.** The `zephyrprojectrtos/zephyr-build` base image ships
+`/opt/toolchains/zephyr-sdk-1.0.1`, and `/opt` is one of the directories the extension
+scans on its own. Pick **0.17.0** — that is the one this workshop pins and the one CI
+uses. The `ZEPHYR_SDK_INSTALL_DIR` in `devcontainer.json` points at 0.17.0 so the CLI
+is never ambiguous; only the extension's dropdown offers the choice.
+
+**If the picker is ever empty**, in the container:
+
+```bash
+bash .devcontainer/register-sdks.sh
+for f in ~/.cmake/packages/*/*; do echo "$f => $(cat $f)"; done
+```
+
+then Command Palette → **nRF Connect: Refresh SDKs** and **nRF Connect: Refresh
+Toolchains**. None of this affects the CLI (`west build`, `west twister`) — that path
+runs off `ZEPHYR_BASE` from `use-vanilla` and never touches the registry.
 
 ---
 
@@ -263,3 +321,7 @@ Or **Dev Containers: Rebuild Without Cache** from the Command Palette, which is 
 | Wrong Zephyr version after editing the script | volume | `docker volume rm zephyr-sdks-cache`, then restart |
 | Runner re-registers on every rebuild | devcontainer.json | `actions-runner-state` volume missing or renamed |
 | Xtensa compiler not found | setup-sdks.sh | ESP32 toolchain is not in the `-t` list; fetched separately |
+| nRF Connect SDK picker empty, SDKs on disk | `~/.cmake` | `bash .devcontainer/register-sdks.sh`, then **Refresh SDKs** |
+| NCS installed by `use-ncs` never listed | devcontainer.json | `nrf-connect.toolchainManager.installDirectory` must be `/workdir/ncs-sdks` |
+| Only NCS missing, vanilla Zephyr fine | both of the above | they are separate mechanisms -- registry for SDKs, nrfutil for NCS toolchains |
+| Two Zephyr SDKs offered (0.17.0 and 1.0.1) | base image | 1.0.1 ships in `/opt/toolchains`, which the extension scans; pick 0.17.0 |

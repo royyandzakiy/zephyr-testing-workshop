@@ -6,7 +6,10 @@
     "options": ["--platform=linux/amd64"]
   },
   "containerEnv": {
-    "RUNNER_ALLOW_RUNASROOT": "1"
+    "RUNNER_ALLOW_RUNASROOT": "1",
+    // See the comment in ../devcontainer.json -- the extension host does not see
+    // what `use-vanilla` exports in interactive shells.
+    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0"
   },
   "containerUser": "root",
   "remoteUser": "root",
@@ -26,7 +29,12 @@
         "ms-vscode.cpptools",
         "twxs.cmake",
         "nordic-semiconductor.nrf-connect"
-      ]
+      ],
+      "settings": {
+        // Where the extension's bundled nrfutil looks for NCS toolchains. See
+        // ../devcontainer.json and .devcontainer/register-sdks.sh.
+        "nrf-connect.toolchainManager.installDirectory": "/workdir/ncs-sdks"
+      }
     }
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
