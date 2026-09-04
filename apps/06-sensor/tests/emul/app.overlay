@@ -1,0 +1,19 @@
+/* tests/emul/app.overlay
+ *
+ * THE TEST-ONLY OVERLAY.
+ *
+ * native_sim already provides i2c0 as a "zephyr,i2c-emul-controller", so all
+ * this does is hang a BME280 off it under the same node label the real board
+ * overlays use. src/sensors/bme280.c binds DT_NODELABEL(bme280) and cannot
+ * tell that the chip on the other end is 200 lines of C.
+ */
+
+&i2c0 {
+    status = "okay";
+
+    bme280: bme280@77 {
+        compatible = "bosch,bme280";
+        reg = <0x77>;
+        status = "okay";
+    };
+};

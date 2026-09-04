@@ -35,3 +35,18 @@
         sw0 = &test_button;
     };
 };
+/* native_sim already ships an I2C emulation controller (i2c0, see
+ * boards/native/native_sim/native_sim.dts), so all we add is the child node.
+ * Same label and same address as the nrf5340dk and esp32 overlays, so
+ * DT_NODELABEL(bme280) in src/sensors/bme280.c resolves identically on every
+ * target -- which is the entire point.
+ */
+&i2c0 {
+    status = "okay";
+
+    bme280: bme280@77 {
+        compatible = "bosch,bme280";
+        reg = <0x77>;
+        status = "okay";
+    };
+};

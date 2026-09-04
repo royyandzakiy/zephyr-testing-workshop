@@ -1,0 +1,8 @@
+tests:
+  app06.climate.logic:
+    # Pure arithmetic. No driver, no bus, no board.
+    platform_allow:
+      - native_sim
+    tags:
+      - climate
+      - unit

@@ -11,7 +11,7 @@ int main(void)
     /* Initialize all hardware */
     led_init();
     button_init();
-    // bme280_start();
+    bme280_start();
 
     printk("System ready. Press button to toggle LED.\n");
     
