@@ -4,4 +4,7 @@ project(led_btn_sim_demo)
 
 target_sources(app PRIVATE 
     src/main.c 
+    src/sensors/bme280.c 
+    src/hardware/button.c 
+    src/hardware/led.c 
 )

@@ -20,8 +20,8 @@ west build -b esp32_devkitc/esp32/procpu \
   -p always \
   -d build_esp32_sensor \
   -- -DEXTRA_DTC_OVERLAY_FILE="boards/esp32_devkitc_esp32_procpu.overlay" \
-&& west flash --runner esp32 --esp-device /dev/ttyACM0 -d build_esp32_sensor \
-&& python3 -m serial.tools.miniterm --raw /dev/ttyACM0 115200
+&& west flash --runner esp32 --esp-device /dev/ttyUSB0 -d build_esp32_sensor \
+&& python3 -m serial.tools.miniterm --raw /dev/ttyUSB0 115200
 ```
 
 ## nrf5340dk
