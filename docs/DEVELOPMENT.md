@@ -23,17 +23,19 @@
 - 11 using gtest gock with a cpp project
 - 12 custom sensor api + native sim fake equivalent
 - 13 create large project, portray good unit test coverage (will be called in ci with lcov and coverage report)
+- 14 create simple project that will fail in sanitizer
 
-- add ci to do lcov
+- ci
+    - add ci lcov
+    - fix sanitizer ci
 
 ## Done
 
 - apps/06 sensor spin: climate_logic seam + ztest, app-local BME280 i2c emulator + ztest
 - cleaned up project NOTES
-
 ## Known Issue
-
-- consider using clean image to reduce container size
+ that
+- consider using clean image to reduce container
 - UBSAN trips inside Zephyr's own BME280 driver (bme280.c:103, left shift of a
   negative value in the Bosch compensation formula). Upstream, not ours; see
   apps/06-sensor/NOTES.md.
