@@ -19,6 +19,8 @@
 - apps/07 do fault injection
 - create 08 about finding seams in legacy projects
 - create 09 about fuzz testing in ci
+- 10 about unit test conventions
+- 11 using gtest gock with a cpp project
 
 ## Done
 
