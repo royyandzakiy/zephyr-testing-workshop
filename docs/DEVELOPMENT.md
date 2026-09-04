@@ -8,6 +8,7 @@
     - NOTES pre general guide
     - WORKSHOP
     - add: maintaining sdk toolchains + vscode ext
+    - add: NoOtes testing theory, conventions and best practices
 - test all apps/ working fine
 - create claude md, claude skills:
     - testing unit test
