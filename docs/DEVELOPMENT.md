@@ -14,8 +14,11 @@
     - testing pytest
     - ci
 
+- refine apps 06, will be about board bringup to native sim
 - apps/05 about pytest, a bit more advanced
 - apps/07 do fault injection
+- create 08 about finding seams in legacy projects
+- create 09 about fuzz testing in ci
 
 ## Done
 
