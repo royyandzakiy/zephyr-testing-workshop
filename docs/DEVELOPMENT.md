@@ -21,6 +21,7 @@
 - create 09 about fuzz testing in ci
 - 10 about unit test conventions
 - 11 using gtest gock with a cpp project
+- 12 custom sensor api + native sim fake equivalent
 
 - add ci to do lcov
 
