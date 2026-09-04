@@ -57,9 +57,12 @@ python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
 Additional setup to be able to compile to board
 
 ```bash
+west blobs fetch hal_espressif
 west sdk list
 west sdk install -t xtensa-espressif_esp32s3_zephyr-elf # change based on your board
-west blobs fetch hal_espressif
+# incase after install fail bcs west installs to wrong toolchain version, select the toolchain explicitly
+cd /workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0
+./setup.sh -t xtensa-espressif_esp32_zephyr-elf
 ```
 
 ```bash
