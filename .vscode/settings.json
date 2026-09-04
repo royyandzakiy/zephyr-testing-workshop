@@ -1,0 +1,6 @@
+{
+    "nrf-connect.applications": [
+        "${workspaceFolder}/apps/04-shell-pytest",
+        "${workspaceFolder}/apps/06-sensor"
+    ]
+}

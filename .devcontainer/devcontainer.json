@@ -5,9 +5,6 @@
   },
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
-    // The nRF Connect extension also accepts the Zephyr SDK via this env var.
-    // `use-vanilla` in .bashrc sets it, but only for interactive shells — the
-    // extension host never sees those, so set it container-wide too.
     "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0"
   },
   "containerUser": "root",
@@ -32,18 +29,10 @@
         "thecreativedodo.usbip-connect"
       ],
       "settings": {
-        // CRITICAL: where the extension's bundled nrfutil looks for nRF Connect
-        // SDK toolchains. Unset, it searches nrfutil's default dir (~/ncs, which
-        // does not exist here) and an NCS installed under /workdir/ncs-sdks is
-        // "installed but not listed". Harmless if you never install NCS.
-        // SDKs themselves are discovered from the CMake user package registry —
-        // see .devcontainer/register-sdks.sh.
         "nrf-connect.toolchainManager.installDirectory": "/workdir/ncs-sdks"
       }
     }
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  // setup-sdks.sh ends by calling register-sdks.sh, which re-publishes every SDK
-  // in /workdir to ~/.cmake/packages on each start (that dir is not persisted).
   "postStartCommand": "/bin/bash .devcontainer/setup-sdks.sh"
 }
