@@ -3,8 +3,8 @@
         "${workspaceFolder}/apps/00-hello",
         "${workspaceFolder}/apps/01-blinky",
         "${workspaceFolder}/apps/02-ztest",
-        "${workspaceFolder}/apps/03-emul",
-        "${workspaceFolder}/apps/04-shell-pytest",
+        "${workspaceFolder}/apps/03-emul-gpio",
+        "${workspaceFolder}/apps/04-pytest-shell",
         "${workspaceFolder}/apps/06-sensor"
     ]
 }
