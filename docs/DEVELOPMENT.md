@@ -22,6 +22,7 @@
 - 10 about unit test conventions
 - 11 using gtest gock with a cpp project
 - 12 custom sensor api + native sim fake equivalent
+- 13 create large project, portray good unit test coverage (will be called in ci with lcov and coverage report)
 
 - add ci to do lcov
 
