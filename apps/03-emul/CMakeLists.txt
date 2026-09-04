@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(led_btn_sim_demo)
+project(blinky)
 
-target_sources(app PRIVATE 
-    src/main.c 
+target_sources(app PRIVATE
+    src/main.c
+    src/blinky.c
+    src/blink_logic.c
 )

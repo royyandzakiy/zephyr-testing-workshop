@@ -1,0 +1,9 @@
+tests:
+  app03.blink.emul:
+    # gpio_emul only exists in a build that has no real pins to drive.
+    platform_allow:
+      - native_sim
+    tags:
+      - blink
+      - emul
+      - gpio
