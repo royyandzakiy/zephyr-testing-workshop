@@ -22,6 +22,8 @@
 - 10 about unit test conventions
 - 11 using gtest gock with a cpp project
 
+- add ci to do lcov
+
 ## Done
 
 - apps/06 sensor spin: climate_logic seam + ztest, app-local BME280 i2c emulator + ztest
