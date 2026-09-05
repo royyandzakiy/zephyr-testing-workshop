@@ -6,10 +6,9 @@
     - NOTES zephyr vanilla ncs
     - NOTES pre build flash
     - NOTES pre general guide
-    - WORKSHOP
-    - add: maintaining sdk toolchains + vscode ext
-    - add: NoOtes testing theory, conventions and best practices
-- test all apps/ working fine
+    - WORKSHOP: refine with using ai
+    - NOTES maintaining sdk toolchains + vscode ext
+    - NOTES Notes testing theory, conventions and best practices
 - create claude md, claude skills:
     - build flash run* (incl run tests and summarize results or errors)
     - board bring up dts (incl board migration)
@@ -19,14 +18,15 @@
     - create n testing unit test*
     - create n testing pytest*
     - create ci: build, sanitize, run on ci, run self hosted
-- add apps
+- test all current apps/ working fine
+- add new apps
     - refine apps 06, will be about board bringup to native sim
     - apps/05 about pytest, a bit more advanced
     - apps/07 do fault injection
     - create 08 about finding seams in legacy projects
     - create 09 about fuzz testing in ci
     - 10 about unit test conventions
-    - 11 using gtest gock with a cpp project
+    - 11 using gtest gmock with a cpp project
     - 12 custom sensor api + native sim fake equivalent
     - 13 create large project, portray good unit test coverage (will be called in ci with lcov and coverage report)
     - 14 create simple project that will fail in sanitizer
