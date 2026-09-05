@@ -11,8 +11,10 @@
     - add: NoOtes testing theory, conventions and best practices
 - test all apps/ working fine
 - create claude md, claude skills:
-    - testing unit test
-    - testing pytest
+    - build flash run; board bring up dts; kconfig helper; memory analyzer;
+    - (ensure all use zephyr mcp where possible)
+    - create n testing unit test
+    - create n testing pytest
     - ci
 
 - refine apps 06, will be about board bringup to native sim
