@@ -11,7 +11,7 @@
     - add: NoOtes testing theory, conventions and best practices
 - test all apps/ working fine
 - create claude md, claude skills:
-    - build flash run (incl run tests and summarize results or errors); board bring up dts; kconfig helper; memory analyzer;
+    - build flash run (incl run tests and summarize results or errors); board bring up dts (incl board migration); kconfig helper (debug kconfig issues accurately); memory analyzer (binary size, largest symbol);
     - (ensure all use zephyr mcp where possible)
     - create n testing unit test
     - create n testing pytest
