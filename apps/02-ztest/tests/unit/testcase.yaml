@@ -2,7 +2,7 @@ tests:
   app02.blink.logic:
     # Pure logic -- no driver, no board. native_sim runs it in milliseconds.
     platform_allow:
-      - native_sim
+      - native_sim # todo: allow other boards
     tags:
       - blink
       - unit
