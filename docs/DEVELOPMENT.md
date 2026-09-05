@@ -6,6 +6,7 @@
     - 03 chge folder to logic, emul, hw (use nrf)
     - 06 simplify and explain bme280 emul. give pictures of is register table from datasheet
 - add new apps
+    - add exercise.md for all apps
     - 05: advanced and variative pytest usage
     - 06* refine: will be about board bringup (bme280) to native sim
     - XX about finding seams in legacy projects
