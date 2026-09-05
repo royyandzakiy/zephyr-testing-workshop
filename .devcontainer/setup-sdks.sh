@@ -12,9 +12,6 @@ if [ ! -d "$ZEPHYR_SDK_DIR" ]; then
     echo "=== Installing Zephyr SDK $ZEPHYR_SDK_VER ==="
     mkdir -p /workdir/zephyr-sdks/toolchains
     wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VER}/zephyr-sdk-${ZEPHYR_SDK_VER}_linux-x86_64_minimal.tar.xz" | tar -xJ -C /workdir/zephyr-sdks/toolchains
-    # -c registers the SDK as a CMake package (~/.cmake/packages/Zephyr-sdk), which
-    # is how the nRF Connect extension finds the toolchain. See register-sdks.sh.
-    (cd "$ZEPHYR_SDK_DIR" && ./setup.sh -h -c -t x86_64-zephyr-elf -t arm-zephyr-eabi)
 fi
 
 # Clone Vanilla Zephyr if missing
@@ -42,7 +39,11 @@ fi
 #     exit 1
 # fi
 
-# --- 3. Register everything in the CMake user package registry ---
+# --- 3. Run the Zephyr SDK setup script ---
+echo "=== Setting up Zephyr SDK $ZEPHYR_SDK_VER host tools ==="
+(cd "$ZEPHYR_SDK_DIR" && ./setup.sh -h -c -t x86_64-zephyr-elf -t arm-zephyr-eabi)
+
+# --- 4. Register everything in the CMake user package registry ---
 # OUTSIDE the guards above on purpose: the SDKs live in named volumes and persist,
 # but ~/.cmake does not, so this has to run on EVERY container start.
 bash "$(dirname "$0")/register-sdks.sh"
