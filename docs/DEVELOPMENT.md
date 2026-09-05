@@ -1,7 +1,9 @@
 ## To Do
 
 - test all current apps/ working fine
-    - 06: assemble board + bme280, ensure works fine. currently fails to compile
+    - 06: assemble board + bme280, ensure works fine.  currently fails to compile
+    - 03 create a diff ztest, showing logic. remove button example
+    - 04 chge folder to logic, emul, hw (use nrf)
 - add new apps
     - 05: advanced and variative pytest usage
     - 06* refine: will be about board bringup (bme280) to native sim
