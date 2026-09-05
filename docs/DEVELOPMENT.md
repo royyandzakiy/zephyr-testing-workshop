@@ -4,7 +4,7 @@
     - 06: assemble board + bme280, ensure works fine.  currently fails to compile
     - 02 create a diff ztest, showing logic. remove button example
     - 03 chge folder to logic, emul, hw (use nrf)
-    - 06 simplify and explain bme280 emul. give pictures of is register table
+    - 06 simplify and explain bme280 emul. give pictures of is register table from datasheet
 - add new apps
     - 05: advanced and variative pytest usage
     - 06* refine: will be about board bringup (bme280) to native sim
