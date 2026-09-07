@@ -203,8 +203,11 @@ use-vanilla() {
         return 1
     fi
 
-    reset-ncs > /dev/null
-
+    # Resolve BEFORE reset-ncs. reset-ncs unsets ZEPHYR_BASE and
+    # ZEPHYR_SDK_INSTALL_DIR, so bailing out after it would leave the shell with
+    # no Zephyr environment at all -- and a missing ZEPHYR_SDK_INSTALL_DIR sends
+    # FindZephyr-sdk.cmake down its registry-search path, which fails with an
+    # unhelpful "Could not find a package configuration file".
     # Workspace and SDK resolve independently -- mixing stores is fine.
     for root in "${ZEPHYR_STORES[@]}"; do
         [ -z "$base" ] && [ -d "$root/$target_ver/zephyr" ] && base="$root/$target_ver/zephyr"
@@ -214,13 +217,23 @@ use-vanilla() {
     if [ -z "$base" ]; then
         echo "Error: Zephyr $target_ver not found in ${ZEPHYR_STORES[*]}" >&2
         echo "       Install it with: bash .devcontainer/fetch-zephyr.sh $target_ver" >&2
+        echo "       Environment left unchanged." >&2
         return 1
     fi
     if [ -z "$sdk" ]; then
         echo "Error: zephyr-sdk-$sdk_ver not found in ${ZEPHYR_STORES[*]}" >&2
         echo "       Install it with: bash .devcontainer/fetch-zephyr.sh $target_ver $sdk_ver" >&2
+        echo "       Environment left unchanged." >&2
         return 1
     fi
+    if [ ! -f "$sdk/cmake/Zephyr-sdkConfig.cmake" ]; then
+        echo "Error: $sdk has no cmake/Zephyr-sdkConfig.cmake -- the SDK is incomplete." >&2
+        echo "       Repair it with: rm -rf $sdk && bash .devcontainer/setup-sdks.sh" >&2
+        echo "       Environment left unchanged." >&2
+        return 1
+    fi
+
+    reset-ncs > /dev/null
 
     export ZEPHYR_BASE="$base"
     export ZEPHYR_SDK_INSTALL_DIR="$sdk"
