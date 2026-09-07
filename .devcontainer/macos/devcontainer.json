@@ -7,9 +7,10 @@
   },
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
-    // See the comment in ../devcontainer.json -- the extension host does not see
-    // what `use-vanilla` exports in interactive shells.
-    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0"
+    // Keep in sync with ../versions.env; see ../devcontainer.json.
+    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.2.2/zephyr",
+    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0",
+    "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr"
   },
   "containerUser": "root",
   "remoteUser": "root",
@@ -18,9 +19,10 @@
     "--privileged"
   ],
   "mounts": [
+    // Shared by name across projects; see ../devcontainer.json.
     "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",
-    "source=actions-runner-state,target=/actions-runner,type=volume"
+    "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume"
   ],
   "customizations": {
     "vscode": {
@@ -31,8 +33,7 @@
         "nordic-semiconductor.nrf-connect"
       ],
       "settings": {
-        // Where the extension's bundled nrfutil looks for NCS toolchains. See
-        // ../devcontainer.json and .devcontainer/register-sdks.sh.
+        // Where the extension's bundled nrfutil looks for NCS toolchains.
         "nrf-connect.toolchainManager.installDirectory": "/workdir/ncs-sdks"
       }
     }

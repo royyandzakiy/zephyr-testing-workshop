@@ -3,6 +3,9 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  // Must match versions.env, which this file cannot read. setup-sdks.sh fails
+  // loudly if they disagree. Needed here because the extension host does not see
+  // what `use-vanilla` exports in interactive shells.
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.2.2/zephyr",
@@ -15,10 +18,13 @@
   "runArgs": [
     "--privileged"
   ],
+  // The SDK volumes are named WITHOUT the project name on purpose, so every
+  // project copying this .devcontainer/ shares one download. The runner volume is
+  // the opposite -- it holds one registration, so it must be per-project.
   "mounts": [
     "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",
-    "source=actions-runner-state,target=/actions-runner,type=volume",
+    "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume",
     "source=/dev,target=/dev,type=bind,bind-propagation=rslave"
   ],
   "customizations": {

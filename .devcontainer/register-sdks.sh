@@ -1,26 +1,18 @@
 #!/usr/bin/env bash
-# Register every Zephyr/NCS workspace and Zephyr SDK under /workdir in the CMake
-# *user package registry*, so the nRF Connect for VS Code extension lists them.
+# Register every Zephyr/NCS workspace and Zephyr SDK in the CMake *user package
+# registry* (~/.cmake/packages), which is how the nRF Connect for VS Code
+# extension discovers them -- it does not scan install directories.
 #
-# WHY THIS EXISTS
-#   The extension does not scan an install directory for SDKs. It reads
-#   ~/.cmake/packages/<pkg>/* -- each file holds a path -- and derives:
-#     Zephyr          -> <topdir>/zephyr/share/zephyr-package/cmake      (SDK picker)
-#     Zephyr-sdk      -> <zephyr-sdk-x.y.z>/cmake                        (toolchain list)
-#     ZephyrUnittest  -> <topdir>/zephyr/share/zephyrunittest-package/cmake
-#   `west zephyr-export` and `zephyr-sdk-x.y.z/setup.sh -c` write those entries,
-#   but neither runs on a warm container start, and ~/.cmake lives in the
-#   container's throwaway layer (no volume) -- so the registration is lost on every
-#   rebuild while the SDKs themselves survive in the /workdir volumes.
+# `west zephyr-export` and `zephyr-sdk-*/setup.sh -c` write those entries, but
+# neither runs on a warm start and ~/.cmake is in the container's throwaway layer,
+# so the registration is lost on every rebuild while the SDKs survive in the
+# volumes. Hence: run from setup-sdks.sh on every start. Safe to re-run by hand if
+# the SDK picker comes up empty, then Command Palette -> "nRF Connect: Refresh
+# SDKs" and "Refresh Toolchains".
 #
-#   Run from setup-sdks.sh (postStartCommand) on every start. Safe to re-run, and
-#   safe to run by hand if the extension's SDK picker ever comes up empty:
-#       bash .devcontainer/register-sdks.sh
-#   then: Command Palette -> "nRF Connect: Refresh SDKs" and "Refresh Toolchains".
-#
-# NOTE the /workdir/*/*/ glob covers BOTH stores (zephyr-sdks/v4.2.2 and
-# ncs-sdks/v3.3.0) and skips nrfutil's toolchains/, downloads/ and tmp/ for free --
-# those have no zephyr/share/... underneath them.
+# The /workdir/*/*/ glob covers both volume stores and skips nrfutil's
+# toolchains/, downloads/ and tmp/ for free. /opt/zephyr-sdks is one level
+# shallower, hence the second glob in each loop.
 set -eu
 
 REG_ROOT="${HOME}/.cmake/packages"
@@ -39,18 +31,21 @@ echo "=== Registering SDKs for the nRF Connect extension ==="
 count=0
 
 # West workspaces -- vanilla Zephyr and NCS alike.
-for p in /workdir/*/*/zephyr/share/zephyr-package/cmake; do
+for p in /workdir/*/*/zephyr/share/zephyr-package/cmake \
+         /opt/zephyr-sdks/*/zephyr/share/zephyr-package/cmake; do
     register Zephyr "$p"
 done
 
 # unit_testing builds resolve find_package(ZephyrUnittest), not find_package(Zephyr).
-for p in /workdir/*/*/zephyr/share/zephyrunittest-package/cmake; do
+for p in /workdir/*/*/zephyr/share/zephyrunittest-package/cmake \
+         /opt/zephyr-sdks/*/zephyr/share/zephyrunittest-package/cmake; do
     register ZephyrUnittest "$p"
 done
 
 # Zephyr SDK toolchains (the NCS toolchains are found by nrfutil instead -- see
 # nrf-connect.toolchainManager.installDirectory in devcontainer.json).
-for p in /workdir/*/toolchains/zephyr-sdk-*/cmake; do
+for p in /workdir/*/toolchains/zephyr-sdk-*/cmake \
+         /opt/zephyr-sdks/toolchains/zephyr-sdk-*/cmake; do
     register Zephyr-sdk "$p"
 done
 
