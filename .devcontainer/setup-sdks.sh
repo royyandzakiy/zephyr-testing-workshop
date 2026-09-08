@@ -168,7 +168,13 @@ fi
 # ~/.cmake is in the container's throwaway layer even though the SDK persists, so
 # without this the nRF Connect SDK picker is empty after a rebuild.
 echo "=== Setting up Zephyr SDK host tools ==="
-(cd "$SDK_DIR" && ./setup.sh -h -c > /dev/null)
+# Output captured, not discarded: swallowing it once left an exit-30 "Host tools
+# installation failed" with no explanation anywhere.
+if ! (cd "$SDK_DIR" && ./setup.sh -h -c) > /tmp/zephyr-sdk-setup.log 2>&1; then
+    echo "ERROR: $SDK_DIR/setup.sh -h -c failed:" >&2
+    cat /tmp/zephyr-sdk-setup.log >&2
+    exit 1
+fi
 
 bash "$HERE/register-sdks.sh"
 

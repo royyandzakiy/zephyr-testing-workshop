@@ -166,8 +166,13 @@ use-vanilla() {
     export ZEPHYR_SDK_INSTALL_DIR="$sdk"
     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 
+    # Only env here -- deliberately NOT `setup.sh -h -c`. That installs SDK host
+    # tools and writes ~/.cmake, which setup-sdks.sh already does once per
+    # container start (and fetch-zephyr.sh at install time). Running it per shell
+    # cost ~7s on every prompt, timed out VS Code's shell-environment probe, and
+    # raced that probe against postStartCommand -- two concurrent setup.sh runs
+    # make one of them exit 30 with "Host tools installation failed".
     source "$ZEPHYR_BASE/zephyr-env.sh"
-    source "$ZEPHYR_SDK_INSTALL_DIR/setup.sh" -h -c > /dev/null
     echo "Switched to Vanilla Zephyr ${target_ver} (SDK: zephyr-sdk-${sdk_ver})"
     echo "  ZEPHYR_BASE=$ZEPHYR_BASE"
     echo "  ZEPHYR_SDK_INSTALL_DIR=$ZEPHYR_SDK_INSTALL_DIR"
