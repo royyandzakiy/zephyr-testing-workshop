@@ -1,17 +1,10 @@
 #!/usr/bin/env bash
-# Build the three-stage image chain, the way zephyrproject-rtos/docker-image does:
-#
-#     Dockerfile.base   -> zephyr-workshop-base    build tools, no Zephyr SDK
-#     Dockerfile.ci     -> zephyr-workshop-ci      + flashing tools, Actions runner
-#     Dockerfile.devel  -> zephyr-workshop-devel   + editor tooling, shell helpers
-#
-# devcontainer.json runs this from initializeCommand, because a devcontainer can
-# only build one Dockerfile itself. Every stage is layer-cached, so this is a
-# no-op once built.
+# Build the base -> ci -> devel image chain.
 #
 #     bash .devcontainer/build.sh [tag] [platform]
 #
-# Run it by hand to rebuild after editing a Dockerfile.
+# devcontainer.json inlines the same three commands in initializeCommand (it
+# cannot call this file -- see the comment there), so keep the two in step.
 set -euo pipefail
 
 cd "$(dirname "$0")"

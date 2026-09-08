@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
-# postStartCommand: ensure the Zephyr version this project wants is in the shared
-# volume, then register it.
-#
-# The SDK and Zephyr tree are not in the image -- they live in zephyr-sdks-cache,
-# shared by name with every project that copies this .devcontainer/. So the first
-# start on a machine takes ~10 min; every start after that, in any project, takes
-# seconds and no network.
+# postStartCommand: ensure the Zephyr version in versions.env is in the shared
+# volume, then register it. First start on a machine takes ~10 min; every start
+# after that, in any project sharing zephyr-sdks-cache, takes seconds.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -50,12 +46,10 @@ if ! flock -w 1800 9; then
 fi
 
 # --- Adopt installs made before the sentinels existed -------------------------
-# A volume provisioned by the old scripts has no .complete marker. Stamp one if
-# the install genuinely looks finished, so upgrading does not trigger a pointless
-# refetch. The checks are deliberately specific: a half-extracted SDK -- which the
-# old `[ ! -d ... ]` guard would leave behind and then skip forever -- has the
-# directory but neither setup.sh nor cmake/Zephyr-sdkConfig.cmake, so it is NOT
-# adopted and gets refetched below.
+# A volume provisioned by the old scripts has no .complete marker; stamp one if
+# the install looks finished, so upgrading does not force a refetch. The checks
+# are narrow on purpose: a half-extracted SDK has the directory but no setup.sh
+# or Zephyr-sdkConfig.cmake, so it is not adopted and gets refetched below.
 if [ ! -f "$SDK_DIR/.complete" ] \
    && [ -f "$SDK_DIR/setup.sh" ] \
    && [ -f "$SDK_DIR/cmake/Zephyr-sdkConfig.cmake" ]; then
@@ -77,10 +71,8 @@ fresh_install=0
 [ -f "$ZEPHYR_WS/.complete" ] || { need_zephyr=1; fresh_install=1; }
 [ -f "$SDK_DIR/.complete" ] || { need_sdk=1; fresh_install=1; }
 
-# An installed SDK can still be missing a toolchain this project needs -- another
-# project may have provisioned the shared store with a shorter ZSDK_TOOLCHAINS.
-# fetch-zephyr.sh adds them incrementally, so ask for it rather than failing
-# verification below.
+# Another project may have provisioned the shared store with a shorter
+# ZSDK_TOOLCHAINS; fetch-zephyr.sh adds the missing ones incrementally.
 if [ "$need_sdk" -eq 0 ]; then
     for t in $ZSDK_TOOLCHAINS; do
         if [ ! -d "$SDK_DIR/$t" ]; then
@@ -171,10 +163,8 @@ echo "=== Setting up Zephyr SDK host tools ==="
 
 bash "$HERE/register-sdks.sh"
 
-# The registry is the only thing FindZephyr-sdk.cmake can fall back on when
-# ZEPHYR_SDK_INSTALL_DIR is absent from a subprocess environment. If it is empty,
-# a build fails with an opaque "Could not find a package configuration file
-# provided by Zephyr-sdk" -- so say so here instead.
+# The registry is FindZephyr-sdk.cmake's only fallback when ZEPHYR_SDK_INSTALL_DIR
+# is absent from a subprocess env. Empty means an opaque build failure later.
 if ! ls "${HOME}/.cmake/packages/Zephyr-sdk/"* >/dev/null 2>&1; then
     echo "ERROR: no Zephyr-sdk entry in ${HOME}/.cmake/packages -- builds will fail" >&2
     echo "       to locate the SDK whenever ZEPHYR_SDK_INSTALL_DIR is not set." >&2

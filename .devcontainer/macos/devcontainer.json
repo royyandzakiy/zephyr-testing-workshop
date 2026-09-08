@@ -3,7 +3,7 @@
   // Same chain as ../devcontainer.json, forced to linux/amd64 and tagged
   // separately so the two do not overwrite each other's images.
   "image": "zephyr-workshop-devel:local-amd64",
-  "initializeCommand": ["bash", ".devcontainer/build.sh", "local-amd64", "linux/amd64"],
+  "initializeCommand": "docker build --platform linux/amd64 -f .devcontainer/Dockerfile.base -t zephyr-workshop-base:local-amd64 .devcontainer && docker build --platform linux/amd64 -f .devcontainer/Dockerfile.ci --build-arg BASE_IMAGE=zephyr-workshop-base:local-amd64 -t zephyr-workshop-ci:local-amd64 .devcontainer && docker build --platform linux/amd64 -f .devcontainer/Dockerfile.devel --build-arg BASE_IMAGE=zephyr-workshop-ci:local-amd64 -t zephyr-workshop-devel:local-amd64 .devcontainer",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     // Keep in sync with ../versions.env; see ../devcontainer.json.

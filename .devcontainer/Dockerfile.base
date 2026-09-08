@@ -1,15 +1,8 @@
 # Base image: everything needed to BUILD Zephyr, except the Zephyr SDK.
+# Chain: Dockerfile.base -> Dockerfile.ci -> Dockerfile.devel (see build.sh).
 #
-# Mirrors zephyrproject-rtos/docker-image's Dockerfile.base. Built ground-up from
-# Ubuntu rather than from zephyrprojectrtos/zephyr-build (~32 GB, mostly
-# toolchains and emulators this repo never uses).
-#
-# The Zephyr SDK and the Zephyr tree are not in any of these images -- they live
-# in the shared volume at /workdir/zephyr-sdks, installed on first container
-# start by setup-sdks.sh, so every project reusing this .devcontainer/ shares one
-# download per machine.
-#
-# Chain:  Dockerfile.base -> Dockerfile.ci -> Dockerfile.devel   (see build.sh)
+# The SDK and the Zephyr tree are in the shared volume /workdir/zephyr-sdks, not
+# in any image -- setup-sdks.sh installs them on first container start.
 FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -18,14 +11,11 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# native_sim (and native_sim/native, which this repo builds) is a 32-BIT host
-# binary, which drives two things here:
-#   gcc-multilib/g++-multilib  pull in /lib32/libasan.so.* and /lib32/libubsan.so.*,
-#                              which sanitizers_native-sim_ci.yml asserts exist
-#   libsdl2-dev:i386           lets display/LVGL samples link; needs the i386 arch
-#   libc6-dbg:i386             valgrind refuses to run a 32-bit binary without the
-#                              matching 32-bit debuginfo ("Cannot continue -- exiting
-#                              now"), so `twister --enable-valgrind` needs it
+# native_sim is a 32-BIT host binary, so the i386 arch and three of the packages
+# below exist for it:
+#   gcc-multilib/g++-multilib  /lib32/libasan.so.*, asserted by sanitizers CI
+#   libsdl2-dev:i386           lets display/LVGL samples link
+#   libc6-dbg:i386             valgrind will not start without matching debuginfo
 RUN dpkg --add-architecture i386 \
     && apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -37,9 +27,7 @@ RUN dpkg --add-architecture i386 \
     gperf \
     ccache \
     device-tree-compiler \
-    # sparse: static analysis via -DZEPHYR_SCA_VARIANT=sparse. Zephyr 4.2 ships
-    # sca implementations for clang, codechecker, coverity, cpptest, eclair, gcc,
-    # polyspace and sparse -- there is no clang-tidy variant.
+    # -DZEPHYR_SCA_VARIANT=sparse. Zephyr 4.2 has no clang-tidy sca variant.
     sparse \
     gdb \
     gcovr \

@@ -51,16 +51,24 @@ Rebuild cost follows the same order: Dockerfile change = `bash .devcontainer/bui
 
 ### Why `image` + `initializeCommand`, not `build`
 
-A devcontainer builds exactly **one** Dockerfile, and this repo has a three-stage chain. So `build.sh` builds it and `devcontainer.json` just names the finished image. `initializeCommand` runs on the **host** before the container exists, which is the only hook early enough. Every stage is layer-cached, so it is a no-op once built.
+A devcontainer builds exactly **one** Dockerfile, and this repo has a three-stage chain. So `devcontainer.json` names the finished image and `initializeCommand` builds the chain — it runs on the **host** before the container exists, which is the only hook early enough. Every stage is layer-cached, so it is a no-op once built.
 
-The cost: **the host needs `bash`**. Fine on macOS and Linux; on Windows this means Git Bash (bundled with Git for Windows). Without it the container will not start.
+**The three `docker build` calls are spelled out inline, not `["bash", ".devcontainer/build.sh"]`.** That array form looks tidier and is a trap on Windows: `bash` there usually resolves to `C:\Users\<you>\AppData\Local\Microsoft\WindowsApps\bash.exe`, the **WSL shim**, because Git ships its `bash.exe` in `Git\bin` which is not on `PATH` by default (only `Git\cmd` and `Git\mingw64\bin` are). If WSL is missing or broken you get a 30-second hang and:
 
-To rebuild by hand after editing a Dockerfile:
+```
+Could not connect to WSL.  Error code: Wsl/Service/0x8007274c
+```
+
+and the container never starts. The single-string form runs in the host's own shell — `cmd.exe` on Windows, `sh` elsewhere — and `&&` chaining works in both, so the only host requirement is Docker.
+
+`build.sh` does the same thing and stays for manual use and CI:
 
 ```bash
-bash .devcontainer/build.sh                    # zephyr-workshop-{base,ci,devel}:local
-bash .devcontainer/build.sh local-amd64 linux/amd64   # what macos/devcontainer.json uses
+bash .devcontainer/build.sh                            # zephyr-workshop-{base,ci,devel}:local
+bash .devcontainer/build.sh local-amd64 linux/amd64    # the macos/ variant's tags
 ```
+
+If you edit the chain, keep `build.sh` and both `initializeCommand` strings in step.
 
 ### Identity and privileges
 
@@ -397,7 +405,7 @@ these images — `devcontainer.json` names a prebuilt image. Run `build.sh` for 
 | `ZEPHYR_BASE not defined` in CI, fine in terminal | shell | non-interactive shell — set `BASH_ENV` or `containerEnv` |
 | `Could not find a package configuration file provided by "Zephyr-sdk"` | volume | SDK directory exists but is hollow, or the CMake registry is empty. `rm -rf /workdir/zephyr-sdks/toolchains/zephyr-sdk-<ver>` then `bash .devcontainer/setup-sdks.sh` |
 | `ZEPHYR_BASE does not match versions.env` on start | versions.env | `devcontainer.json`'s `containerEnv` paths and `versions.env` disagree; make them match, then rebuild the container |
-| Container will not start, `initializeCommand` failed | host | no `bash` on the host — install Git Bash on Windows, or run `bash .devcontainer/build.sh` manually |
+| Container will not start, `initializeCommand` failed | host | check Docker is running. If the log shows `Could not connect to WSL` / `Wsl/Service/0x...`, something is invoking `bash` and hitting the WSL shim — `initializeCommand` must be the inline `docker build ... && ...` string, not a call to a `.sh` file |
 | `ELFCLASS32` / `libjlinkarm.so.7` | Dockerfile.ci | 32-bit J-Link linked; `bash .devcontainer/build.sh` |
 | Probe in `lsusb`, no `/dev/ttyACM*` | devcontainer.json | `bind-propagation=rslave` on the `/dev` mount |
 | "Cannot connect to J-Link" *after* detection | devcontainer.json | stale USB node after re-enumeration; same `rslave` fix |

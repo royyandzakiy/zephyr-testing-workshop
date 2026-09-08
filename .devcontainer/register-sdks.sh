@@ -3,16 +3,13 @@
 # registry* (~/.cmake/packages), which is how the nRF Connect for VS Code
 # extension discovers them -- it does not scan install directories.
 #
-# `west zephyr-export` and `zephyr-sdk-*/setup.sh -c` write those entries, but
-# neither runs on a warm start and ~/.cmake is in the container's throwaway layer,
-# so the registration is lost on every rebuild while the SDKs survive in the
-# volumes. Hence: run from setup-sdks.sh on every start. Safe to re-run by hand if
-# the SDK picker comes up empty, then Command Palette -> "nRF Connect: Refresh
-# SDKs" and "Refresh Toolchains".
+# ~/.cmake is in the container's throwaway layer while the SDKs survive in the
+# volumes, so this has to re-run on every start. Safe to run by hand if the SDK
+# picker comes up empty, then Command Palette -> "nRF Connect: Refresh SDKs".
 #
-# The /workdir/*/*/ glob covers both volume stores and skips nrfutil's
-# toolchains/, downloads/ and tmp/ for free. /opt/zephyr-sdks is one level
-# shallower, hence the second glob in each loop.
+# /workdir/*/*/ covers both volume stores and skips nrfutil's toolchains/,
+# downloads/ and tmp/ for free. /opt/zephyr-sdks is one level shallower, hence
+# the second glob in each loop.
 set -eu
 
 REG_ROOT="${HOME}/.cmake/packages"

@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 # Install a vanilla Zephyr version and/or a Zephyr SDK into the shared volume.
+# setup-sdks.sh calls this on first container start; run it by hand to add more:
 #
-# setup-sdks.sh calls this on the first container start of a machine, for the
-# versions in versions.env. Call it by hand to add another alongside:
+#     bash .devcontainer/fetch-zephyr.sh v4.3.0 0.17.4   # then: use-vanilla v4.3.0 0.17.4
 #
-#     bash .devcontainer/fetch-zephyr.sh v4.3.0            # Zephyr + default SDK
-#     bash .devcontainer/fetch-zephyr.sh v4.3.0 0.17.4     # Zephyr + that SDK
-#     bash .devcontainer/fetch-zephyr.sh "" 0.17.4         # SDK only
-#     use-vanilla v4.3.0 0.17.4                            # then switch to it
+# An omitted argument falls back to versions.env; an empty one ("") skips that half.
 #
-# An omitted argument falls back to versions.env; an explicitly empty one ("")
-# skips that half.
-#
-# The .complete sentinels are written only after a step fully succeeds. A guard on
-# directory existence alone would report a half-dead `west update` as ready and
-# never repair it.
+# .complete sentinels are written only after a step fully succeeds -- a guard on
+# directory existence would report a half-dead `west update` as ready forever.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"

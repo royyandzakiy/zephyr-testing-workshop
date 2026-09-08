@@ -1,13 +1,11 @@
 {
   "name": "Zephyr Development",
-  // Built by build.sh as a base -> ci -> devel chain, which a devcontainer
-  // cannot do itself (it builds one Dockerfile). initializeCommand runs on the
-  // host before the container is created; it is layer-cached, so it is a no-op
-  // once built. Rebuild after editing a Dockerfile with:
-  //     bash .devcontainer/build.sh
+  // Builds the base -> ci -> devel chain; a devcontainer can only build one
+  // Dockerfile itself. Same as build.sh, but inline: calling a .sh would need
+  // `bash`, which on Windows resolves to the WSL shim and fails if WSL is broken.
   "image": "zephyr-workshop-devel:local",
-  "initializeCommand": ["bash", ".devcontainer/build.sh"],
-  // Must match versions.env, which this file cannot read. setup-sdks.sh fails
+  "initializeCommand": "docker build -f .devcontainer/Dockerfile.base -t zephyr-workshop-base:local .devcontainer && docker build -f .devcontainer/Dockerfile.ci --build-arg BASE_IMAGE=zephyr-workshop-base:local -t zephyr-workshop-ci:local .devcontainer && docker build -f .devcontainer/Dockerfile.devel --build-arg BASE_IMAGE=zephyr-workshop-ci:local -t zephyr-workshop-devel:local .devcontainer",
+  // Must match versions.env, which this file cannot read; setup-sdks.sh fails
   // loudly if they disagree. Needed here because the extension host does not see
   // what `use-vanilla` exports in interactive shells.
   "containerEnv": {
@@ -22,9 +20,9 @@
   "runArgs": [
     "--privileged"
   ],
-  // The SDK volumes are named WITHOUT the project name on purpose, so every
-  // project copying this .devcontainer/ shares one download. The runner volume is
-  // the opposite -- it holds one registration, so it must be per-project.
+  // SDK volumes have no project prefix on purpose: every project copying this
+  // .devcontainer/ shares one download. The runner volume holds one registration,
+  // so it must be per-project.
   "mounts": [
     "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",

@@ -11,9 +11,7 @@ Workshop repository. Everything you build today lives under [`apps/`](apps/).
 Do this **3–4 days ahead**, not the morning of. The CI session depends on step 1.
 
 1. **Fork this repository** to your own GitHub account. Session 4 pushes to your fork and watches your own Actions run.
-2. **Install Docker** — Docker Desktop (Windows/macOS) or Docker Engine (Linux). Confirm `docker run hello-world` works.
-
-   **On Windows, you also need Git Bash** (it ships with [Git for Windows](https://git-scm.com/download/win)). Opening the container runs a small build script on your machine with `bash`, so without it the container will not start. macOS and Linux already have `bash`.
+2. **Install Docker** — Docker Desktop (Windows/macOS) or Docker Engine (Linux). Confirm `docker run hello-world` works. Nothing else is required on your machine.
 3. **Clone your fork** and open it in VS Code. Accept the *"Reopen in Container"* prompt.
 
    Two waits, both one-time:

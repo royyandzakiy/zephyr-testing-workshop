@@ -1,18 +1,13 @@
-# Developer image: CI plus the things only a human needs -- editor tooling, a
-# serial monitor, and the shell helpers for switching Zephyr/NCS versions.
-#
-# This is the image devcontainer.json runs.
+# Developer image: CI plus what only a human needs -- editor tooling, a serial
+# monitor, and the version-switching shell helpers. This is what runs.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# clang-tidy is editor tooling here, not a Zephyr SCA variant -- Zephyr 4.2 has no
-# clang-tidy sca implementation. clangd runs its checks inline, and it can be run by
-# hand over the compile_commands.json that .clangd already points at.
-# The unversioned metapackage is the one that installs /usr/bin/clang-tidy;
-# clang-tidy-18 alone provides only the versioned name.
+# clang-tidy here is editor tooling, not a Zephyr SCA variant. Keep the unversioned
+# metapackage: clang-tidy-18 alone installs only the versioned binary name.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-format \
     clang-tidy \
@@ -45,11 +40,9 @@ fi
 # Searched in order: shared volume first, then the image's (empty) store.
 ZEPHYR_STORES=(/workdir/zephyr-sdks /opt/zephyr-sdks)
 
-# Version numbers are derived from the paths devcontainer.json exported, never
-# hardcoded -- a literal here would override versions.env in every project that
-# copies this file.
-#   ZEPHYR_BASE=<store>/v4.2.2/zephyr                    -> v4.2.2
-#   ZEPHYR_SDK_INSTALL_DIR=<store>/.../zephyr-sdk-0.17.0 -> 0.17.0
+# Versions are derived from the paths devcontainer.json exported, never hardcoded
+# -- a literal here would override versions.env in every project copying this file.
+#   ZEPHYR_BASE=<store>/v4.2.2/zephyr -> v4.2.2
 _zephyr_env_version() {
     local b="${ZEPHYR_BASE:-${_ORIG_ZEPHYR_BASE:-}}"
     [ -n "$b" ] || return 0
@@ -89,11 +82,9 @@ use-vanilla() {
         return 1
     fi
 
-    # Resolve BEFORE reset-ncs, which unsets ZEPHYR_BASE and
-    # ZEPHYR_SDK_INSTALL_DIR -- bailing out after it would leave the shell with no
-    # Zephyr environment, and a missing ZEPHYR_SDK_INSTALL_DIR sends
-    # FindZephyr-sdk.cmake down its registry-search path and an opaque failure.
-    # Workspace and SDK resolve independently; mixing stores is fine.
+    # Resolve BEFORE reset-ncs, which unsets both vars -- bailing out after it
+    # would leave the shell with no ZEPHYR_SDK_INSTALL_DIR, and FindZephyr-sdk.cmake
+    # then fails opaquely. Workspace and SDK resolve independently.
     for root in "${ZEPHYR_STORES[@]}"; do
         [ -z "$base" ] && [ -d "$root/$target_ver/zephyr" ] && base="$root/$target_ver/zephyr"
         [ -z "$sdk" ] && [ -d "$root/toolchains/zephyr-sdk-$sdk_ver" ] && sdk="$root/toolchains/zephyr-sdk-$sdk_ver"
