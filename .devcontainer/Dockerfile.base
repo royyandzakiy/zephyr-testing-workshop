@@ -69,10 +69,12 @@ RUN python3 -m venv ${VIRTUAL_ENV} \
     && pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir west
 
-# One venv for all Zephyr versions. These pins barely move between minor
-# releases; bump ZEPHYR_REQ_REF if a newer Zephyr needs something. Independent of
-# versions.env. requirements-doc is excluded (sphinx, several hundred MB).
-ARG ZEPHYR_REQ_REF=v4.2.2
+# One venv for every Zephyr version in the shared volume, so keep this at the
+# NEWEST version any project uses -- older Zephyrs tolerate extra packages, but a
+# newer one fails hard on a missing dep (4.4 added jsonschema; on a v4.2.2-pinned
+# venv every build died in zephyr_module.cmake). requirements-doc is excluded
+# (sphinx, several hundred MB).
+ARG ZEPHYR_REQ_REF=v4.4.2
 RUN ZREQ="https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/${ZEPHYR_REQ_REF}/scripts" \
     && pip install --no-cache-dir \
       -r "${ZREQ}/requirements-base.txt" \

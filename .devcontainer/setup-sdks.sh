@@ -45,6 +45,15 @@ if ! flock -w 1800 9; then
     exit 1
 fi
 
+# SDK 0.17.x puts toolchains at <sdk>/<triple>; SDK 1.0.x moved them under a
+# variant directory, <sdk>/gnu/<triple>. Accept either, and any future variant.
+sdk_has_toolchain() {
+    local sdk="$1" t="$2" p
+    [ -d "$sdk/$t" ] && return 0
+    for p in "$sdk"/*/"$t"; do [ -d "$p" ] && return 0; done
+    return 1
+}
+
 # --- Adopt installs made before the sentinels existed -------------------------
 # A volume provisioned by the old scripts has no .complete marker; stamp one if
 # the install looks finished, so upgrading does not force a refetch. The checks
@@ -75,7 +84,7 @@ fresh_install=0
 # ZSDK_TOOLCHAINS; fetch-zephyr.sh adds the missing ones incrementally.
 if [ "$need_sdk" -eq 0 ]; then
     for t in $ZSDK_TOOLCHAINS; do
-        if [ ! -d "$SDK_DIR/$t" ]; then
+        if ! sdk_has_toolchain "$SDK_DIR" "$t"; then
             echo "=== Toolchain $t missing from the shared SDK -- installing ==="
             need_sdk=1
         fi
@@ -127,7 +136,7 @@ if [ -d "$SDK_DIR" ]; then
         fail=1
     fi
     for t in $ZSDK_TOOLCHAINS; do
-        if [ -d "$SDK_DIR/$t" ]; then
+        if sdk_has_toolchain "$SDK_DIR" "$t"; then
             echo "               $t"
         else
             echo "  ERROR: toolchain $t not installed in $SDK_DIR" >&2

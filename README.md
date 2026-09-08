@@ -165,7 +165,7 @@ Finished a block early? → [`docs/EXERCISE.md`](docs/EXERCISE.md). Graded **★
 | [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | Container internals, SDK layout |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Working on this repo itself |
 
-Zephyr **v4.2.2**, SDK **0.17.0**. Boards with overlays in-tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`, `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
+Zephyr **v4.4.2**, SDK **1.0.1**. Boards with overlays in-tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`, `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
 
 `dump/` is scratch material kept for reference. Ignore it.
 

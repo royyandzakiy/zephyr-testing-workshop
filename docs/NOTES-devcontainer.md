@@ -32,11 +32,11 @@ Rebuild cost follows the same order: Dockerfile change = `bash .devcontainer/bui
 {
   "name": "Zephyr Development",
   "image": "zephyr-workshop-devel:local",
-  "initializeCommand": ["bash", ".devcontainer/build.sh"],
+  "initializeCommand": "docker build -f .devcontainer/Dockerfile.base ... && ... Dockerfile.ci ... && ... Dockerfile.devel ...",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
-    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.2.2/zephyr",
-    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0",
+    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
+    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-1.0.1",
     "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr"
   },
   "containerUser": "root",
@@ -171,8 +171,8 @@ What `setup-sdks.sh` does, in order:
 `versions.env` is the only file to edit per project:
 
 ```bash
-ZEPHYR_VERSION=v4.2.2
-ZSDK_VERSION=0.17.0
+ZEPHYR_VERSION=v4.4.2
+ZSDK_VERSION=1.0.1
 ZSDK_TOOLCHAINS="arm-zephyr-eabi x86_64-zephyr-elf xtensa-espressif_esp32_zephyr-elf xtensa-espressif_esp32s3_zephyr-elf"
 ```
 
@@ -301,7 +301,7 @@ Fixes, in order of preference:
 export BASH_ENV=/root/.bashrc
 
 # 2. Or set the variable at container level in devcontainer.json
-"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.2.2/zephyr" }
+"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr" }
 
 # 3. Or source explicitly in the CI step
 bash -c 'source /root/.bashrc && west build ...'

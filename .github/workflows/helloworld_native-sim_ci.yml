@@ -12,8 +12,8 @@ jobs:
       image: zephyrprojectrtos/ci:v0.29.3
 
     env:
-      ZEPHYR_VERSION: v4.2.2
-      ZEPHYR_TOOLCHAIN_VERSION: 0.17.0
+      ZEPHYR_VERSION: v4.4.2
+      ZEPHYR_TOOLCHAIN_VERSION: 1.0.1
       BOARD_TYPE: "native_sim/native"
 
     steps:
@@ -34,19 +34,9 @@ jobs:
           west init -l zephyr
           west update --narrow -o=--depth=1
 
-      - name: Cache Zephyr SDK
-        uses: actions/cache@v4
-        id: cache-zephyr-sdk
-        with:
-          path: /opt/toolchains/zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}
-          key: ${{ runner.os }}-zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}-arm
-
-      - name: Download & Extract Zephyr SDK
-        if: steps.cache-zephyr-sdk.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p /opt/toolchains
-          wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_TOOLCHAIN_VERSION}/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}_linux-x86_64_minimal.tar.xz" | tar -xJ -C /opt/toolchains
-
+      # The Zephyr SDK is already in the ci image at /opt/toolchains (v0.29.3
+      # bundles 1.0.1 with all toolchains), so there is nothing to download --
+      # only the CMake package registry entry to (re)create.
       - name: Register SDK CMake Package
         run: |
           cd /opt/toolchains/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}

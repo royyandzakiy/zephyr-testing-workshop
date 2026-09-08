@@ -11,9 +11,8 @@
             detach vdisk
             exit
         ```
-- upgrade to latest sdk & toolchain of zephyr
 - upload docker to ghcr
-- create ci version to run on github actions
+    - create ci version to run on github actions
 
 - test all current apps/ working fine
     - 06: assemble board + bme280, ensure works fine.  currently fails to compile

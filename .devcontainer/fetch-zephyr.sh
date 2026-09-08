@@ -69,6 +69,10 @@ if [ -n "$ZEPHYR_VER" ]; then
         west init -l "$WS/zephyr"
         west update --narrow -o=--depth=1
         west zephyr-export
+        for m in ${ZEPHYR_BLOBS:-}; do
+            echo "=== Fetching binary blobs for $m ==="
+            west blobs fetch "$m"
+        done
         touch "$WS/.complete"
     fi
 fi

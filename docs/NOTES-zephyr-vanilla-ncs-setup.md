@@ -20,7 +20,8 @@ package registry — see [`NOTES-devcontainer.md`](NOTES-devcontainer.md).
 ## Cloning latest Zephyr Vanilla
 
 ```bash
-export ZEPHYR_VAN_VER="v4.2.2"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
 
 # 2. Clone Zephyr repository & fetch submodules
@@ -38,8 +39,8 @@ wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEP
 
 ```bash
 # Select version, define paths
-export ZEPHYR_VAN_VER="v4.2.2"
-export ZEPHYR_SDK_VER="0.17.0"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
 export ZEPHYR_SDK_DIR="/workdir/zephyr-sdks/toolchains/zephyr-sdk-$ZEPHYR_SDK_VER"
@@ -53,8 +54,8 @@ source "$ZEPHYR_BASE/zephyr-env.sh"
 
 ```bash
 # Select versions
-export ZEPHYR_VAN_VER="v4.2.2"
-export ZEPHYR_SDK_VER="0.17.0"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 
 # Define base path
 export ZEPHYR_BASE_DIR="/workdir/zephyr-sdks"
@@ -100,7 +101,7 @@ echo "Successfully cloned Vanilla Zephyr $ZEPHYR_VAN_VER with SDK $ZEPHYR_SDK_VE
 ### Permanently adding it to `.bashrc`
 
 ```bash
-export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.2.2/zephyr"
+export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.4.2/zephyr"
 if [ -f "$ZEPHYR_BASE/zephyr-env.sh" ]; then
     source "$ZEPHYR_BASE/zephyr-env.sh" > /dev/null
 fi
