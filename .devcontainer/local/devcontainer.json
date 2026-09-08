@@ -1,16 +1,17 @@
 {
-  "name": "Zephyr Development",
-  // Pulled prebuilt from GHCR -- no local build, no initializeCommand, so Docker
-  // is the only thing needed on the host. Published by
-  // .github/workflows/publish-images.yml.
+  "name": "Zephyr Development (build from source)",
+  // Same as ../devcontainer.json but builds the images locally instead of
+  // pulling from GHCR. Use this when changing a Dockerfile; use the other one
+  // for normal work and for attendees.
   //
-  // The tag is the Zephyr/SDK pair and is immutable: bumping versions.env
-  // produces a new tag rather than moving this one, so nothing shifts under an
-  // attendee mid-workshop. Keep it in step with versions.env.
+  // Only base + devel are built -- Dockerfile.ci exists for GitHub Actions and
+  // bakes in an SDK development does not need. `WITH_CI=1 bash
+  // .devcontainer/build.sh` builds it if you want to test that image.
   //
-  // To build the images from source instead -- when changing a Dockerfile --
-  // open .devcontainer/local/devcontainer.json.
-  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
+  // Spelled out inline rather than calling build.sh: on Windows `bash` usually
+  // resolves to the WSL shim, so the container would not start if WSL is broken.
+  "image": "zephyr-workshop-devel:local",
+  "initializeCommand": "docker build -f .devcontainer/Dockerfile.base -t zephyr-workshop-base:local .devcontainer && docker build -f .devcontainer/Dockerfile.devel --build-arg BASE_IMAGE=zephyr-workshop-base:local -t zephyr-workshop-devel:local .devcontainer",
   // Must match versions.env, which this file cannot read; setup-sdks.sh fails
   // loudly if they disagree. Needed here because the extension host does not see
   // what `use-vanilla` exports in interactive shells.

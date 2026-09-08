@@ -11,8 +11,14 @@ Workshop repository. Everything you build today lives under [`apps/`](apps/).
 Do this **3–4 days ahead**, not the morning of. The CI session depends on step 1.
 
 1. **Fork this repository** to your own GitHub account. Session 4 pushes to your fork and watches your own Actions run.
-2. **Install Docker** — Docker Desktop (Windows/macOS) or Docker Engine (Linux). Confirm `docker run hello-world` works.
-3. **Clone your fork** and open it in VS Code. Accept the *"Reopen in Container"* prompt and let the devcontainer build. First build pulls a large image — leave it running.
+2. **Install Docker** — Docker Desktop (Windows/macOS) or Docker Engine (Linux). Confirm `docker run hello-world` works. Nothing else is required on your machine.
+3. **Clone your fork** and open it in VS Code. Accept the *"Reopen in Container"* prompt.
+
+   Two waits, both one-time:
+   - **~6 min** building the container image. It is built from Ubuntu rather than pulled, so you will see package installs scroll past, not a download bar.
+   - **~10 min** on first start, downloading Zephyr and the Zephyr SDK into a shared Docker volume. This happens **once per machine**, not once per project — you will see a `FIRST RUN ON THIS MACHINE` banner. Later starts take seconds and need no network.
+
+   Leave both running.
 4. **Verify** inside the container:
 
    ```bash
@@ -159,7 +165,7 @@ Finished a block early? → [`docs/EXERCISE.md`](docs/EXERCISE.md). Graded **★
 | [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | Container internals, SDK layout |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Working on this repo itself |
 
-Zephyr **v4.2.2**, SDK **0.17.0**. Boards with overlays in-tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`, `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
+Zephyr **v4.4.2**, SDK **1.0.1**. Boards with overlays in-tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`, `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
 
 `dump/` is scratch material kept for reference. Ignore it.
 

@@ -1,0 +1,205 @@
+# Developer image: base plus everything a human and the self-hosted runner need --
+# flashing tools, the Actions runner, editor tooling, and the version-switching
+# shell helpers. This is the image devcontainer.json runs.
+#
+# Built FROM base, not from Dockerfile.ci: that one bakes a Zephyr SDK in for
+# GitHub Actions, which development does not want -- here the SDK comes from the
+# shared /workdir volume.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# clang-tidy here is editor tooling, not a Zephyr SCA variant. Keep the unversioned
+# metapackage: clang-tidy-18 alone installs only the versioned binary name.
+# dfu-util and libusb are for flashing; libffi/libyaml are nrfutil runtime deps.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    clang-format \
+    clang-tidy \
+    clangd \
+    picocom \
+    dfu-util \
+    usbutils \
+    libusb-1.0-0 \
+    libffi8 \
+    libyaml-0-2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && command -v clang-tidy >/dev/null || { echo "MISSING clang-tidy"; exit 1; }
+
+# --- Hardware tools -----------------------------------------------------------
+# These live here rather than in Dockerfile.ci because the jobs that flash run
+# `runs-on: [self-hosted, linux]` with no container, on a runner hosted inside
+# THIS image. The GitHub-hosted build jobs never touch hardware.
+RUN curl -fSL "https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfutil" -o /usr/local/bin/nrfutil \
+    && chmod +x /usr/local/bin/nrfutil \
+    && nrfutil install toolchain-manager \
+    && nrfutil install device
+
+ARG NORDIC_COMMAND_LINE_TOOLS_VERSION="10-24-0/nrf-command-line-tools-10.24.0"
+RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x && \
+    NCLT_TMP=$(mktemp -d) && cd "${NCLT_TMP}" && \
+    wget -qO - "${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-amd64.tar.gz" | tar --no-same-owner -xz && \
+    mkdir -p /opt/SEGGER && \
+    tar xzf JLink_Linux_*x86_64.tgz -C /opt/SEGGER && \
+    mv /opt/SEGGER/JLink_Linux* /opt/SEGGER/JLink && \
+    rm -rf /opt/SEGGER/JLink/x86 /opt/SEGGER/JLink/libjlinkarm_x86.so* && \
+    cd /opt/SEGGER/JLink && \
+    JLINK_SO="$(ls libjlinkarm.so.[0-9]*.[0-9]*.[0-9]* | head -n1)" && \
+    ln -sf "${JLINK_SO}" libjlinkarm.so.7 && \
+    ln -sf libjlinkarm.so.7 libjlinkarm.so && \
+    ln -s /opt/SEGGER/JLink/JLinkExe /usr/local/bin/JLinkExe && \
+    echo "/opt/SEGGER/JLink" > /etc/ld.so.conf.d/SEGGER_JLink.conf && ldconfig && \
+    cd / && rm -rf "${NCLT_TMP}"
+
+# Fail here rather than on someone's first flash if the 32-bit J-Link library
+# won the symlink race.
+RUN JLINK_LIB="$(ldconfig -p | awk '/libjlinkarm\.so\.7/ {print $NF; exit}')" && \
+    file -L "${JLINK_LIB}" | grep -q 'ELF 64-bit' && \
+    nrfutil device --version
+
+WORKDIR /actions-runner
+RUN curl -o actions-runner-linux-x64-2.336.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.336.0/actions-runner-linux-x64-2.336.0.tar.gz \
+    && echo "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d  actions-runner-linux-x64-2.336.0.tar.gz" | sha256sum -c \
+    && tar xzf ./actions-runner-linux-x64-2.336.0.tar.gz \
+    && rm ./actions-runner-linux-x64-2.336.0.tar.gz
+
+# Second SDK store, searched after /workdir. Empty here -- Dockerfile.ci is what
+# bakes a pair into it.
+RUN mkdir -p /opt/zephyr-sdks
+
+WORKDIR /workspaces
+
+# Shell helpers:
+#   use-vanilla [ver] [sdk]  switch this shell to a vanilla Zephyr + SDK
+#   use-ncs [ver]            switch to an nRF Connect SDK install
+#   reset-ncs                back to the container baseline
+#   zephyr-stores            list what is installed, and where
+RUN cat << 'EOF' >> /root/.bashrc
+
+if [ -z "$_ORIG_PATH" ]; then
+    export _ORIG_PATH="$PATH"
+    export _ORIG_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+    # reset-ncs unsets the live vars; these keep the project default recoverable.
+    export _ORIG_ZEPHYR_BASE="${ZEPHYR_BASE:-}"
+    export _ORIG_ZEPHYR_SDK_INSTALL_DIR="${ZEPHYR_SDK_INSTALL_DIR:-}"
+fi
+
+# Searched in order: shared volume first, then the image's own store.
+ZEPHYR_STORES=(/workdir/zephyr-sdks /opt/zephyr-sdks)
+
+# Versions are derived from the paths devcontainer.json exported, never hardcoded
+# -- a literal here would override versions.env in every project copying this file.
+#   ZEPHYR_BASE=<store>/v4.4.2/zephyr -> v4.4.2
+_zephyr_env_version() {
+    local b="${ZEPHYR_BASE:-${_ORIG_ZEPHYR_BASE:-}}"
+    [ -n "$b" ] || return 0
+    basename "$(dirname "$b")"
+}
+
+_zephyr_env_sdk_version() {
+    local s="${ZEPHYR_SDK_INSTALL_DIR:-${_ORIG_ZEPHYR_SDK_INSTALL_DIR:-}}"
+    [ -n "$s" ] || return 0
+    basename "$s" | sed 's/^zephyr-sdk-//'
+}
+
+zephyr-stores() {
+    local root p
+    echo "Zephyr workspaces:"
+    for root in "${ZEPHYR_STORES[@]}"; do
+        for p in "$root"/*/zephyr/VERSION; do
+            [ -f "$p" ] && echo "  $(basename "$(dirname "$(dirname "$p")")")  ->  $(dirname "$p")"
+        done
+    done
+    echo "Zephyr SDKs:"
+    for root in "${ZEPHYR_STORES[@]}"; do
+        for p in "$root"/toolchains/zephyr-sdk-*; do
+            [ -d "$p" ] && echo "  $(basename "$p")  ->  $p"
+        done
+    done
+    # An unmatched glob leaves the last `[ -d ] &&` false, which would otherwise
+    # become this function's exit status.
+    return 0
+}
+
+use-vanilla() {
+    local target_ver="${1:-$(_zephyr_env_version)}"
+    local sdk_ver="${2:-$(_zephyr_env_sdk_version)}"
+    local root base="" sdk=""
+
+    if [ -z "$target_ver" ] || [ -z "$sdk_ver" ]; then
+        echo "Usage: use-vanilla <zephyr-version> <sdk-version>   e.g. use-vanilla v4.4.2 1.0.1" >&2
+        echo "       (no default available -- ZEPHYR_BASE/ZEPHYR_SDK_INSTALL_DIR are unset)" >&2
+        return 1
+    fi
+
+    # Resolve BEFORE reset-ncs, which unsets both vars -- bailing out after it
+    # would leave the shell with no ZEPHYR_SDK_INSTALL_DIR, and FindZephyr-sdk.cmake
+    # then fails opaquely. Workspace and SDK resolve independently.
+    for root in "${ZEPHYR_STORES[@]}"; do
+        [ -z "$base" ] && [ -d "$root/$target_ver/zephyr" ] && base="$root/$target_ver/zephyr"
+        [ -z "$sdk" ] && [ -d "$root/toolchains/zephyr-sdk-$sdk_ver" ] && sdk="$root/toolchains/zephyr-sdk-$sdk_ver"
+    done
+
+    if [ -z "$base" ]; then
+        echo "Error: Zephyr $target_ver not found in ${ZEPHYR_STORES[*]}" >&2
+        echo "       Install it with: bash .devcontainer/fetch-zephyr.sh $target_ver" >&2
+        echo "       Environment left unchanged." >&2
+        return 1
+    fi
+    if [ -z "$sdk" ]; then
+        echo "Error: zephyr-sdk-$sdk_ver not found in ${ZEPHYR_STORES[*]}" >&2
+        echo "       Install it with: bash .devcontainer/fetch-zephyr.sh $target_ver $sdk_ver" >&2
+        echo "       Environment left unchanged." >&2
+        return 1
+    fi
+    if [ ! -f "$sdk/cmake/Zephyr-sdkConfig.cmake" ]; then
+        echo "Error: $sdk has no cmake/Zephyr-sdkConfig.cmake -- the SDK is incomplete." >&2
+        echo "       Repair it with: rm -rf $sdk && bash .devcontainer/setup-sdks.sh" >&2
+        echo "       Environment left unchanged." >&2
+        return 1
+    fi
+
+    reset-ncs > /dev/null
+
+    export ZEPHYR_BASE="$base"
+    export ZEPHYR_SDK_INSTALL_DIR="$sdk"
+    export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+
+    source "$ZEPHYR_BASE/zephyr-env.sh"
+    source "$ZEPHYR_SDK_INSTALL_DIR/setup.sh" -h -c > /dev/null
+    echo "Switched to Vanilla Zephyr ${target_ver} (SDK: zephyr-sdk-${sdk_ver})"
+    echo "  ZEPHYR_BASE=$ZEPHYR_BASE"
+    echo "  ZEPHYR_SDK_INSTALL_DIR=$ZEPHYR_SDK_INSTALL_DIR"
+}
+
+use-ncs() {
+    local target_ver="${1:-v3.3.0}"
+    local script_path
+
+    reset-ncs > /dev/null
+
+    script_path=$(find /workspaces -name "ncs.py" 2>/dev/null | head -n 1)
+
+    if [ -n "$script_path" ] && [ -f "$script_path" ]; then
+        eval "$(/usr/bin/python3 "$script_path" "$target_ver")"
+    else
+        echo "Error: Could not locate ncs.py script." >&2
+        return 1
+    fi
+}
+
+reset-ncs() {
+    export PATH="$_ORIG_PATH"
+    if [ -n "$_ORIG_LD_LIBRARY_PATH" ]; then
+        export LD_LIBRARY_PATH="$_ORIG_LD_LIBRARY_PATH"
+    else
+        unset LD_LIBRARY_PATH
+    fi
+    unset ZEPHYR_BASE ZEPHYR_SDK_INSTALL_DIR NCS_TOOLCHAIN_PATH ZEPHYR_TOOLCHAIN_VARIANT
+    echo "Reset environment to container baseline."
+}
+
+# Project default. No version arguments on purpose -- see _zephyr_env_version.
+use-vanilla
+EOF

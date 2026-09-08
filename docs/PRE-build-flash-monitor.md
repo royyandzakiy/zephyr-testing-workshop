@@ -54,15 +54,24 @@ python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
 
 ## Espressif
 
-Additional setup to be able to compile to board
+The Xtensa toolchains are **already installed** — `ZSDK_TOOLCHAINS` in
+[`.devcontainer/versions.env`](../.devcontainer/versions.env) lists both
+`xtensa-espressif_esp32_zephyr-elf` and `xtensa-espressif_esp32s3_zephyr-elf`, and
+`setup-sdks.sh` installs them on first container start. `zephyr-stores` shows what you have.
+
+One thing still needed per workspace — the Espressif binary blobs are not in the git tree:
 
 ```bash
 west blobs fetch hal_espressif
-west sdk list
-west sdk install -t xtensa-espressif_esp32s3_zephyr-elf # change based on your board
-# incase after install fail bcs west installs to wrong toolchain version, select the toolchain explicitly
-cd /workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0
-./setup.sh -t xtensa-espressif_esp32_zephyr-elf
+```
+
+To add a toolchain for a different chip (ESP32-S2, a RISC-V ESP32-C3, …), append the triple
+to `ZSDK_TOOLCHAINS` in `versions.env` and restart the container. `setup-sdks.sh` tops up the
+shared SDK incrementally, so nothing is re-downloaded. `west sdk list` shows the available
+triples. To install one immediately without restarting:
+
+```bash
+bash .devcontainer/fetch-zephyr.sh    # re-runs setup.sh -t for everything in versions.env
 ```
 
 ```bash

@@ -2,21 +2,38 @@
 
 **General Notes**:
 
-- Three layers, each owning a different thing. Almost all "why isn't my change taking effect" confusion comes from editing the wrong layer.
+- Four layers, each owning a different thing. Almost all "why isn't my change taking effect" confusion comes from editing the wrong layer.
 - The Zephyr SDK is **not baked into the image**. It lives in a named Docker volume, provisioned on first start. This keeps the image small and lets it survive image rebuilds.
-- This repo is **not** a west manifest repo. There is no `west.yml`; `ZEPHYR_BASE` points outside the workspace into the SDK volume. That is why the env-var shell helpers exist at all.
+- The volume is **shared by name across every project** that copies this `.devcontainer/`. Zephyr and the SDK are downloaded once per *machine*, not once per project.
+- The images are built ground-up from `ubuntu:24.04`, not derived from `zephyrprojectrtos/zephyr-build` (~32 GB, mostly toolchains and emulators this repo never uses), and are **published to GHCR** — the devcontainer pulls, it does not build.
+- This repo is **not** a west manifest repo. There is no `west.yml`; `ZEPHYR_BASE` points outside the workspace into the SDK volume. That is why the env-var shell helpers exist at all. A `west.yml` here would mean west's T2 topology, which clones Zephyr *into each project's* workspace — exactly what the shared volume exists to avoid.
 
-## The Three Layers
+## The Four Layers
+
+`ci` and `devel` are **siblings** off `base`, not a chain — they have different consumers:
 
 ```
-Dockerfile        → builds the image (apt packages, nrfutil, J-Link, runner, .bashrc helpers)
+Dockerfile.base   → build tools, Python venv, Zephyr's Python requirements
+├─ Dockerfile.ci    → + Zephyr SDK and tree BAKED IN     → GitHub Actions `container:` only
+└─ Dockerfile.devel → + flashing tools, Actions runner,   → what devcontainer.json pulls
+                        clangd, picocom, .bashrc helpers
+build.sh          → builds them locally (base + devel; ci only with WITH_CI=1)
+versions.env      → WHICH Zephyr + SDK + toolchains + blobs this project wants
 devcontainer.json → how the image is launched (mounts, privileges, user) + editor config
-setup-sdks.sh     → what gets provisioned at runtime into the volumes (Zephyr source + SDK)
+setup-sdks.sh     → fills the volumes at runtime (with fetch-zephyr.sh)
 ```
 
-Order of truth: Dockerfile defines what exists → devcontainer.json decides how it is launched and what is mounted → `setup-sdks.sh` fills the volumes. Missing tool, fix the Dockerfile. Missing device or path, fix devcontainer.json. Wrong *version*, fix `setup-sdks.sh`.
+**Why `devel` does not build on `ci`:** `ci` bakes a Zephyr SDK and tree into
+`/opt/zephyr-sdks` because GitHub-hosted runners have no persistent volume. Development
+does not want that — it uses the shared `/workdir` volume, and `use-vanilla` searches
+`/workdir` first anyway. Conversely `ci` has no nrfutil, J-Link or Actions runner: the
+jobs that flash hardware run `runs-on: [self-hosted, linux]` with **no container**, on a
+runner hosted inside the `devel` container. Upstream's chain is linear because their
+`devel` is genuinely `ci` plus a VNC stack; ours are two different products.
 
-Rebuild cost follows the same order: Dockerfile change = full image rebuild (slow), devcontainer.json change = container recreate (fast), `setup-sdks.sh` change = just restart (instant, volumes persist).
+Order of truth: the Dockerfiles define what exists → `devcontainer.json` decides how it is launched and what is mounted → `setup-sdks.sh` fills the volumes with whatever `versions.env` names. Missing tool, fix the right Dockerfile. Missing device or path, fix `devcontainer.json`. Wrong *version*, fix `versions.env` **and** the matching paths in `devcontainer.json` (which cannot read an env file — `setup-sdks.sh` fails loudly if the two disagree).
+
+Rebuild cost follows the same order: Dockerfile change = push to `main` and let `publish-images.yml` republish, or `bash .devcontainer/build.sh` for a local one (a `Dockerfile.base` change rebuilds both siblings); `devcontainer.json` change = container recreate (fast); `setup-sdks.sh` or `versions.env` change = just restart (instant, volumes persist).
 
 ---
 
@@ -24,9 +41,14 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
 
 ```json
 {
-  "name": "Zephyr & NCS Build Environment",
-  "build": { "dockerfile": "Dockerfile" },
-  "containerEnv": { "RUNNER_ALLOW_RUNASROOT": "1" },
+  "name": "Zephyr Development",
+  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
+  "containerEnv": {
+    "RUNNER_ALLOW_RUNASROOT": "1",
+    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
+    "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-1.0.1",
+    "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr"
+  },
   "containerUser": "root",
   "remoteUser": "root",
   "updateRemoteUserUID": false,
@@ -36,6 +58,29 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
   "postStartCommand": "/bin/bash .devcontainer/setup-sdks.sh"
 }
 ```
+
+### Three devcontainer configs
+
+| Config | Image | For |
+|---|---|---|
+| `.devcontainer/` | `ghcr.io/…/zephyr-workshop-devel:<tag>` | normal work and attendees — **pulls**, no build |
+| `.devcontainer/local/` | `zephyr-workshop-devel:local` | when you are changing a Dockerfile — builds base + devel |
+| `.devcontainer/macos/` | the GHCR image, `--platform=linux/amd64` | Apple Silicon, under emulation |
+
+The default has **no `initializeCommand`**, so Docker is the only host requirement.
+
+The tag is the Zephyr/SDK pair (`z4.4.2-sdk1.0.1`) and is immutable — bumping `versions.env` publishes a *new* tag rather than moving this one, so nothing shifts under an attendee mid-workshop. Keep the tag in both `devcontainer.json` files in step with `versions.env`.
+
+**The `local/` variant spells its two `docker build` calls out inline rather than calling `build.sh`.** That looks less tidy and is deliberate: on Windows `bash` usually resolves to `C:\Users\<you>\AppData\Local\Microsoft\WindowsApps\bash.exe`, the **WSL shim**, because Git ships its `bash.exe` in `Git\bin`, which is not on `PATH` by default (only `Git\cmd` and `Git\mingw64\bin` are). If WSL is missing or broken you get a 30-second hang, `Could not connect to WSL. Error code: Wsl/Service/0x8007274c`, and the container never starts.
+
+`build.sh` remains for manual use:
+
+```bash
+bash .devcontainer/build.sh              # base + devel, tagged :local
+WITH_CI=1 bash .devcontainer/build.sh    # also the ci image (large, GitHub Actions only)
+```
+
+If you change the build, keep `build.sh`, `local/devcontainer.json` and `publish-images.yml` in step.
 
 ### Identity and privileges
 
@@ -53,7 +98,7 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
 "mounts": [
   "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
   "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",
-  "source=actions-runner-state,target=/actions-runner,type=volume",
+  "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume",
   "source=/dev,target=/dev,type=bind,bind-propagation=rslave"
 ]
 ```
@@ -61,7 +106,8 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
 - `type=volume`: Docker-managed named volume. Survives container deletion and image rebuild. Use for anything expensive to re-download.
   - `zephyr-sdks-cache` — vanilla Zephyr source + Zephyr SDK toolchain
   - `ncs-sdks-cache` — NCS toolchains, managed by `nrfutil toolchain-manager`
-  - `actions-runner-state` — runner registration and credentials, so you do not re-register on every rebuild
+  - `${localWorkspaceFolderBasename}-actions-runner` — runner registration and credentials, so you do not re-register on every rebuild
+- **The naming asymmetry is deliberate.** The two SDK volumes have fixed names with no project prefix, so every project that copies this `.devcontainer/` mounts the *same* volumes and shares one download per machine. The runner volume is the opposite: it holds a single runner registration, so a shared name would make two projects fight over it.
 - `type=bind`: maps a host path in. Changes are live in both directions.
 - `bind-propagation=rslave`: **the important one**. When a board resets and USB re-enumerates, the device node number changes (`/dev/bus/usb/001/008` → `009`). Without `rslave` the container keeps the stale view and flashing fails with "cannot connect to J-Link" *after* the probe was already detected fine. `rslave` propagates host mount events inward.
 
@@ -79,7 +125,9 @@ Rebuild cost follows the same order: Dockerfile change = full image rebuild (slo
 | `postStartCommand` | **every start**, including restarts | `setup-sdks.sh` — must be idempotent |
 | `postAttachCommand` | every time an editor attaches | editor-only fixups |
 
-This repo uses `postStartCommand`, which is exactly why `setup-sdks.sh` is written entirely as `if [ ! -d ... ]` guards. It runs on every single start.
+The default config uses only `postStartCommand`, for `setup-sdks.sh`, which therefore has to be idempotent — it runs on every single start. (The `local/` variant adds `initializeCommand` to build the images first.)
+
+Idempotent here means `.complete` sentinel files, **not** `if [ ! -d ... ]` guards. A directory-existence check treats "the download started" as "the install finished": a `tar` that creates the directory and then dies leaves a hollow SDK that every later start reports as ready. That bug is exactly how this repo ended up with an SDK directory containing no SDK. Sentinels are written only after a step fully succeeds.
 
 ### Editor config
 
@@ -100,7 +148,9 @@ docker volume rm zephyr-sdks-cache                # force full re-provision on n
 docker volume prune                               # remove all unreferenced volumes
 ```
 
-The container must be stopped before `rm` succeeds. After removing `zephyr-sdks-cache`, the next start re-downloads Zephyr and the SDK — several minutes, so not something to do casually.
+The container must be stopped before `rm` succeeds. After removing `zephyr-sdks-cache`, the next start re-downloads Zephyr and the SDK — roughly 10 minutes, so not something to do casually. Note this also affects **every other project** on the machine that shares the volume.
+
+To see what is actually installed and which store it came from, run `zephyr-stores` inside the container.
 
 Rebuild paths (Command Palette):
 
@@ -112,33 +162,43 @@ Rebuild paths (Command Palette):
 
 ## `setup-sdks.sh`
 
-Runs on every container start, guarded so it is a no-op once provisioned. Provisions two things into `/workdir/zephyr-sdks/`:
+Runs on every container start. Reads `versions.env`, makes sure that Zephyr and SDK are in the shared volume, and registers them. First start on a machine takes ~10 minutes; every start after that, in any project, takes seconds and touches no network.
+
+The actual downloading lives in **`fetch-zephyr.sh`**, which `setup-sdks.sh` calls when something is missing. You can also call it by hand to add another version alongside:
 
 ```bash
-# 1. Zephyr SDK toolchain (0.17.0), if missing
-wget -qO- ".../zephyr-sdk-0.17.0_linux-x86_64_minimal.tar.xz" | tar -xJ -C /workdir/zephyr-sdks/toolchains
-./setup.sh -h -c -t x86_64-zephyr-elf -t arm-zephyr-eabi
-
-# 2. Zephyr source (v4.2.2), if missing
-git clone --depth 1 --branch v4.2.2 https://github.com/zephyrproject-rtos/zephyr.git "$ZEPHYR_BASE"
-west init -l "$ZEPHYR_BASE" && west update --narrow -o=--depth=1 && west zephyr-export
-
-# 3. Register both in the CMake user package registry, on EVERY start
-bash .devcontainer/register-sdks.sh
+bash .devcontainer/fetch-zephyr.sh v4.3.0 0.17.4   # install
+use-vanilla v4.3.0 0.17.4                          # switch this shell to it
 ```
 
-Flags:
+What `setup-sdks.sh` does, in order:
 
-- `_minimal.tar.xz`: SDK variant with no toolchains preinstalled — you add only what you need via `-t`. The full SDK is roughly 10 GB; minimal plus two targets is a fraction of that.
-- `setup.sh -h`: install host tools (qemu, openocd, and friends).
+1. **Desync guard.** Compares `ZEPHYR_BASE` / `ZEPHYR_SDK_INSTALL_DIR` (from `devcontainer.json`) against what `versions.env` implies, and exits with both paths printed if they disagree. Two places holding a version is fine; two places quietly disagreeing means provisioning one version and building against another.
+2. **`flock`** on `/workdir/zephyr-sdks/.lock`. Two projects' containers can start at once, and two concurrent `west update`s into one directory produce a corrupt workspace.
+3. **Adoption.** A volume provisioned before `.complete` sentinels existed gets one stamped, if the install genuinely looks finished — so upgrading does not trigger a pointless refetch. The checks are narrow on purpose: a hollow SDK has neither `setup.sh` nor `cmake/Zephyr-sdkConfig.cmake`, so it is *not* adopted and gets refetched.
+4. **Populate**, if a `.complete` sentinel is missing — or if a toolchain named in `ZSDK_TOOLCHAINS` is absent. That second case matters because the store is shared: another project may have provisioned it with a shorter list, and `setup.sh -t` is incremental, so the volume accumulates the union of what every project needs.
+5. **Verify**, including that `cmake/Zephyr-sdkConfig.cmake` exists.
+6. **Re-register on every start** — `setup.sh -h -c` plus `register-sdks.sh`, then assert the registry entry actually landed.
+
+`versions.env` is the only file to edit per project:
+
+```bash
+ZEPHYR_VERSION=v4.4.2
+ZSDK_VERSION=1.0.1
+ZSDK_TOOLCHAINS="arm-zephyr-eabi x86_64-zephyr-elf xtensa-espressif_esp32_zephyr-elf xtensa-espressif_esp32s3_zephyr-elf"
+```
+
+Flags worth knowing:
+
+- `_minimal.tar.xz`: SDK variant with no toolchains preinstalled — you add only what you need via `-t`. The full SDK is roughly 13 GB; minimal plus four targets is a fraction of that.
+- `setup.sh -h`: install host tools (qemu, openocd, and friends). This is where `qemu-system-*` comes from — it is not an apt package.
 - `setup.sh -c`: register the SDK as a CMake package, so `find_package(Zephyr)` finds it without env vars.
-- `setup.sh -t <triple>`: install one toolchain. Repeatable. `arm-zephyr-eabi` covers nRF53 and STM32; `x86_64-zephyr-elf` covers `native_sim`.
-  - **Xtensa is not in this list.** ESP32-S3 builds use the Espressif toolchain, fetched separately. If an S3 build fails on a missing compiler, this is why.
+- `setup.sh -t <triple>`: install one toolchain. Repeatable and incremental. `arm-zephyr-eabi` covers nRF53 and STM32; `x86_64-zephyr-elf` covers `native_sim/native/64`; the two `xtensa-espressif_*` entries cover ESP32 and ESP32-S3.
 - `west init -l <dir>`: local init — treat an *existing* directory as the manifest repo. Without `-l`, west would clone a manifest from a URL instead.
 - `west update --narrow`: fetch only the revisions named in the manifest, not every branch and tag.
 - `-o=--depth=1`: pass `--depth=1` through to the underlying `git clone`. Shallow, much faster, no history.
 
-To change Zephyr version: edit `ZEPHYR_VAN_VER` here **and** the `use-vanilla` default in the Dockerfile, then `docker volume rm zephyr-sdks-cache`. Two places, easy to desync.
+To change Zephyr version: edit `versions.env` **and** the two matching paths in `devcontainer.json`, then restart. No `docker volume rm` needed — the new version is installed alongside the old, and both stay usable via `use-vanilla`.
 
 ---
 
@@ -167,6 +227,10 @@ on every start, globs `/workdir/*/*/zephyr/share/zephyr-package/cmake` and
 longer exists. The `/workdir/*/*/` shape picks up both `zephyr-sdks/` and `ncs-sdks/`
 and skips nrfutil's `toolchains/`, `downloads/` and `tmp/` for free.
 
+It also globs `/opt/zephyr-sdks/...`, a second store that ships **empty** in the image.
+`Dockerfile.ci` bakes a Zephyr + SDK pair into it for GitHub Actions; in the `devel`
+image it ships empty, because development uses the `/workdir` volume. `use-vanilla` searches `/workdir` first, then `/opt`.
+
 **nRF Connect SDK toolchains are the one exception** — those come from the
 extension's bundled nrfutil, not from the registry, and it only looks where
 `nrf-connect.toolchainManager.installDirectory` points. `devcontainer.json` sets it
@@ -177,11 +241,10 @@ on disk but never listed. Cross-check from a terminal:
 nrfutil toolchain-manager list --install-dir /workdir/ncs-sdks
 ```
 
-**Two Zephyr SDKs will list.** The `zephyrprojectrtos/zephyr-build` base image ships
-`/opt/toolchains/zephyr-sdk-1.0.1`, and `/opt` is one of the directories the extension
-scans on its own. Pick **0.17.0** — that is the one this workshop pins and the one CI
-uses. The `ZEPHYR_SDK_INSTALL_DIR` in `devcontainer.json` points at 0.17.0 so the CLI
-is never ambiguous; only the extension's dropdown offers the choice.
+**Only one Zephyr SDK should list now.** The old `zephyrprojectrtos/zephyr-build` base
+image shipped a second SDK at `/opt/toolchains/zephyr-sdk-1.0.1`, which the extension
+found on its own and offered alongside the real one. Building from Ubuntu removed it.
+If you ever see two, something is installing an SDK outside `versions.env`.
 
 **If the picker is ever empty**, in the container:
 
@@ -191,22 +254,43 @@ for f in ~/.cmake/packages/*/*; do echo "$f => $(cat $f)"; done
 ```
 
 then Command Palette → **nRF Connect: Refresh SDKs** and **nRF Connect: Refresh
-Toolchains**. None of this affects the CLI (`west build`, `west twister`) — that path
-runs off `ZEPHYR_BASE` from `use-vanilla` and never touches the registry.
+Toolchains**.
+
+**The registry is not only for the extension.** `cmake/modules/FindZephyr-sdk.cmake`
+has two paths: if `ZEPHYR_SDK_INSTALL_DIR` is set it uses that directly, and if it is
+not, it falls back to hardcoded prefixes plus this same user package registry. So a
+missing registry entry breaks `west build` and `west twister` too, in any context
+where the env var did not survive — a VS Code task, a `docker exec`, a twister
+subprocess. The failure is opaque:
+
+```
+CMake Error at .../FindZephyr-sdk.cmake:80 (find_package):
+  Could not find a package configuration file provided by "Zephyr-sdk"
+```
+
+The old `zephyr-build` base image baked a registry entry into an image layer, so this
+fallback was always populated and quietly covered for a broken volume. Building from
+Ubuntu removed that safety net, which is why `setup-sdks.sh` now asserts the entry
+exists after registering.
 
 ---
 
 ## SDK Switching Helpers
 
-Appended to `/root/.bashrc` by the Dockerfile. `use-vanilla v4.2.2 0.17.0` runs at the bottom, so every interactive shell starts on vanilla Zephyr.
+Appended to `/root/.bashrc` by `Dockerfile.devel`. A bare `use-vanilla` runs at the bottom, so every interactive shell starts on vanilla Zephyr.
 
 ```bash
-use-vanilla [version] [sdk_version]   # default: v4.2.2 0.17.0
+use-vanilla [version] [sdk_version]   # default: whatever the project is configured for
 use-ncs [version]                     # default: v3.3.0 — installs on demand if missing
 reset-ncs                             # restore container baseline
+zephyr-stores                         # list installed Zephyr trees and SDKs, and where
 ncs.py --list                         # list installed NCS versions
 ncs.py install v3.3.0                 # install without switching
 ```
+
+**There are no version literals in `Dockerfile.devel`.** `use-vanilla` derives its defaults from the `ZEPHYR_BASE` / `ZEPHYR_SDK_INSTALL_DIR` that `devcontainer.json` exported, which in turn track `versions.env`. A hardcoded default there would be a third place holding the version, in the one file that must stay identical across projects — copy this `.devcontainer/` into a project on v4.3.0 and every shell would silently snap back.
+
+**A failed switch leaves the environment untouched.** `use-vanilla` resolves and validates the target — including that `cmake/Zephyr-sdkConfig.cmake` exists — *before* calling `reset-ncs`. Bailing out after the reset would leave the shell with no `ZEPHYR_SDK_INSTALL_DIR` at all, which is precisely the state that produces the opaque `Could not find a package configuration file` error above.
 
 What they manipulate:
 
@@ -229,7 +313,7 @@ Fixes, in order of preference:
 export BASH_ENV=/root/.bashrc
 
 # 2. Or set the variable at container level in devcontainer.json
-"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.2.2/zephyr" }
+"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr" }
 
 # 3. Or source explicitly in the CI step
 bash -c 'source /root/.bashrc && west build ...'
@@ -275,36 +359,54 @@ CompileFlags:
 
 ---
 
-## Dockerfile (overview)
+## Dockerfiles (overview)
 
-```dockerfile
-FROM zephyrprojectrtos/zephyr-build:v0.29.3
-```
+A three-stage chain, mirroring the structure of
+[zephyrproject-rtos/docker-image](https://github.com/zephyrproject-rtos/docker-image)
+(`Dockerfile.base` → `Dockerfile.ci` → `Dockerfile.devel`), split by *who needs each piece*:
 
-Five blocks, in order:
+| File | Image | Contents | Size |
+|---|---|---|---|
+| `Dockerfile.base` | `zephyr-workshop-base` | `FROM ubuntu:24.04`. Build tooling, 32-bit multilib, Python venv + Zephyr's Python requirements, static-analysis tools | ~2.8 GB |
+| `Dockerfile.ci` | `zephyr-workshop-ci` | + nrfutil, J-Link, GitHub Actions runner — everything needed to flash and test on hardware | ~3.9 GB |
+| `Dockerfile.devel` | `zephyr-workshop-devel` | + clangd, clang-format, picocom, `.bashrc` helpers | ~4.3 GB |
 
-1. **apt base deps** — `clangd`, `clang-format`, `cmake`, `ninja`, `file`, python bits.
-2. **nrfutil** — downloaded binary plus the `toolchain-manager` and `device` plugins. `nrfutil device` replaces the deprecated `nrfjprog` for programming.
-3. **Nordic Command Line Tools + J-Link** — the fiddly one. Extracts the NCLT bundle, deletes the 32-bit J-Link variants, then symlinks `libjlinkarm.so.7` at the 64-bit library explicitly. Getting this wrong produces an `ELFCLASS32` error at flash time.
-4. **Arch verification** — `ldconfig -p` plus `file -L | grep 'ELF 64-bit'` plus `nrfjprog --version`. Fails the *image build* rather than letting a bad arch surface later in CI.
-5. **Actions runner + `.bashrc` helpers** — runner tarball with a pinned SHA256, then the `use-vanilla` / `use-ncs` / `reset-ncs` functions appended.
+Each stage takes `ARG BASE_IMAGE` and `build.sh` chains them. `devel` is what runs.
+
+**Why not `FROM zephyrprojectrtos/zephyr-build`?** It is ~32 GB, and ~90% of that is
+irrelevant here: the full SDK with all ~15 toolchains, ARM FVPs, Renode, a Rust
+toolchain, Hexagon and TriCore cross compilers, babblesim, a VNC stack. Deriving and
+deleting does not help — layers are additive, so an `rm` only writes a whiteout and the
+bytes stay in the pull. Upstream's smallest published image, `ci-base` (no SDK), is
+still ~8.9 GB.
+
+Notable blocks:
+
+- **Multilib** — `gcc-multilib`/`g++-multilib` plus `libsdl2-dev:i386`. `native_sim` is a 32-bit host binary; the first pair provides `/lib32/libasan.so.*` and `/lib32/libubsan.so.*` that `sanitizers_native-sim_ci.yml` asserts, the second lets display/LVGL samples link.
+- **Python venv** at `/opt/python-venv`, first on `PATH`. Ubuntu 24.04 marks the system interpreter externally-managed (PEP 668), so this is required, not stylistic. Requirements are pinned to `ARG ZEPHYR_REQ_REF` and fetched from GitHub — one venv serves every Zephyr version, so it does not have to live in the volume.
+- **Static analysis** — `sparse`, in `base`, for `west build -- -DZEPHYR_SCA_VARIANT=sparse`. Zephyr 4.2 ships sca implementations for `clang`, `codechecker`, `coverity`, `cpptest`, `eclair`, `gcc`, `polyspace` and `sparse` — **there is no `clang-tidy` variant**, and the `clang` one wants `analyze-build`, which Ubuntu's `clang-tools` does not provide. `clang-tidy` is in `devel` instead, as editor tooling: clangd runs its checks inline, and you can run it by hand over the `compile_commands.json` that `.clangd` already points at. Install the *unversioned* metapackage — `clang-tidy-18` alone gives only the versioned binary name.
+- **Debug symbols** — `libc6-dbg` and `libc6-dbg:i386`. Valgrind refuses to start on a binary whose libc has no debuginfo (`Cannot continue -- exiting now`), and `native_sim/native` is 32-bit, so `twister --enable-valgrind` needs the `:i386` one specifically.
+- **Nordic Command Line Tools + J-Link** (`ci`) — the fiddly one. Extracts the NCLT bundle, deletes the 32-bit J-Link variants, then symlinks `libjlinkarm.so.7` at the 64-bit library explicitly. Getting this wrong produces an `ELFCLASS32` error at flash time.
+- **Build-time asserts** — each stage checks what it just installed and fails the *image build* rather than letting the problem surface on someone's first build or flash. `base` checks the 32-bit sanitizer runtimes, 32-bit SDL, the SCA tools, and west/cmake/pytest; `ci` checks `file -L | grep 'ELF 64-bit'` on the J-Link library plus `nrfutil device --version`.
 
 Conventions worth keeping:
 
-- `FROM ...:v0.29.3` — pinned, not `:latest`. A base image that shifts under a hardware CI runner is a debugging session you do not want.
+- `FROM ubuntu:24.04` and pinned `ARG`s — not `:latest`. A base that shifts under a hardware CI runner is a debugging session you do not want.
 - `SHELL ["/bin/bash", "-o", "pipefail", "-c"]` — without `pipefail`, a failing `wget` in `wget ... | tar` is masked by tar's success and the image builds broken.
-- `ARG NORDIC_COMMAND_LINE_TOOLS_VERSION=...` — overridable at build time without editing the file.
 - `--no-install-recommends` plus `rm -rf /var/lib/apt/lists/*` in the same `RUN` — keeps the layer small; splitting them into two `RUN`s would shrink nothing.
 - SDKs deliberately **not** installed here. They are runtime, in volumes, so an image rebuild does not cost a re-download.
+- No version literals in `Dockerfile.devel` — see [SDK Switching Helpers](#sdk-switching-helpers).
 
 Rebuild:
 
 ```bash
-docker build -t zephyr-dev .devcontainer/
-docker build --no-cache --build-arg NORDIC_COMMAND_LINE_TOOLS_VERSION=... .devcontainer/
+bash .devcontainer/build.sh                    # all three stages, layer-cached
+docker build --no-cache -f .devcontainer/Dockerfile.base -t zephyr-workshop-base:local .devcontainer
 ```
 
-Or **Dev Containers: Rebuild Without Cache** from the Command Palette, which is what you will normally use.
+**Dev Containers: Rebuild Container** recreates the container but does **not** rebuild
+these images — `devcontainer.json` names a prebuilt image. Run `build.sh` for that
+(`initializeCommand` does it automatically on open).
 
 ---
 
@@ -313,15 +415,19 @@ Or **Dev Containers: Rebuild Without Cache** from the Command Palette, which is 
 | Symptom | Layer | Fix |
 |---|---|---|
 | `ZEPHYR_BASE not defined` in CI, fine in terminal | shell | non-interactive shell — set `BASH_ENV` or `containerEnv` |
-| `ELFCLASS32` / `libjlinkarm.so.7` | Dockerfile | 32-bit J-Link linked; rebuild image |
+| `Could not find a package configuration file provided by "Zephyr-sdk"` | volume | SDK directory exists but is hollow, or the CMake registry is empty. `rm -rf /workdir/zephyr-sdks/toolchains/zephyr-sdk-<ver>` then `bash .devcontainer/setup-sdks.sh` |
+| `ZEPHYR_BASE does not match versions.env` on start | versions.env | `devcontainer.json`'s `containerEnv` paths and `versions.env` disagree; make them match, then rebuild the container |
+| Container will not start, `initializeCommand` failed | host | check Docker is running. If the log shows `Could not connect to WSL` / `Wsl/Service/0x...`, something is invoking `bash` and hitting the WSL shim — `initializeCommand` must be the inline `docker build ... && ...` string, not a call to a `.sh` file |
+| `ELFCLASS32` / `libjlinkarm.so.7` | Dockerfile.ci | 32-bit J-Link linked; `bash .devcontainer/build.sh` |
 | Probe in `lsusb`, no `/dev/ttyACM*` | devcontainer.json | `bind-propagation=rslave` on the `/dev` mount |
 | "Cannot connect to J-Link" *after* detection | devcontainer.json | stale USB node after re-enumeration; same `rslave` fix |
 | Runner will not start as root | devcontainer.json | `RUNNER_ALLOW_RUNASROOT=1` |
 | `<zephyr/...>` not found in editor | `.clangd` | build once; check `CompilationDatabase` path exists |
-| Wrong Zephyr version after editing the script | volume | `docker volume rm zephyr-sdks-cache`, then restart |
-| Runner re-registers on every rebuild | devcontainer.json | `actions-runner-state` volume missing or renamed |
-| Xtensa compiler not found | setup-sdks.sh | ESP32 toolchain is not in the `-t` list; fetched separately |
+| Wrong Zephyr version | versions.env | edit `versions.env` **and** `devcontainer.json`, then restart. No `docker volume rm` — versions install side by side |
+| Runner re-registers on every rebuild | devcontainer.json | `${localWorkspaceFolderBasename}-actions-runner` volume missing or renamed |
+| Xtensa (or any) compiler not found | versions.env | add the triple to `ZSDK_TOOLCHAINS` and restart; `setup-sdks.sh` tops up the shared SDK incrementally |
+| Image changes not taking effect after "Rebuild Container" | build.sh | that recreates the container, not the images. Run `bash .devcontainer/build.sh` |
 | nRF Connect SDK picker empty, SDKs on disk | `~/.cmake` | `bash .devcontainer/register-sdks.sh`, then **Refresh SDKs** |
 | NCS installed by `use-ncs` never listed | devcontainer.json | `nrf-connect.toolchainManager.installDirectory` must be `/workdir/ncs-sdks` |
 | Only NCS missing, vanilla Zephyr fine | both of the above | they are separate mechanisms -- registry for SDKs, nrfutil for NCS toolchains |
-| Two Zephyr SDKs offered (0.17.0 and 1.0.1) | base image | 1.0.1 ships in `/opt/toolchains`, which the extension scans; pick 0.17.0 |
+| Two Zephyr SDKs offered | volume | no longer expected — the stray `/opt/toolchains/zephyr-sdk-1.0.1` came from the old `zephyr-build` base. Run `zephyr-stores` to see what is actually installed and where |

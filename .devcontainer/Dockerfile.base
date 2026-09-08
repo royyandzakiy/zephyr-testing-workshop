@@ -1,0 +1,95 @@
+# Base image: everything needed to BUILD Zephyr, except the Zephyr SDK.
+# Chain: Dockerfile.base -> Dockerfile.ci -> Dockerfile.devel (see build.sh).
+#
+# The SDK and the Zephyr tree are in the shared volume /workdir/zephyr-sdks, not
+# in any image -- setup-sdks.sh installs them on first container start.
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# native_sim is a 32-BIT host binary, so the i386 arch and three of the packages
+# below exist for it:
+#   gcc-multilib/g++-multilib  /lib32/libasan.so.*, asserted by sanitizers CI
+#   libsdl2-dev:i386           lets display/LVGL samples link
+#   libc6-dbg:i386             valgrind will not start without matching debuginfo
+RUN dpkg --add-architecture i386 \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc-multilib \
+    g++-multilib \
+    cmake \
+    ninja-build \
+    make \
+    gperf \
+    ccache \
+    device-tree-compiler \
+    # -DZEPHYR_SCA_VARIANT=sparse. Zephyr 4.2 has no clang-tidy sca variant.
+    sparse \
+    gdb \
+    gcovr \
+    lcov \
+    valgrind \
+    libc6-dbg \
+    libc6-dbg:i386 \
+    libsdl2-dev \
+    libsdl2-dev:i386 \
+    python3 \
+    python3-dev \
+    python3-venv \
+    python3-pip \
+    python3-setuptools \
+    python-is-python3 \
+    ca-certificates \
+    curl \
+    wget \
+    git \
+    gnupg \
+    openssh-client \
+    file \
+    jq \
+    unzip \
+    xz-utils \
+    rsync \
+    socat \
+    srecord \
+    sudo \
+    locales \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ubuntu 24.04 marks the system interpreter externally-managed (PEP 668), so a
+# venv is required, not stylistic.
+ENV VIRTUAL_ENV=/opt/python-venv
+ENV PATH=${VIRTUAL_ENV}/bin:${PATH}
+
+RUN python3 -m venv ${VIRTUAL_ENV} \
+    && pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir west
+
+# One venv for every Zephyr version in the shared volume, so keep this at the
+# NEWEST version any project uses -- older Zephyrs tolerate extra packages, but a
+# newer one fails hard on a missing dep (4.4 added jsonschema; on a v4.2.2-pinned
+# venv every build died in zephyr_module.cmake). requirements-doc is excluded
+# (sphinx, several hundred MB).
+ARG ZEPHYR_REQ_REF=v4.4.2
+RUN ZREQ="https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/${ZEPHYR_REQ_REF}/scripts" \
+    && pip install --no-cache-dir \
+      -r "${ZREQ}/requirements-base.txt" \
+      -r "${ZREQ}/requirements-build-test.txt" \
+      -r "${ZREQ}/requirements-run-test.txt" \
+      -r "${ZREQ}/requirements-extras.txt" \
+      'esptool>=5.0.2'
+
+RUN set -e; \
+    ldconfig -p | grep -q "libasan.*lib32"  || { echo "MISSING 32-bit libasan"; exit 1; }; \
+    ldconfig -p | grep -q "libubsan.*lib32" || { echo "MISSING 32-bit libubsan"; exit 1; }; \
+    test -f /usr/lib/i386-linux-gnu/libSDL2.so || { echo "MISSING 32-bit libSDL2"; exit 1; }; \
+    dpkg -s libc6-dbg:i386 >/dev/null 2>&1 || { echo "MISSING libc6-dbg:i386 (valgrind needs it for 32-bit native_sim)"; exit 1; }; \
+    for t in sparse cgcc valgrind; do \
+        command -v "$t" >/dev/null || { echo "MISSING $t"; exit 1; }; \
+    done; \
+    west --version && cmake --version | head -1 && \
+    python3 -c "import pytest; print('pytest', pytest.__version__)"

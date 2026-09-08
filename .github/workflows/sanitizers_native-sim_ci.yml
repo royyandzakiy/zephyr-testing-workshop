@@ -16,15 +16,15 @@ jobs:
     timeout-minutes: 20
 
     container:
-      image: zephyrprojectrtos/ci:v0.29.3
+      image: ghcr.io/royyandzakiy/zephyr-workshop-ci:z4.4.2-sdk1.0.1
 
     defaults:
       run:
         shell: bash
 
     env:
-      ZEPHYR_VERSION: v4.2.2
-      ZEPHYR_TOOLCHAIN_VERSION: 0.17.0
+      ZEPHYR_VERSION: v4.4.2
+      ZEPHYR_TOOLCHAIN_VERSION: 1.0.1
       BOARD_TYPE: "native_sim/native"
       # Any app under apps/ works. 01-blinky is the smallest one that actually
       # gives the sanitizers something to chew on -- it pulls in the GPIO
@@ -41,44 +41,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: workshop
-
-      - name: Cache Zephyr workspace
-        uses: actions/cache@v4
-        id: zephyr-cache
-        with:
-          path: zephyr-workspace
-          key: ${{ runner.os }}-zephyr-${{ env.ZEPHYR_VERSION }}
-
-      - name: Fetch vanilla Zephyr
-        if: steps.zephyr-cache.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p zephyr-workspace
-          git clone --depth 1 --branch "$ZEPHYR_VERSION" \
-            https://github.com/zephyrproject-rtos/zephyr.git zephyr-workspace/zephyr
-          cd zephyr-workspace
-          west init -l zephyr
-          west update --narrow -o=--depth=1
-
-      - name: Cache Zephyr SDK
-        uses: actions/cache@v4
-        id: cache-zephyr-sdk
-        with:
-          path: /opt/toolchains/zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}
-          key: ${{ runner.os }}-zephyr-sdk-${{ env.ZEPHYR_TOOLCHAIN_VERSION }}-arm
-
-      - name: Download & Extract Zephyr SDK
-        if: steps.cache-zephyr-sdk.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p /opt/toolchains
-          wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_TOOLCHAIN_VERSION}/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}_linux-x86_64_minimal.tar.xz" | tar -xJ -C /opt/toolchains
-
-      - name: Register SDK CMake Package
-        run: |
-          set -euo pipefail
-          cd "/opt/toolchains/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}"
-          ./setup.sh -c -t arm-zephyr-eabi
 
       - name: Preflight — sanitizer runtimes present
         run: |
@@ -109,7 +71,6 @@ jobs:
           CCACHE_DIR: ~/.cache/ccache
         run: |
           set -euo pipefail
-          cd zephyr-workspace
           west build -b "$BOARD_TYPE" -d build -p always \
             "$GITHUB_WORKSPACE/workshop/$APP" \
             -- -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/workshop/.github/sanitize.conf" \
@@ -119,7 +80,7 @@ jobs:
       - name: Assert the sanitizers actually got enabled
         run: |
           set -euo pipefail
-          cfg=zephyr-workspace/build/zephyr/.config
+          cfg=build/zephyr/.config
           echo "--- sanitizer config in the build ---"
           grep -E "^CONFIG_(ASAN|UBSAN|LSAN)" "$cfg" || true
           # A wrong EXTRA_CONF_FILE path is silently ignored by CMake, which
@@ -127,12 +88,11 @@ jobs:
           grep -q '^CONFIG_ASAN=y'  "$cfg" || { echo "::error::CONFIG_ASAN not set — sanitize.conf was not applied"; exit 1; }
           grep -q '^CONFIG_UBSAN=y' "$cfg" || { echo "::error::CONFIG_UBSAN not set — sanitize.conf was not applied"; exit 1; }
           echo "--- runtimes linked into the binary ---"
-          ldd zephyr-workspace/build/zephyr/zephyr.exe | grep -E "libasan|libubsan"
+          ldd build/zephyr/zephyr.exe | grep -E "libasan|libubsan"
 
       - name: Run under sanitizers
         run: |
           set -uo pipefail
-          cd zephyr-workspace
           export ASAN_OPTIONS="halt_on_error=1:detect_leaks=1:print_summary=1"
           export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1"
           ./build/zephyr/zephyr.exe "-stop_at=$STOP_AT" 2>&1 | tee run.log
@@ -146,7 +106,6 @@ jobs:
       - name: Fail on any sanitizer report
         run: |
           set -uo pipefail
-          cd zephyr-workspace
           # The load-bearing check. ASAN can be built to report and continue,
           # so a clean exit code on its own is not evidence of a clean run.
           if grep -nE "AddressSanitizer|LeakSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY: " run.log; then
@@ -161,6 +120,6 @@ jobs:
         with:
           name: sanitizer-logs
           path: |
-            zephyr-workspace/run.log
-            zephyr-workspace/build/zephyr/.config
+            run.log
+            build/zephyr/.config
           if-no-files-found: warn

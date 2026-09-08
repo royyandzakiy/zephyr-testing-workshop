@@ -1,13 +1,27 @@
 # Zephyr & NCS
 
-[[explain this is how the auto envir setup and how to change]]
+**What this file is:** the manual, step-by-step version of how a Zephyr and nRF Connect SDK
+environment gets built — useful for setting one up on a bare host, and for understanding what
+the devcontainer scripts do underneath.
 
-[[create another file, specifically talking about docker & dev container, and their various special setups (eg: bind mount dev usb)]]
+**You do not need to run any of it inside the devcontainer.** There it is automated:
+
+| Manual step below | Automated by |
+|---|---|
+| Choosing versions | [`.devcontainer/versions.env`](../.devcontainer/versions.env) — the one file to edit |
+| Cloning Zephyr, `west init` / `update`, downloading the SDK | [`fetch-zephyr.sh`](../.devcontainer/fetch-zephyr.sh), called on first container start |
+| Exporting `ZEPHYR_BASE` / `ZEPHYR_SDK_INSTALL_DIR` | `containerEnv` in `devcontainer.json`, plus the `use-vanilla` shell helper |
+| Installing nrfutil, J-Link, NCLT | [`Dockerfile.ci`](../.devcontainer/Dockerfile.ci) |
+| Installing an NCS toolchain | `use-ncs` / `ncs.py` |
+
+For Docker and devcontainer specifics — mounts, USB passthrough, SDK switching, the CMake
+package registry — see [`NOTES-devcontainer.md`](NOTES-devcontainer.md).
 
 ## Cloning latest Zephyr Vanilla
 
 ```bash
-export ZEPHYR_VAN_VER="v4.2.2"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
 
 # 2. Clone Zephyr repository & fetch submodules
@@ -25,8 +39,8 @@ wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEP
 
 ```bash
 # Select version, define paths
-export ZEPHYR_VAN_VER="v4.2.2"
-export ZEPHYR_SDK_VER="0.17.0"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
 export ZEPHYR_SDK_DIR="/workdir/zephyr-sdks/toolchains/zephyr-sdk-$ZEPHYR_SDK_VER"
@@ -40,8 +54,8 @@ source "$ZEPHYR_BASE/zephyr-env.sh"
 
 ```bash
 # Select versions
-export ZEPHYR_VAN_VER="v4.2.2"
-export ZEPHYR_SDK_VER="0.17.0"
+export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_SDK_VER="1.0.1"
 
 # Define base path
 export ZEPHYR_BASE_DIR="/workdir/zephyr-sdks"
@@ -87,7 +101,7 @@ echo "Successfully cloned Vanilla Zephyr $ZEPHYR_VAN_VER with SDK $ZEPHYR_SDK_VE
 ### Permanently adding it to `.bashrc`
 
 ```bash
-export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.2.2/zephyr"
+export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.4.2/zephyr"
 if [ -f "$ZEPHYR_BASE/zephyr-env.sh" ]; then
     source "$ZEPHYR_BASE/zephyr-env.sh" > /dev/null
 fi

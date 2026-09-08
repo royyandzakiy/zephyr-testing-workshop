@@ -1,5 +1,19 @@
 ## To Do
 
+- compact HDD
+    - close docker desktop
+    - `wsl --shutdown`
+    - open admin terminal > diskpart
+        ```bash
+            select vdisk file="C:\Users\royya\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
+            attach vdisk readonly
+            compact vdisk
+            detach vdisk
+            exit
+        ```
+- upload docker to ghcr
+    - create ci version to run on github actions
+
 - test all current apps/ working fine
     - 06: assemble board + bme280, ensure works fine.  currently fails to compile
     - 02 create a diff ztest, showing logic. remove button example
@@ -39,7 +53,6 @@
 
 ## Known Issue
 
-- consider using clean image to reduce container size
 - UBSAN trips inside Zephyr's own BME280 driver (bme280.c:103, left shift of a  negative value in the Bosch compensation formula). Upstream, not ours; see apps/06-sensor/NOTES.md.
 
 ## Docs
