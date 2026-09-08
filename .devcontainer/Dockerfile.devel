@@ -8,11 +8,18 @@ FROM ${BASE_IMAGE}
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+# clang-tidy is editor tooling here, not a Zephyr SCA variant -- Zephyr 4.2 has no
+# clang-tidy sca implementation. clangd runs its checks inline, and it can be run by
+# hand over the compile_commands.json that .clangd already points at.
+# The unversioned metapackage is the one that installs /usr/bin/clang-tidy;
+# clang-tidy-18 alone provides only the versioned name.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-format \
+    clang-tidy \
     clangd \
     picocom \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && command -v clang-tidy >/dev/null || { echo "MISSING clang-tidy"; exit 1; }
 
 # Second SDK store, searched after /workdir. Left empty so a future prebuilt
 # image can bake a default Zephyr + SDK in without touching the helpers below.

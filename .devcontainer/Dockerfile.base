@@ -23,6 +23,9 @@ ENV LANG=C.UTF-8 \
 #   gcc-multilib/g++-multilib  pull in /lib32/libasan.so.* and /lib32/libubsan.so.*,
 #                              which sanitizers_native-sim_ci.yml asserts exist
 #   libsdl2-dev:i386           lets display/LVGL samples link; needs the i386 arch
+#   libc6-dbg:i386             valgrind refuses to run a 32-bit binary without the
+#                              matching 32-bit debuginfo ("Cannot continue -- exiting
+#                              now"), so `twister --enable-valgrind` needs it
 RUN dpkg --add-architecture i386 \
     && apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -34,15 +37,16 @@ RUN dpkg --add-architecture i386 \
     gperf \
     ccache \
     device-tree-compiler \
-    # static analysis, via -DZEPHYR_SCA_VARIANT=clang-tidy|sparse.
-    # clang-tidy-18, not the `clang-tidy` metapackage: the metapackage does not
-    # reliably leave a /usr/bin/clang-tidy under --no-install-recommends.
-    clang-tidy-18 \
+    # sparse: static analysis via -DZEPHYR_SCA_VARIANT=sparse. Zephyr 4.2 ships
+    # sca implementations for clang, codechecker, coverity, cpptest, eclair, gcc,
+    # polyspace and sparse -- there is no clang-tidy variant.
     sparse \
     gdb \
     gcovr \
     lcov \
     valgrind \
+    libc6-dbg \
+    libc6-dbg:i386 \
     libsdl2-dev \
     libsdl2-dev:i386 \
     python3 \
@@ -93,7 +97,8 @@ RUN set -e; \
     ldconfig -p | grep -q "libasan.*lib32"  || { echo "MISSING 32-bit libasan"; exit 1; }; \
     ldconfig -p | grep -q "libubsan.*lib32" || { echo "MISSING 32-bit libubsan"; exit 1; }; \
     test -f /usr/lib/i386-linux-gnu/libSDL2.so || { echo "MISSING 32-bit libSDL2"; exit 1; }; \
-    for t in clang-tidy sparse cgcc valgrind; do \
+    dpkg -s libc6-dbg:i386 >/dev/null 2>&1 || { echo "MISSING libc6-dbg:i386 (valgrind needs it for 32-bit native_sim)"; exit 1; }; \
+    for t in sparse cgcc valgrind; do \
         command -v "$t" >/dev/null || { echo "MISSING $t"; exit 1; }; \
     done; \
     west --version && cmake --version | head -1 && \
