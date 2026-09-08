@@ -1,8 +1,12 @@
 {
   "name": "Zephyr Development",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  // Built by build.sh as a base -> ci -> devel chain, which a devcontainer
+  // cannot do itself (it builds one Dockerfile). initializeCommand runs on the
+  // host before the container is created; it is layer-cached, so it is a no-op
+  // once built. Rebuild after editing a Dockerfile with:
+  //     bash .devcontainer/build.sh
+  "image": "zephyr-workshop-devel:local",
+  "initializeCommand": ["bash", ".devcontainer/build.sh"],
   // Must match versions.env, which this file cannot read. setup-sdks.sh fails
   // loudly if they disagree. Needed here because the extension host does not see
   // what `use-vanilla` exports in interactive shells.

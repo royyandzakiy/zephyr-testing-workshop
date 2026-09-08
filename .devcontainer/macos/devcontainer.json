@@ -1,10 +1,9 @@
 {
   "name": "Zephyr & NCS Build Environment (macOS, no USB)",
-  "build": {
-    "dockerfile": "../Dockerfile",
-    "context": "..",
-    "options": ["--platform=linux/amd64"]
-  },
+  // Same chain as ../devcontainer.json, forced to linux/amd64 and tagged
+  // separately so the two do not overwrite each other's images.
+  "image": "zephyr-workshop-devel:local-amd64",
+  "initializeCommand": ["bash", ".devcontainer/build.sh", "local-amd64", "linux/amd64"],
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     // Keep in sync with ../versions.env; see ../devcontainer.json.
