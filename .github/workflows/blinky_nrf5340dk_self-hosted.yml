@@ -34,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf build
-          west build -b "$BOARD_TYPE" zephyr/samples/basic/blinky -d build \
+          west build -b "$BOARD_TYPE" "$ZEPHYR_BASE"/samples/basic/blinky -d build \
             -- -DZEPHYR_SCACHE=ccache
           ccache -s || true
 

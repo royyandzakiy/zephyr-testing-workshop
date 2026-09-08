@@ -7,8 +7,16 @@ name: Publish container images
 #   ghcr.io/<owner>/zephyr-workshop-devel  what devcontainer.json pulls
 #
 # Both are tagged with the Zephyr/SDK pair from .devcontainer/versions.env, so a
-# version bump produces a NEW immutable tag rather than moving an existing one.
-# Attendees pin that tag; nothing shifts under them mid-workshop.
+# version bump produces a new tag rather than moving an existing one.
+#
+# CAVEAT, learned the hard way: the tag is only immutable while versions.env is
+# unchanged. Fixing anything else in .devcontainer/ republishes the SAME tag, and
+# Docker will keep serving a locally cached copy with no hint it is stale -- a
+# bug appears fixed in the registry and unfixed on the machine. After such a
+# republish, `docker pull <tag>` is required, not just a container rebuild.
+# If that happens once attendees have pulled, give the tag a build suffix
+# (z4.4.2-sdk1.0.1-2) here and in both devcontainer.json files instead, so the
+# changed reference forces a fetch.
 #
 # Layer cache is registry-backed (a :buildcache tag per package) rather than
 # type=gha, because the GitHub Actions cache is capped at 10 GB per repository and
