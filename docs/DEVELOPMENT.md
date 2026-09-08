@@ -1,6 +1,19 @@
 ## To Do
 
-- clean docker image to reduce container size
+- compact HDD
+    - close docker desktop
+    - `wsl --shutdown`
+    - open admin terminal > diskpart
+        ```bash
+            select vdisk file="C:\Users\royya\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
+            attach vdisk readonly
+            compact vdisk
+            detach vdisk
+            exit
+        ```
+- upgrade to latest sdk & toolchain of zephyr
+- upload docker to ghcr
+- create ci version to run on github actions
 
 - test all current apps/ working fine
     - 06: assemble board + bme280, ensure works fine.  currently fails to compile
