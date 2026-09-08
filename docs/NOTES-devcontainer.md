@@ -359,6 +359,40 @@ CompileFlags:
 
 ---
 
+## GHCR publishing
+
+`.github/workflows/publish-images.yml` builds and pushes on every push to `main` that
+touches `.devcontainer/**`, or on manual dispatch.
+
+| Package | Public? | Consumer |
+|---|---|---|
+| `zephyr-workshop-devel` | **yes** | `devcontainer.json` — attendees pull it |
+| `zephyr-workshop-ci` | **yes** | `container:` in the other four workflows |
+| `zephyr-workshop-base` | no | intermediate only; devel/ci are self-contained once pushed |
+
+Tags are the Zephyr/SDK pair (`z4.4.2-sdk1.0.1`) plus `latest`, plus a `:buildcache` tag
+per package.
+
+Things that are easy to get wrong here, all learned the hard way:
+
+- **`base` must be pushed, not `load`ed.** buildx's `docker-container` driver does not
+  share the host daemon's image store, so `FROM ${BASE_IMAGE}` in the devel and ci builds
+  resolves against a *registry*. A local tag gets looked up as `docker.io/library/...`
+  and fails with `pull access denied, repository does not exist`.
+- **Cache is registry-backed, not `type=gha`.** The Actions cache is capped at 10 GB per
+  repository; the ci image alone is ~14 GB, so `mode=max` there would evict every other
+  workflow's cache. GHCR has no cap.
+- **New packages are private.** Flip `devel` and `ci` to public once, by hand, at
+  `github.com/users/<owner>/packages` → *Package settings* → *Change visibility*. There is
+  no API to set this at creation, so it cannot be automated.
+- **The workflow is guarded to the upstream repo.** Attendees fork this repo; without
+  `if: github.repository == '<owner>/<repo>'` every fork would fail this job on push.
+- **`workflow_dispatch` only appears in the UI once the file is on the default branch.**
+  To publish from a feature branch, merge it to `main` first — the push trigger then fires
+  on its own.
+
+---
+
 ## Dockerfiles (overview)
 
 A three-stage chain, mirroring the structure of

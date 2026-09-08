@@ -5,7 +5,7 @@
 # Built FROM base, not from Dockerfile.ci: that one bakes a Zephyr SDK in for
 # GitHub Actions, which development does not want -- here the SDK comes from the
 # shared /workdir volume.
-ARG BASE_IMAGE
+ARG BASE_IMAGE=zephyr-workshop-base:local
 FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive

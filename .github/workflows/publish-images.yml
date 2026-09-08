@@ -10,10 +10,19 @@ name: Publish container images
 # version bump produces a NEW immutable tag rather than moving an existing one.
 # Attendees pin that tag; nothing shifts under them mid-workshop.
 #
-# ONE MANUAL STEP after the first successful run: both packages are private by
-# default. Open each at github.com/users/<owner>/packages and set
-# "Package settings -> Change visibility -> Public", or attendees cannot pull
-# without a token. GitHub has no API to do this on creation.
+# Layer cache is registry-backed (a :buildcache tag per package) rather than
+# type=gha, because the GitHub Actions cache is capped at 10 GB per repository and
+# the ci image alone is ~14 GB -- mode=max there would thrash the cache for every
+# other workflow. GHCR has no such cap.
+#
+# A third package, zephyr-workshop-base, is pushed as an intermediate. It can stay
+# private -- see the comment on that step.
+#
+# ONE MANUAL STEP after the first successful run: packages are private by default.
+# Open zephyr-workshop-devel and zephyr-workshop-ci at
+# github.com/users/<owner>/packages and set "Package settings -> Change
+# visibility -> Public", or attendees cannot pull without a token. GitHub has no
+# API to do this on creation.
 
 on:
   push:
@@ -22,11 +31,6 @@ on:
       - '.devcontainer/**'
       - '.github/workflows/publish-images.yml'
   workflow_dispatch:
-    inputs:
-      push:
-        description: 'Push to GHCR (uncheck to build only)'
-        type: boolean
-        default: true
 
 concurrency:
   group: publish-images-${{ github.ref }}
@@ -80,25 +84,33 @@ jobs:
         id: p
         run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
 
-      # base is an intermediate: built, cached, never pushed.
-      - name: Build base
+      # base HAS to be pushed, not just `load`ed: buildx's docker-container driver
+      # does not share the host daemon's image store, so the devel and ci builds
+      # resolve FROM ${BASE_IMAGE} against a registry. A local tag would be looked
+      # up as docker.io/library/... and fail with "pull access denied".
+      #
+      # Nothing outside this workflow consumes base, so leave that package private
+      # -- devel and ci are self-contained once pushed.
+      - name: Build and push base
         uses: docker/build-push-action@v6
         with:
           context: .devcontainer
           file: .devcontainer/Dockerfile.base
-          tags: zephyr-workshop-base:ci
-          load: true
-          push: false
-          cache-from: type=gha,scope=base
-          cache-to: type=gha,scope=base,mode=max
+          push: true
+          tags: ${{ steps.p.outputs.prefix }}/zephyr-workshop-base:${{ steps.v.outputs.pair }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-base:buildcache
+          cache-to: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-base:buildcache,mode=max
 
       - name: Build and push devel
         uses: docker/build-push-action@v6
         with:
           context: .devcontainer
           file: .devcontainer/Dockerfile.devel
-          build-args: BASE_IMAGE=zephyr-workshop-base:ci
-          push: ${{ github.event_name != 'workflow_dispatch' || inputs.push }}
+          build-args: BASE_IMAGE=${{ steps.p.outputs.prefix }}/zephyr-workshop-base:${{ steps.v.outputs.pair }}
+          push: true
           tags: |
             ${{ steps.p.outputs.prefix }}/zephyr-workshop-devel:${{ steps.v.outputs.pair }}
             ${{ steps.p.outputs.prefix }}/zephyr-workshop-devel:latest
@@ -106,8 +118,8 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.description=Zephyr development (devcontainer) image - Zephyr ${{ steps.v.outputs.zephyr }}, SDK ${{ steps.v.outputs.sdk }}
-          cache-from: type=gha,scope=devel
-          cache-to: type=gha,scope=devel,mode=max
+          cache-from: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-devel:buildcache
+          cache-to: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-devel:buildcache,mode=max
 
       - name: Build and push ci
         uses: docker/build-push-action@v6
@@ -115,12 +127,12 @@ jobs:
           context: .devcontainer
           file: .devcontainer/Dockerfile.ci
           build-args: |
-            BASE_IMAGE=zephyr-workshop-base:ci
+            BASE_IMAGE=${{ steps.p.outputs.prefix }}/zephyr-workshop-base:${{ steps.v.outputs.pair }}
             ZEPHYR_VERSION=${{ steps.v.outputs.zephyr }}
             ZSDK_VERSION=${{ steps.v.outputs.sdk }}
             ZSDK_TOOLCHAINS=${{ steps.v.outputs.toolchains }}
             ZEPHYR_BLOBS=${{ steps.v.outputs.blobs }}
-          push: ${{ github.event_name != 'workflow_dispatch' || inputs.push }}
+          push: true
           tags: |
             ${{ steps.p.outputs.prefix }}/zephyr-workshop-ci:${{ steps.v.outputs.pair }}
             ${{ steps.p.outputs.prefix }}/zephyr-workshop-ci:latest
@@ -128,8 +140,8 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.description=Zephyr CI build (GitHub Actions) image - Zephyr ${{ steps.v.outputs.zephyr }}, SDK ${{ steps.v.outputs.sdk }}
-          cache-from: type=gha,scope=ci
-          cache-to: type=gha,scope=ci,mode=max
+          cache-from: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-ci:buildcache
+          cache-to: type=registry,ref=${{ steps.p.outputs.prefix }}/zephyr-workshop-ci:buildcache,mode=max
 
       - name: Summary
         run: |

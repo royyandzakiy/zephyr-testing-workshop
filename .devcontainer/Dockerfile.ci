@@ -8,7 +8,7 @@
 # Deliberately has no nrfutil, J-Link or Actions runner: the jobs that flash
 # hardware run `runs-on: [self-hosted, linux]` with no container at all, on a
 # runner hosted inside the devel container, which is where those tools live.
-ARG BASE_IMAGE
+ARG BASE_IMAGE=zephyr-workshop-base:local
 FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
