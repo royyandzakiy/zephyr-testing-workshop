@@ -1,9 +1,9 @@
 {
   "name": "Zephyr & NCS Build Environment (macOS, no USB)",
-  // Same chain as ../devcontainer.json, forced to linux/amd64 and tagged
-  // separately so the two do not overwrite each other's images.
-  "image": "zephyr-workshop-devel:local-amd64",
-  "initializeCommand": "docker build --platform linux/amd64 -f .devcontainer/Dockerfile.base -t zephyr-workshop-base:local-amd64 .devcontainer && docker build --platform linux/amd64 -f .devcontainer/Dockerfile.ci --build-arg BASE_IMAGE=zephyr-workshop-base:local-amd64 -t zephyr-workshop-ci:local-amd64 .devcontainer && docker build --platform linux/amd64 -f .devcontainer/Dockerfile.devel --build-arg BASE_IMAGE=zephyr-workshop-ci:local-amd64 -t zephyr-workshop-devel:local-amd64 .devcontainer",
+  // Same GHCR image as ../devcontainer.json. The published image is amd64 only,
+  // so Apple Silicon runs it under emulation -- see --platform in runArgs.
+  // Builds are roughly 3-5x slower than native; workable, not pleasant.
+  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     // Keep in sync with ../versions.env; see ../devcontainer.json.
@@ -15,7 +15,8 @@
   "remoteUser": "root",
   "updateRemoteUserUID": false,
   "runArgs": [
-    "--privileged"
+    "--privileged",
+    "--platform=linux/amd64"
   ],
   "mounts": [
     // Shared by name across projects; see ../devcontainer.json.

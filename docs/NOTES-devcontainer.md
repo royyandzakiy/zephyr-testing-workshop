@@ -5,24 +5,35 @@
 - Four layers, each owning a different thing. Almost all "why isn't my change taking effect" confusion comes from editing the wrong layer.
 - The Zephyr SDK is **not baked into the image**. It lives in a named Docker volume, provisioned on first start. This keeps the image small and lets it survive image rebuilds.
 - The volume is **shared by name across every project** that copies this `.devcontainer/`. Zephyr and the SDK are downloaded once per *machine*, not once per project.
-- The images are built ground-up from `ubuntu:24.04` as a three-stage chain, not derived from `zephyrprojectrtos/zephyr-build` (~32 GB, mostly toolchains and emulators this repo never uses).
+- The images are built ground-up from `ubuntu:24.04`, not derived from `zephyrprojectrtos/zephyr-build` (~32 GB, mostly toolchains and emulators this repo never uses), and are **published to GHCR** — the devcontainer pulls, it does not build.
 - This repo is **not** a west manifest repo. There is no `west.yml`; `ZEPHYR_BASE` points outside the workspace into the SDK volume. That is why the env-var shell helpers exist at all. A `west.yml` here would mean west's T2 topology, which clones Zephyr *into each project's* workspace — exactly what the shared volume exists to avoid.
 
 ## The Four Layers
 
+`ci` and `devel` are **siblings** off `base`, not a chain — they have different consumers:
+
 ```
 Dockerfile.base   → build tools, Python venv, Zephyr's Python requirements
-  → Dockerfile.ci    → + nrfutil, J-Link, GitHub Actions runner (flashing / automation)
-    → Dockerfile.devel  → + clangd, picocom, .bashrc helpers   ← the image you run
-build.sh          → drives that chain (a devcontainer can only build one Dockerfile itself)
-versions.env      → WHICH Zephyr + SDK + toolchains this project wants
+├─ Dockerfile.ci    → + Zephyr SDK and tree BAKED IN     → GitHub Actions `container:` only
+└─ Dockerfile.devel → + flashing tools, Actions runner,   → what devcontainer.json pulls
+                        clangd, picocom, .bashrc helpers
+build.sh          → builds them locally (base + devel; ci only with WITH_CI=1)
+versions.env      → WHICH Zephyr + SDK + toolchains + blobs this project wants
 devcontainer.json → how the image is launched (mounts, privileges, user) + editor config
 setup-sdks.sh     → fills the volumes at runtime (with fetch-zephyr.sh)
 ```
 
+**Why `devel` does not build on `ci`:** `ci` bakes a Zephyr SDK and tree into
+`/opt/zephyr-sdks` because GitHub-hosted runners have no persistent volume. Development
+does not want that — it uses the shared `/workdir` volume, and `use-vanilla` searches
+`/workdir` first anyway. Conversely `ci` has no nrfutil, J-Link or Actions runner: the
+jobs that flash hardware run `runs-on: [self-hosted, linux]` with **no container**, on a
+runner hosted inside the `devel` container. Upstream's chain is linear because their
+`devel` is genuinely `ci` plus a VNC stack; ours are two different products.
+
 Order of truth: the Dockerfiles define what exists → `devcontainer.json` decides how it is launched and what is mounted → `setup-sdks.sh` fills the volumes with whatever `versions.env` names. Missing tool, fix the right Dockerfile. Missing device or path, fix `devcontainer.json`. Wrong *version*, fix `versions.env` **and** the matching paths in `devcontainer.json` (which cannot read an env file — `setup-sdks.sh` fails loudly if the two disagree).
 
-Rebuild cost follows the same order: Dockerfile change = `bash .devcontainer/build.sh` (slow, and a `Dockerfile.base` change rebuilds all three), `devcontainer.json` change = container recreate (fast), `setup-sdks.sh` or `versions.env` change = just restart (instant, volumes persist).
+Rebuild cost follows the same order: Dockerfile change = push to `main` and let `publish-images.yml` republish, or `bash .devcontainer/build.sh` for a local one (a `Dockerfile.base` change rebuilds both siblings); `devcontainer.json` change = container recreate (fast); `setup-sdks.sh` or `versions.env` change = just restart (instant, volumes persist).
 
 ---
 
@@ -31,8 +42,7 @@ Rebuild cost follows the same order: Dockerfile change = `bash .devcontainer/bui
 ```json
 {
   "name": "Zephyr Development",
-  "image": "zephyr-workshop-devel:local",
-  "initializeCommand": "docker build -f .devcontainer/Dockerfile.base ... && ... Dockerfile.ci ... && ... Dockerfile.devel ...",
+  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
@@ -49,26 +59,28 @@ Rebuild cost follows the same order: Dockerfile change = `bash .devcontainer/bui
 }
 ```
 
-### Why `image` + `initializeCommand`, not `build`
+### Three devcontainer configs
 
-A devcontainer builds exactly **one** Dockerfile, and this repo has a three-stage chain. So `devcontainer.json` names the finished image and `initializeCommand` builds the chain — it runs on the **host** before the container exists, which is the only hook early enough. Every stage is layer-cached, so it is a no-op once built.
+| Config | Image | For |
+|---|---|---|
+| `.devcontainer/` | `ghcr.io/…/zephyr-workshop-devel:<tag>` | normal work and attendees — **pulls**, no build |
+| `.devcontainer/local/` | `zephyr-workshop-devel:local` | when you are changing a Dockerfile — builds base + devel |
+| `.devcontainer/macos/` | the GHCR image, `--platform=linux/amd64` | Apple Silicon, under emulation |
 
-**The three `docker build` calls are spelled out inline, not `["bash", ".devcontainer/build.sh"]`.** That array form looks tidier and is a trap on Windows: `bash` there usually resolves to `C:\Users\<you>\AppData\Local\Microsoft\WindowsApps\bash.exe`, the **WSL shim**, because Git ships its `bash.exe` in `Git\bin` which is not on `PATH` by default (only `Git\cmd` and `Git\mingw64\bin` are). If WSL is missing or broken you get a 30-second hang and:
+The default has **no `initializeCommand`**, so Docker is the only host requirement.
 
-```
-Could not connect to WSL.  Error code: Wsl/Service/0x8007274c
-```
+The tag is the Zephyr/SDK pair (`z4.4.2-sdk1.0.1`) and is immutable — bumping `versions.env` publishes a *new* tag rather than moving this one, so nothing shifts under an attendee mid-workshop. Keep the tag in both `devcontainer.json` files in step with `versions.env`.
 
-and the container never starts. The single-string form runs in the host's own shell — `cmd.exe` on Windows, `sh` elsewhere — and `&&` chaining works in both, so the only host requirement is Docker.
+**The `local/` variant spells its two `docker build` calls out inline rather than calling `build.sh`.** That looks less tidy and is deliberate: on Windows `bash` usually resolves to `C:\Users\<you>\AppData\Local\Microsoft\WindowsApps\bash.exe`, the **WSL shim**, because Git ships its `bash.exe` in `Git\bin`, which is not on `PATH` by default (only `Git\cmd` and `Git\mingw64\bin` are). If WSL is missing or broken you get a 30-second hang, `Could not connect to WSL. Error code: Wsl/Service/0x8007274c`, and the container never starts.
 
-`build.sh` does the same thing and stays for manual use and CI:
+`build.sh` remains for manual use:
 
 ```bash
-bash .devcontainer/build.sh                            # zephyr-workshop-{base,ci,devel}:local
-bash .devcontainer/build.sh local-amd64 linux/amd64    # the macos/ variant's tags
+bash .devcontainer/build.sh              # base + devel, tagged :local
+WITH_CI=1 bash .devcontainer/build.sh    # also the ci image (large, GitHub Actions only)
 ```
 
-If you edit the chain, keep `build.sh` and both `initializeCommand` strings in step.
+If you change the build, keep `build.sh`, `local/devcontainer.json` and `publish-images.yml` in step.
 
 ### Identity and privileges
 
@@ -113,7 +125,7 @@ If you edit the chain, keep `build.sh` and both `initializeCommand` strings in s
 | `postStartCommand` | **every start**, including restarts | `setup-sdks.sh` — must be idempotent |
 | `postAttachCommand` | every time an editor attaches | editor-only fixups |
 
-This repo uses **both**: `initializeCommand` to build the image chain on the host, and `postStartCommand` for `setup-sdks.sh`, which therefore has to be idempotent — it runs on every single start.
+The default config uses only `postStartCommand`, for `setup-sdks.sh`, which therefore has to be idempotent — it runs on every single start. (The `local/` variant adds `initializeCommand` to build the images first.)
 
 Idempotent here means `.complete` sentinel files, **not** `if [ ! -d ... ]` guards. A directory-existence check treats "the download started" as "the install finished": a `tar` that creates the directory and then dies leaves a hollow SDK that every later start reports as ready. That bug is exactly how this repo ended up with an SDK directory containing no SDK. Sentinels are written only after a step fully succeeds.
 
@@ -216,8 +228,8 @@ longer exists. The `/workdir/*/*/` shape picks up both `zephyr-sdks/` and `ncs-s
 and skips nrfutil's `toolchains/`, `downloads/` and `tmp/` for free.
 
 It also globs `/opt/zephyr-sdks/...`, a second store that ships **empty** in the image.
-It exists so a future prebuilt or GHCR-published image can bake a default Zephyr + SDK
-in without changing any of this. `use-vanilla` searches `/workdir` first, then `/opt`.
+`Dockerfile.ci` bakes a Zephyr + SDK pair into it for GitHub Actions; in the `devel`
+image it ships empty, because development uses the `/workdir` volume. `use-vanilla` searches `/workdir` first, then `/opt`.
 
 **nRF Connect SDK toolchains are the one exception** — those come from the
 extension's bundled nrfutil, not from the registry, and it only looks where

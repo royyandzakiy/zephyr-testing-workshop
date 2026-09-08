@@ -1,54 +1,56 @@
-# CI image: base plus everything the self-hosted runner needs to FLASH and TEST
-# on real hardware -- nrfutil, the SEGGER J-Link runtime, and the GitHub Actions
-# runner itself.
+# CI image: base plus the Zephyr SDK and the Zephyr tree, BAKED IN.
 #
-# Used by blinky_nrf5340dk_self-hosted.yml and
-# twister_shell_emul_nrf5340dk_self-hosted.yml.
+# Consumed only by .github/workflows/* as their `container:` image. GitHub-hosted
+# runners have no persistent volume, so unlike the devel image this one cannot
+# use /workdir -- the pair goes into /opt/zephyr-sdks, the second store that
+# use-vanilla already searches.
+#
+# Deliberately has no nrfutil, J-Link or Actions runner: the jobs that flash
+# hardware run `runs-on: [self-hosted, linux]` with no container at all, on a
+# runner hosted inside the devel container, which is where those tools live.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# dfu-util and libusb for flashing; libffi/libyaml are nrfutil runtime deps.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    dfu-util \
-    usbutils \
-    libusb-1.0-0 \
-    libffi8 \
-    libyaml-0-2 \
-    && rm -rf /var/lib/apt/lists/*
+# Must match .devcontainer/versions.env. build.sh and the publish workflow pass
+# these through so there is one source of truth.
+ARG ZEPHYR_VERSION=v4.4.2
+ARG ZSDK_VERSION=1.0.1
+ARG ZSDK_TOOLCHAINS="arm-zephyr-eabi x86_64-zephyr-elf xtensa-espressif_esp32_zephyr-elf xtensa-espressif_esp32s3_zephyr-elf"
+ARG ZEPHYR_BLOBS="hal_espressif"
 
-RUN curl -fSL "https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfutil" -o /usr/local/bin/nrfutil \
-    && chmod +x /usr/local/bin/nrfutil \
-    && nrfutil install toolchain-manager \
-    && nrfutil install device
+ENV ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdks/toolchains/zephyr-sdk-${ZSDK_VERSION}
+ENV ZEPHYR_BASE=/opt/zephyr-sdks/${ZEPHYR_VERSION}/zephyr
+ENV ZEPHYR_TOOLCHAIN_VARIANT=zephyr
 
-ARG NORDIC_COMMAND_LINE_TOOLS_VERSION="10-24-0/nrf-command-line-tools-10.24.0"
-RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x && \
-    NCLT_TMP=$(mktemp -d) && cd "${NCLT_TMP}" && \
-    wget -qO - "${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-amd64.tar.gz" | tar --no-same-owner -xz && \
-    mkdir -p /opt/SEGGER && \
-    tar xzf JLink_Linux_*x86_64.tgz -C /opt/SEGGER && \
-    mv /opt/SEGGER/JLink_Linux* /opt/SEGGER/JLink && \
-    rm -rf /opt/SEGGER/JLink/x86 /opt/SEGGER/JLink/libjlinkarm_x86.so* && \
-    cd /opt/SEGGER/JLink && \
-    JLINK_SO="$(ls libjlinkarm.so.[0-9]*.[0-9]*.[0-9]* | head -n1)" && \
-    ln -sf "${JLINK_SO}" libjlinkarm.so.7 && \
-    ln -sf libjlinkarm.so.7 libjlinkarm.so && \
-    ln -s /opt/SEGGER/JLink/JLinkExe /usr/local/bin/JLinkExe && \
-    echo "/opt/SEGGER/JLink" > /etc/ld.so.conf.d/SEGGER_JLink.conf && ldconfig && \
-    cd / && rm -rf "${NCLT_TMP}"
+RUN mkdir -p /opt/zephyr-sdks/toolchains \
+    && cd /opt/zephyr-sdks/toolchains \
+    && wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz" | tar -xJ \
+    && cd "zephyr-sdk-${ZSDK_VERSION}" \
+    && targs=() \
+    && for t in ${ZSDK_TOOLCHAINS}; do targs+=(-t "$t"); done \
+    && ./setup.sh -h -c "${targs[@]}"
 
-# Fail here rather than on someone's first flash if the 32-bit J-Link library
-# won the symlink race.
-RUN JLINK_LIB="$(ldconfig -p | awk '/libjlinkarm\.so\.7/ {print $NF; exit}')" && \
-    file -L "${JLINK_LIB}" | grep -q 'ELF 64-bit' && \
-    nrfutil device --version
+RUN mkdir -p "/opt/zephyr-sdks/${ZEPHYR_VERSION}" \
+    && git clone --depth 1 --branch "${ZEPHYR_VERSION}" \
+       https://github.com/zephyrproject-rtos/zephyr.git "${ZEPHYR_BASE}" \
+    && cd "/opt/zephyr-sdks/${ZEPHYR_VERSION}" \
+    && west init -l "${ZEPHYR_BASE}" \
+    && west update --narrow -o=--depth=1 \
+    && west zephyr-export \
+    && for m in ${ZEPHYR_BLOBS}; do west blobs fetch "$m"; done
 
-WORKDIR /actions-runner
+# Fail the build here rather than in someone's CI run.
+RUN set -e; \
+    test -f "${ZEPHYR_BASE}/VERSION" || { echo "MISSING Zephyr checkout"; exit 1; }; \
+    test -d "/opt/zephyr-sdks/${ZEPHYR_VERSION}/modules/hal/espressif" || { echo "west update incomplete"; exit 1; }; \
+    test -f "${ZEPHYR_SDK_INSTALL_DIR}/cmake/Zephyr-sdkConfig.cmake" || { echo "MISSING Zephyr-sdkConfig.cmake"; exit 1; }; \
+    for t in ${ZSDK_TOOLCHAINS}; do \
+        [ -d "${ZEPHYR_SDK_INSTALL_DIR}/$t" ] || [ -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/$t" ] \
+            || { echo "MISSING toolchain $t"; exit 1; }; \
+    done; \
+    ls "${HOME}/.cmake/packages/Zephyr-sdk/"* >/dev/null || { echo "MISSING CMake registry entry"; exit 1; }
 
-RUN curl -o actions-runner-linux-x64-2.336.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.336.0/actions-runner-linux-x64-2.336.0.tar.gz \
-    && echo "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d  actions-runner-linux-x64-2.336.0.tar.gz" | sha256sum -c \
-    && tar xzf ./actions-runner-linux-x64-2.336.0.tar.gz \
-    && rm ./actions-runner-linux-x64-2.336.0.tar.gz
+WORKDIR /workspaces

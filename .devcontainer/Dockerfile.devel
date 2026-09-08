@@ -1,5 +1,10 @@
-# Developer image: CI plus what only a human needs -- editor tooling, a serial
-# monitor, and the version-switching shell helpers. This is what runs.
+# Developer image: base plus everything a human and the self-hosted runner need --
+# flashing tools, the Actions runner, editor tooling, and the version-switching
+# shell helpers. This is the image devcontainer.json runs.
+#
+# Built FROM base, not from Dockerfile.ci: that one bakes a Zephyr SDK in for
+# GitHub Actions, which development does not want -- here the SDK comes from the
+# shared /workdir volume.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
@@ -8,16 +13,59 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # clang-tidy here is editor tooling, not a Zephyr SCA variant. Keep the unversioned
 # metapackage: clang-tidy-18 alone installs only the versioned binary name.
+# dfu-util and libusb are for flashing; libffi/libyaml are nrfutil runtime deps.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang-format \
     clang-tidy \
     clangd \
     picocom \
+    dfu-util \
+    usbutils \
+    libusb-1.0-0 \
+    libffi8 \
+    libyaml-0-2 \
     && rm -rf /var/lib/apt/lists/* \
     && command -v clang-tidy >/dev/null || { echo "MISSING clang-tidy"; exit 1; }
 
-# Second SDK store, searched after /workdir. Left empty so a future prebuilt
-# image can bake a default Zephyr + SDK in without touching the helpers below.
+# --- Hardware tools -----------------------------------------------------------
+# These live here rather than in Dockerfile.ci because the jobs that flash run
+# `runs-on: [self-hosted, linux]` with no container, on a runner hosted inside
+# THIS image. The GitHub-hosted build jobs never touch hardware.
+RUN curl -fSL "https://developer.nordicsemi.com/.pc-tools/nrfutil/x64-linux/nrfutil" -o /usr/local/bin/nrfutil \
+    && chmod +x /usr/local/bin/nrfutil \
+    && nrfutil install toolchain-manager \
+    && nrfutil install device
+
+ARG NORDIC_COMMAND_LINE_TOOLS_VERSION="10-24-0/nrf-command-line-tools-10.24.0"
+RUN NCLT_BASE=https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x && \
+    NCLT_TMP=$(mktemp -d) && cd "${NCLT_TMP}" && \
+    wget -qO - "${NCLT_BASE}/${NORDIC_COMMAND_LINE_TOOLS_VERSION}_linux-amd64.tar.gz" | tar --no-same-owner -xz && \
+    mkdir -p /opt/SEGGER && \
+    tar xzf JLink_Linux_*x86_64.tgz -C /opt/SEGGER && \
+    mv /opt/SEGGER/JLink_Linux* /opt/SEGGER/JLink && \
+    rm -rf /opt/SEGGER/JLink/x86 /opt/SEGGER/JLink/libjlinkarm_x86.so* && \
+    cd /opt/SEGGER/JLink && \
+    JLINK_SO="$(ls libjlinkarm.so.[0-9]*.[0-9]*.[0-9]* | head -n1)" && \
+    ln -sf "${JLINK_SO}" libjlinkarm.so.7 && \
+    ln -sf libjlinkarm.so.7 libjlinkarm.so && \
+    ln -s /opt/SEGGER/JLink/JLinkExe /usr/local/bin/JLinkExe && \
+    echo "/opt/SEGGER/JLink" > /etc/ld.so.conf.d/SEGGER_JLink.conf && ldconfig && \
+    cd / && rm -rf "${NCLT_TMP}"
+
+# Fail here rather than on someone's first flash if the 32-bit J-Link library
+# won the symlink race.
+RUN JLINK_LIB="$(ldconfig -p | awk '/libjlinkarm\.so\.7/ {print $NF; exit}')" && \
+    file -L "${JLINK_LIB}" | grep -q 'ELF 64-bit' && \
+    nrfutil device --version
+
+WORKDIR /actions-runner
+RUN curl -o actions-runner-linux-x64-2.336.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.336.0/actions-runner-linux-x64-2.336.0.tar.gz \
+    && echo "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d  actions-runner-linux-x64-2.336.0.tar.gz" | sha256sum -c \
+    && tar xzf ./actions-runner-linux-x64-2.336.0.tar.gz \
+    && rm ./actions-runner-linux-x64-2.336.0.tar.gz
+
+# Second SDK store, searched after /workdir. Empty here -- Dockerfile.ci is what
+# bakes a pair into it.
 RUN mkdir -p /opt/zephyr-sdks
 
 WORKDIR /workspaces
@@ -37,7 +85,7 @@ if [ -z "$_ORIG_PATH" ]; then
     export _ORIG_ZEPHYR_SDK_INSTALL_DIR="${ZEPHYR_SDK_INSTALL_DIR:-}"
 fi
 
-# Searched in order: shared volume first, then the image's (empty) store.
+# Searched in order: shared volume first, then the image's own store.
 ZEPHYR_STORES=(/workdir/zephyr-sdks /opt/zephyr-sdks)
 
 # Versions are derived from the paths devcontainer.json exported, never hardcoded

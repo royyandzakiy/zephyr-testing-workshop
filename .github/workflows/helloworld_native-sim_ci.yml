@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 20
 
     container:
-      image: zephyrprojectrtos/ci:v0.29.3
+      image: ghcr.io/royyandzakiy/zephyr-workshop-ci:z4.4.2-sdk1.0.1
 
     env:
       ZEPHYR_VERSION: v4.4.2
@@ -17,31 +17,6 @@ jobs:
       BOARD_TYPE: "native_sim/native"
 
     steps:
-      - name: Cache Zephyr workspace
-        uses: actions/cache@v4
-        id: zephyr-cache
-        with:
-          path: zephyr-workspace
-          key: ${{ runner.os }}-zephyr-${{ env.ZEPHYR_VERSION }}
-
-      - name: Fetch vanilla Zephyr
-        if: steps.zephyr-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p zephyr-workspace
-          git clone --depth 1 --branch $ZEPHYR_VERSION \
-            https://github.com/zephyrproject-rtos/zephyr.git zephyr-workspace/zephyr
-          cd zephyr-workspace
-          west init -l zephyr
-          west update --narrow -o=--depth=1
-
-      # The Zephyr SDK is already in the ci image at /opt/toolchains (v0.29.3
-      # bundles 1.0.1 with all toolchains), so there is nothing to download --
-      # only the CMake package registry entry to (re)create.
-      - name: Register SDK CMake Package
-        run: |
-          cd /opt/toolchains/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}
-          ./setup.sh -c -t arm-zephyr-eabi
-
       - name: Cache ccache
         uses: actions/cache@v4
         with:
@@ -54,12 +29,10 @@ jobs:
         env:
           CCACHE_DIR: ~/.cache/ccache
         run: |
-          cd zephyr-workspace
-          west build -b $BOARD_TYPE zephyr/samples/basic/minimal -d build -p -- -DZEPHYR_SCACHE=ccache
+          west build -b $BOARD_TYPE $ZEPHYR_BASE/samples/basic/minimal -d build -p -- -DZEPHYR_SCACHE=ccache
 
       - name: Run hello world
         run: |
-          cd zephyr-workspace
           timeout 10s ./build/zephyr/zephyr.exe || true
 
       - name: Show ccache stats

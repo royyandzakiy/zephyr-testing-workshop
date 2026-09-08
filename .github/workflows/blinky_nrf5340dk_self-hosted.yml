@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: zephyrprojectrtos/ci:v0.29.3
+      image: ghcr.io/royyandzakiy/zephyr-workshop-ci:z4.4.2-sdk1.0.1
 
     defaults:
       run:
@@ -22,35 +22,6 @@ jobs:
       CCACHE_DIR: /__w/.ccache
 
     steps:
-      - name: Cache Zephyr workspace
-        uses: actions/cache@v4
-        id: zephyr-cache
-        with:
-          path: |
-            zephyr-workspace
-            !zephyr-workspace/build
-          key: ${{ runner.os }}-${{ github.repository_id }}-zephyr-${{ env.ZEPHYR_VERSION }}-v2
-
-      - name: Fetch vanilla Zephyr
-        if: steps.zephyr-cache.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p zephyr-workspace
-          git clone --depth 1 --branch "$ZEPHYR_VERSION" \
-            https://github.com/zephyrproject-rtos/zephyr.git zephyr-workspace/zephyr
-          cd zephyr-workspace
-          west init -l zephyr
-          west update --narrow -o=--depth=1
-
-      # The Zephyr SDK is already in the ci image at /opt/toolchains (v0.29.3
-      # bundles 1.0.1 with all toolchains), so there is nothing to download --
-      # only the CMake package registry entry to (re)create.
-      - name: Register SDK CMake Package
-        run: |
-          set -euo pipefail
-          cd "/opt/toolchains/zephyr-sdk-${ZEPHYR_TOOLCHAIN_VERSION}"
-          ./setup.sh -c -t arm-zephyr-eabi
-
       - name: Cache ccache
         uses: actions/cache@v4
         with:
@@ -62,7 +33,6 @@ jobs:
       - name: Build blinky
         run: |
           set -euo pipefail
-          cd zephyr-workspace
           rm -rf build
           west build -b "$BOARD_TYPE" zephyr/samples/basic/blinky -d build \
             -- -DZEPHYR_SCACHE=ccache
@@ -71,14 +41,13 @@ jobs:
       - name: Create build tarball
         run: |
           set -euo pipefail
-          cd zephyr-workspace
           tar czf build.tar.gz build/zephyr/zephyr.hex
 
       - name: Upload tarball
         uses: actions/upload-artifact@v4
         with:
           name: build.tar.gz
-          path: zephyr-workspace/build.tar.gz
+          path: build.tar.gz
 
   hw_flash_and_test:
     needs: build_for_hw_test
