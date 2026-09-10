@@ -1,19 +1,10 @@
 {
   "name": "Zephyr Development",
-  // Pulled prebuilt from GHCR -- no local build, no initializeCommand, so Docker
-  // is the only thing needed on the host. Published by
-  // .github/workflows/publish-images.yml.
-  //
-  // The tag is the Zephyr/SDK pair and is immutable: bumping versions.env
-  // produces a new tag rather than moving this one, so nothing shifts under an
-  // attendee mid-workshop. Keep it in step with versions.env.
-  //
-  // To build the images from source instead -- when changing a Dockerfile --
-  // open .devcontainer/local/devcontainer.json.
-  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
+  // Pulled prebuilt from GHCR
   // Must match versions.env, which this file cannot read; setup-sdks.sh fails
   // loudly if they disagree. Needed here because the extension host does not see
   // what `use-vanilla` exports in interactive shells.
+  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
@@ -26,9 +17,6 @@
   "runArgs": [
     "--privileged"
   ],
-  // SDK volumes have no project prefix on purpose: every project copying this
-  // .devcontainer/ shares one download. The runner volume holds one registration,
-  // so it must be per-project.
   "mounts": [
     "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",

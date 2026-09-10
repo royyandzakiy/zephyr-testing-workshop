@@ -48,11 +48,18 @@ jobs:
           # native_sim/native is a 32-BIT build, so the runtimes it needs are
           # the ones under /lib32, not the x86-64 pair. Switching BOARD_TYPE to
           # native_sim/native/64 would need libc6-dev-amd64 variants instead.
+          # Captured once, then matched with herestrings. `ldconfig -p | grep -q`
+          # is a trap here: grep -q exits on first match, ldconfig dies of
+          # SIGPIPE, and this shell's `pipefail` reports 141 -- a successful
+          # match looking like a failure. It depends on how early the match lands
+          # in ~600 lines, so it can start failing when unrelated packages shift
+          # the output.
+          LDC="$(ldconfig -p)"
           echo "--- available sanitizer runtimes ---"
-          ldconfig -p | grep -E "libasan|libubsan" || true
+          grep -E "libasan|libubsan" <<< "$LDC" || true
           missing=0
-          ldconfig -p | grep -q "libasan.*lib32"  || { echo "::error::32-bit libasan not found"; missing=1; }
-          ldconfig -p | grep -q "libubsan.*lib32" || { echo "::error::32-bit libubsan not found"; missing=1; }
+          grep -q "libasan.*lib32"  <<< "$LDC" || { echo "::error::32-bit libasan not found"; missing=1; }
+          grep -q "libubsan.*lib32" <<< "$LDC" || { echo "::error::32-bit libubsan not found"; missing=1; }
           if [ "$missing" -ne 0 ]; then
             echo "::error::install gcc-multilib / lib32asan before running sanitized native_sim builds"
             exit 1

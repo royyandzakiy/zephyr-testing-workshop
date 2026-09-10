@@ -1,24 +1,5 @@
 ## To Do
 
-- compact HDD
-    - close docker desktop
-    - `wsl --shutdown`
-    - open admin terminal > diskpart
-        ```bash
-            select vdisk file="C:\Users\royya\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
-            attach vdisk readonly
-            compact vdisk
-            detach vdisk
-            exit
-        ```
-- upload docker to ghcr
-    - create ci version to run on github actions
-
-- test all current apps/ working fine
-    - 06: assemble board + bme280, ensure works fine.  currently fails to compile
-    - 02 create a diff ztest, showing logic. remove button example
-    - 03 chge folder to logic, emul, hw (use nrf)
-    - 06 simplify and explain bme280 emul. give pictures of is register table from datasheet
 - add new apps
     - add exercise.md for all apps
     - 05: advanced and variative pytest usage
@@ -32,6 +13,11 @@
     - XX create simple project that will fail in sanitizer
     - XX about fuzz testing in ci
     - XX create bluetooth/wifi/usb cdc app, create tests for these hard to test things
+- test all current apps/ working fine
+    - 06: assemble board + bme280, ensure works fine.  currently fails to compile
+    - 02 create a diff ztest, showing logic. remove button example
+    - 03 chge folder to logic, emul, hw (use nrf)
+    - 06 simplify and explain bme280 emul. give pictures of is register table from datasheet
 - create claude md, claude skills:
     - build flash run* (incl run tests and summarize results or errors)
     - board bring up dts (incl board migration)
@@ -48,6 +34,9 @@
 
 ## Done
 
+- compact HDD
+- upload docker to ghcr
+    - create ci version to run on github actions
 - apps/06 sensor spin: climate_logic seam + ztest, app-local BME280 i2c emulator + ztest
 - cleaned up project NOTES
 

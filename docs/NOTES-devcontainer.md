@@ -444,6 +444,51 @@ these images — `devcontainer.json` names a prebuilt image. Run `build.sh` for 
 
 ---
 
+## What upstream ships that this image does not
+
+Diffed against `zephyrproject-rtos/docker-image@main`, checking each candidate against the
+running image with `dpkg -s` rather than trusting the Dockerfile listing. Re-run that diff
+before assuming a gap is real — several look like gaps and are not.
+
+**False alarms.** `gcc`, `g++`, `libglib2.0-dev`, `libpopt0` and `libpython3-dev` arrive as
+transitive deps. `pkg-config` is present as `/usr/bin/pkg-config`; Ubuntu 24.04 renamed the
+package to `pkgconf`, so a `dpkg -s pkg-config` check reports it missing. `git-core` is a
+transitional alias for `git`. And `menuconfig` works without `libncurses5-dev`, because
+python3 already links ncurses (`import curses` succeeds).
+
+**Deliberately absent, and should stay that way** — roughly 45 packages plus ~10 source
+installs, all for targets or features this repo does not use:
+
+| Upstream carries | For |
+|---|---|
+| Corstone-300/310/315/320/1000, Base RevC, AEMv8R FVPs | Arm emulation, TF-M |
+| Renode | boards without a QEMU model |
+| Hexagon LLVM, TriCore GCC, qemu-tricore | those architectures |
+| BSIM (babblesim) | Bluetooth controller simulation |
+| Rust toolchain, 7 bare-metal targets, `uefi-run` | Zephyr Rust support |
+| protoc | nanopb / protobuf samples |
+| doxygen (apt + binary), graphviz | building Zephyr's docs |
+| openbox, x11vnc, xvfb, xterm, python3-xdg, vim | the VNC desktop that makes `zephyr-build` a GUI image |
+| ovmf | UEFI x86 boot |
+| python3.9-dev | required only by the FVPs |
+| clang-20, clang-tools-20, lld-20, lldb-20, llvm-20, libc++-20-dev | `ZEPHYR_TOOLCHAIN_VARIANT=llvm` (~2 GB) |
+| libnl-3-dev:i386, libnl-genl-3-dev:i386 | nrf_wifi / hostap |
+| autoconf, automake, libtool, bison, flex, gawk, texinfo, help2man, chrpath, cpio, dos2unix, diffstat, gdisk, parallel, uuid-runtime, lsb-release, software-properties-common | building host tools from source; Yocto-style packaging |
+
+Upstream also builds Kitware `ninja` (jobserver-aware), `ccache` 4.13.2 and `sparse` (pinned
+SHA) from source where this image takes the apt versions. That is a version delta, not a
+capability gap.
+
+**Closed deliberately**, because they were cheap and plausible for a testing workshop:
+`net-tools` + `iproute2` (Zephyr's `net-setup.sh` TAP setup for `native_sim` networking) and
+`libfuse3-dev` + `libfuse3-dev:i386` (`CONFIG_FUSE_FS_ACCESS`). Nothing under `apps/` uses
+either yet.
+
+One non-parity note: `tkinter` is absent, so `west build -t guiconfig` will not run. Upstream
+does not ship it either; `menuconfig` is the supported path.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Layer | Fix |

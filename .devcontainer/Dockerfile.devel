@@ -24,6 +24,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libusb-1.0-0 \
     libffi8 \
     libyaml-0-2 \
+    libfreetype6 \
+    libfontconfig1 \
+    libxtst6 \
     && rm -rf /var/lib/apt/lists/* \
     && command -v clang-tidy >/dev/null || { echo "MISSING clang-tidy"; exit 1; }
 
