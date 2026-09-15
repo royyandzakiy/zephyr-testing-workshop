@@ -1,32 +1,39 @@
 {
   "name": "Zephyr Development",
-  // Pulled prebuilt from GHCR
-  // Must match versions.env, which this file cannot read; setup-sdks.sh fails
-  // loudly if they disagree. Needed here because the extension host does not see
-  // what `use-vanilla` exports in interactive shells.
-  "image": "ghcr.io/royyandzakiy/zephyr-workshop-devel:z4.4.2-sdk1.0.1",
+  "image": "ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.2-sdk1.0.1",
+
+  // The extension host cannot read what use-vanilla exports in a shell, so the
+  // active Zephyr and SDK have to be named here.
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
     "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-1.0.1",
-    "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr"
+    "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr",
+    "ZSDK_TOOLCHAINS": "arm-zephyr-eabi x86_64-zephyr-elf xtensa-espressif_esp32_zephyr-elf xtensa-espressif_esp32s3_zephyr-elf",
+    "ZEPHYR_BLOBS": "hal_espressif"
   },
+
   "containerUser": "root",
   "remoteUser": "root",
   "updateRemoteUserUID": false,
   "runArgs": [
     "--privileged"
   ],
+
   "mounts": [
-    "source=zephyr-sdks-cache,target=/workdir/zephyr-sdks,type=volume",
-    "source=ncs-sdks-cache,target=/workdir/ncs-sdks,type=volume",
+    // Shared by name across every project on the machine.
+    "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
+    "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
+    // CMake package registry -- the nRF Connect SDK picker reads it, and
+    // setup-sdks.sh rewrites it too late for a fresh container to see it.
+    "source=${localWorkspaceFolderBasename}-cmake-registry,target=/root/.cmake,type=volume",
     "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume",
     "source=/dev,target=/dev,type=bind,bind-propagation=rslave"
   ],
+
   "customizations": {
     "vscode": {
       "extensions": [
-        // "llvm-vs-code-extensions.vscode-clangd",
         "ms-vscode.cpptools",
         "twxs.cmake",
         "nordic-semiconductor.nrf-connect",
@@ -37,6 +44,7 @@
       }
     }
   },
+
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "postStartCommand": "/bin/bash .devcontainer/setup-sdks.sh"
+  "postStartCommand": "/opt/devcontainer/setup-sdks.sh"
 }
