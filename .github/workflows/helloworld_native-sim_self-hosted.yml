@@ -64,7 +64,7 @@ jobs:
           # builds fail with an opaque "Could not find a package configuration
           # file provided by Zephyr-sdk".
           ls "$HOME/.cmake/packages/Zephyr-sdk/"* >/dev/null 2>&1 \
-            || { echo "::error::no Zephyr-sdk entry in $HOME/.cmake/packages — run .devcontainer/register-sdks.sh"; exit 1; }
+            || { echo "::error::no Zephyr-sdk entry in $HOME/.cmake/packages — run /opt/devcontainer/register-sdks.sh"; exit 1; }
           west --version
           echo "Zephyr $(sed -n 's/^VERSION_MAJOR *= *//p' "$ZEPHYR_BASE/VERSION").$(sed -n 's/^VERSION_MINOR *= *//p' "$ZEPHYR_BASE/VERSION")"
 

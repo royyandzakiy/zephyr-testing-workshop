@@ -9,14 +9,14 @@ https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runner
 ```
 
 **Inside the devcontainer you can skip the download.** The runner is already unpacked at
-`/actions-runner` by [`Dockerfile.ci`](../.devcontainer/Dockerfile.ci), and its state lives in a
+`/actions-runner` by the published devel image ([zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)), and its state lives in a
 per-project volume (`${localWorkspaceFolderBasename}-actions-runner`) so a registration survives
 container rebuilds. That volume is deliberately *not* shared between projects the way the SDK
 volumes are — it holds one runner registration, so a shared name would make two projects fight
 over it. Jump to "Run the actions-runner" below.
 
 Two caveats on the baked copy: Docker seeds a named volume from the image only when the volume
-is **empty**, so bumping the runner version in `Dockerfile.ci` will not update an existing
+is **empty**, so bumping the runner version in the image will not update an existing
 volume — delete it first. And the version bundled in the image is the one pinned there, not
 necessarily the newest.
 
