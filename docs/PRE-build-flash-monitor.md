@@ -55,7 +55,7 @@ python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
 ## Espressif
 
 The Xtensa toolchains are **already installed** — `ZSDK_TOOLCHAINS` in
-[`.devcontainer/versions.env`](../.devcontainer/versions.env) lists both
+[`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json) lists both
 `xtensa-espressif_esp32_zephyr-elf` and `xtensa-espressif_esp32s3_zephyr-elf`, and
 `setup-sdks.sh` installs them on first container start. `zephyr-stores` shows what you have.
 
@@ -66,12 +66,12 @@ west blobs fetch hal_espressif
 ```
 
 To add a toolchain for a different chip (ESP32-S2, a RISC-V ESP32-C3, …), append the triple
-to `ZSDK_TOOLCHAINS` in `versions.env` and restart the container. `setup-sdks.sh` tops up the
+to `ZSDK_TOOLCHAINS` in `containerEnv` and restart the container. `setup-sdks.sh` tops up the
 shared SDK incrementally, so nothing is re-downloaded. `west sdk list` shows the available
 triples. To install one immediately without restarting:
 
 ```bash
-bash .devcontainer/fetch-zephyr.sh    # re-runs setup.sh -t for everything in versions.env
+/opt/devcontainer/fetch-zephyr.sh    # re-runs setup.sh -t for the configured toolchains
 ```
 
 ```bash

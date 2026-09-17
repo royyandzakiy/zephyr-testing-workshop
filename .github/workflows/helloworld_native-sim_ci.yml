@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 20
 
     container:
-      image: ghcr.io/royyandzakiy/zephyr-workshop-ci:z4.4.2-sdk1.0.1
+      image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.2-sdk1.0.1
 
     env:
       ZEPHYR_VERSION: v4.4.2

@@ -8,10 +8,10 @@ the devcontainer scripts do underneath.
 
 | Manual step below | Automated by |
 |---|---|
-| Choosing versions | [`.devcontainer/versions.env`](../.devcontainer/versions.env) — the one file to edit |
-| Cloning Zephyr, `west init` / `update`, downloading the SDK | [`fetch-zephyr.sh`](../.devcontainer/fetch-zephyr.sh), called on first container start |
+| Choosing versions | `containerEnv` in [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json) — the one place to edit |
+| Cloning Zephyr, `west init` / `update`, downloading the SDK | `/opt/devcontainer/fetch-zephyr.sh` in the image, called on first container start |
 | Exporting `ZEPHYR_BASE` / `ZEPHYR_SDK_INSTALL_DIR` | `containerEnv` in `devcontainer.json`, plus the `use-vanilla` shell helper |
-| Installing nrfutil, J-Link, NCLT | [`Dockerfile.ci`](../.devcontainer/Dockerfile.ci) |
+| Installing nrfutil, J-Link, NCLT | the published devel image (see [zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)) |
 | Installing an NCS toolchain | `use-ncs` / `ncs.py` |
 
 For Docker and devcontainer specifics — mounts, USB passthrough, SDK switching, the CMake
