@@ -54,7 +54,7 @@ That's the important part. If you fall behind, don't panic and don't try to catc
 It also means the diff *is* the lesson:
 
 ```bash
-diff -r apps/02-ztest apps/03-emul
+diff -r apps/02-ztest apps/03-emul-gpio
 ```
 
 One new directory. Zero changed source files. That's the whole of Session 2.
@@ -63,22 +63,33 @@ One new directory. Zero changed source files. That's the whole of Session 2.
 
 ## The apps
 
+The main line, 00 to 06, is one story about the seam between test and hardware.
+
 | App | Session | What it is |
 |---|---|---|
 | [`00-hello`](apps/00-hello) | Pre-work · S1 | Bare `printk`. No devicetree, nothing to bind. Your setup check. |
 | [`01-blinky`](apps/01-blinky) | S1 | Button toggles an LED. One flat `main.c` — deliberately the code you'd inherit. |
 | [`02-ztest`](apps/02-ztest) | S2 | Same behaviour, logic cut out behind a seam. First `ztest` suite. |
-| [`03-emul`](apps/03-emul) | S2 | `gpio_emul` drives a fake button. A **test-only overlay** reroutes the alias. |
+| [`03-emul-gpio`](apps/03-emul-gpio) | S2 | `gpio_emul` drives a fake button. A **test-only overlay** reroutes the alias. |
 | [`04-shell-pytest`](apps/04-shell-pytest) | S3 | Shell command as a test backdoor. `pytest` asserts from outside the device. |
-| [`05-ci`](apps/05-ci) | S4 | Byte-identical to `04`. Frozen and known-green so CI is the only variable. |
+| [`05-pytest-advanced`](apps/05-pytest-advanced) | S3 | Fixtures, parametrization, markers. Plus the same suite with no twister at all. |
+| [`06-sensor`](apps/06-sensor) | S4 | I2C, a real vendor driver, and an emulated BME280 this repo had to write. |
+
+Apps 07 to 09 are a second thread, about what you write once you have found the
+seam. They can be read in any order and none of them needs a board.
+
+| App | What it is |
+|---|---|
+| [`07-unit-conventions`](apps/07-unit-conventions) | Naming, AAA, fixtures, table-driven cases, suite hooks. The habits, not the API. |
+| [`08-fff-mocks`](apps/08-fff-mocks) | FFF. Fake the function your code calls, not the chip. Zephyr already vendors it. |
+| [`09-gtest-gmock`](apps/09-gtest-gmock) | No Zephyr at all. Host C++ with GoogleTest and GoogleMock, in half a second. |
 
 Inside an app:
 
 ```
-apps/03-emul/
+apps/03-emul-gpio/
 ├── CMakeLists.txt
 ├── prj.conf                 application config
-├── app.overlay              devicetree defaults, all boards
 ├── boards/                  per-board overlays and configs
 │   ├── native_sim_native.overlay
 │   ├── nrf5340dk_nrf5340_cpuapp.overlay
@@ -87,7 +98,8 @@ apps/03-emul/
 ├── tests/                   suites for THIS app
 │   ├── unit/                ztest, native_sim only
 │   └── emul/                ztest + gpio_emul, with its own app.overlay
-└── README.md                what changed vs the previous app, and why
+├── README.md                what changed vs the previous app, and why
+└── EXERCISE.md              what to do if you finish early. Graded ★ to ★★★.
 ```
 
 **Tests live with the app they test.** Twister recurses, so `-T apps/` finds every suite in the repo without a registry to maintain. Each `tests/*/` subfolder is itself a small Zephyr app with its own `prj.conf` and `app.overlay` — that overlay is where the emulation gets swapped in.
@@ -116,13 +128,19 @@ west flash
 **Run one app's tests on `native_sim`**
 
 ```bash
-west twister -T apps/03-emul -p native_sim
+west twister -T apps/03-emul-gpio -p native_sim
 ```
 
 **Run everything** — what CI does
 
 ```bash
 west twister -T apps/ -p native_sim
+```
+
+**Run the host C++ suite** — [`09-gtest-gmock`](apps/09-gtest-gmock) has no `testcase.yaml`, so twister walks past it
+
+```bash
+cmake -S apps/09-gtest-gmock -B apps/09-gtest-gmock/build && cmake --build apps/09-gtest-gmock/build -j && ctest --test-dir apps/09-gtest-gmock/build --output-on-failure
 ```
 
 **Run against real hardware**
@@ -150,7 +168,9 @@ Edit [`hardware-map.yaml`](hardware-map.yaml) with your own probe serial and ser
 
 Two hard gates: everyone's emulated test green before the break, everyone's pytest suite green before Session 4.
 
-Finished a block early? → [`docs/EXERCISE.md`](docs/EXERCISE.md). Graded **★** to **★★★**, all self-serve, no board needed. The answers are in the Zephyr docs rather than in this repo — finding them is the exercise.
+Finished a block early? → the `EXERCISE.md` in the app folder you're in. Graded **★** to **★★★**, all self-serve, no board needed. The answers are in the Zephyr docs rather than in this repo — finding them is the exercise.
+
+Out of exercises too? Apps [`07`](apps/07-unit-conventions), [`08`](apps/08-fff-mocks) and [`09`](apps/09-gtest-gmock) are not on the clock and don't need a board.
 
 ---
 

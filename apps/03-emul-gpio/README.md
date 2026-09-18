@@ -1,11 +1,11 @@
 # 03-emul-gpio
 
-The same five button presses as `02-ztest`, except now they go through the
-real GPIO driver, the real interrupt callback and the real `blinky.c`. What is
-fake is the controller underneath, and a test-only overlay decided that.
+The same five button presses as `02-ztest`, except now they go through the real GPIO
+driver, the real interrupt callback and the real `blinky.c`. What is fake is the
+controller underneath, and a test-only overlay is what decided that.
 
-**What changed since `02-ztest`:** one new directory, `tests/emul/`. Zero
-changed files in `src/`. That is the whole of this session.
+**What changed since `02-ztest`:** one new directory, `tests/emul/`. Zero changed
+files in `src/`. Check it yourself:
 
 ```bash
 diff -r apps/02-ztest/src apps/03-emul-gpio/src
@@ -13,22 +13,21 @@ diff -r apps/02-ztest/src apps/03-emul-gpio/src
 
 ## What to learn here
 
-- What a test-only `app.overlay` is: a devicetree fragment that belongs to the
-  test application, not to the app, and that can reroute an alias the app
-  binds without the app knowing.
-- Why **both** aliases have to move. Reroute `sw0` and leave `led0`, and the
-  first toggle from the callback runs against a controller this build never
-  enabled. The comment in `tests/emul/app.overlay` is there because that
-  failure mode is a SIGSEGV with no useful message.
-- `gpio_emul_input_set()` and `gpio_emul_output_get()`: how a test drives a
+- What a test-only `app.overlay` is: a devicetree fragment that belongs to the test
+  application rather than to the app, and that can reroute an alias the app binds
+  without the app knowing.
+- Why **both** aliases have to move. Reroute `sw0` and leave `led0`, and the first
+  toggle from the callback runs against a controller this build never enabled. The
+  comment in `tests/emul/app.overlay` is there because that failure shows up as a
+  SIGSEGV with no useful message.
+- `gpio_emul_input_set()` and `gpio_emul_output_get()`, which are how a test drives a
   pin that does not exist.
-- Why the suite uses `setup` and not `before`. `gpio_emul` fires registered
-  callbacks straight out of `pin_configure()`, so re-running `blinky_init()`
-  between tests looks exactly like a phantom button press.
-- That `pressed_raw_level()` reads the polarity off `button.dt_flags` instead
-  of hardcoding 0. Flip `GPIO_ACTIVE_LOW` in the overlay and the test still
-  passes, which is the difference between a test that describes behaviour and
-  one that describes wiring.
+- Why the suite uses `setup` and not `before`. `gpio_emul` fires registered callbacks
+  straight out of `pin_configure()`, so re-running `blinky_init()` between tests looks
+  exactly like a phantom button press.
+- That `pressed_raw_level()` reads the polarity off `button.dt_flags` instead of
+  hardcoding a 0. Flip `GPIO_ACTIVE_LOW` in the overlay and the test still passes,
+  because it describes the behaviour rather than the wiring.
 
 ## Layout
 
@@ -77,8 +76,8 @@ INFO    - 2 test scenarios (2 configurations) selected
 INFO    - 2 of 2 executed test configurations passed (100.00%)
 ```
 
-`app03.blink.logic` and `app03.blink.emul`. The second one prints its five
-presses through `TC_PRINT`:
+`app03.blink.logic` and `app03.blink.emul`. The second one prints its five presses
+through `TC_PRINT`:
 
 ```
 START - test_presses_toggle_the_led
@@ -90,8 +89,8 @@ press 5: LED level 1
  PASS - test_presses_toggle_the_led
 ```
 
-Those levels are read back off an emulated output pin, not returned from a
-function. Nothing in `src/` knows.
+Those levels are read back off an emulated output pin, not returned from a function.
+Nothing in `src/` knows the difference.
 
 ## References
 
