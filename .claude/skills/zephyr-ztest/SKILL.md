@@ -208,20 +208,19 @@ mechanism is the linker: leave the real implementation out of `target_sources`, 
 #include <zephyr/fff.h>          /* vendored in Zephyr, nothing to add to west.yml */
 DEFINE_FFF_GLOBALS;
 
-FAKE_VALUE_FUNC(int, sensor_port_read, struct climate_raw *);
-FAKE_VOID_FUNC(alarm_port_set, bool);
-
-#define FFF_FAKES_LIST(FAKE) FAKE(sensor_port_read) FAKE(alarm_port_set)
+FAKE_VALUE_FUNC(int, auger_run, uint16_t);
 
 static void fff_before(void *f) {
     ARG_UNUSED(f);
-    FFF_FAKES_LIST(RESET_FAKE);
+    RESET_FAKE(auger_run);
     FFF_RESET_HISTORY();
 }
 ```
 
-List the fakes once in a macro and loop over them. The fake you forget to reset is the
-one that makes a test pass only when the whole suite runs in order.
+`apps/08-fff-mocks` is the worked example. With more than two or three fakes, list them
+once in a `FFF_FAKES_LIST(FAKE)` macro and loop `RESET_FAKE` over it. The fake you
+forget to reset is the one that makes a test pass only when the whole suite runs in
+order.
 
 What a fake records: `call_count`, `arg0_val`, `arg0_history[]`, `return_val`,
 `return_val_seq` via `SET_RETURN_SEQ`, and `custom_fake` when the function
@@ -233,8 +232,8 @@ only tell you its final state.
 
 This only works if your module calls **your** function. Zephyr's driver APIs are
 `static inline` over an API struct, so there is no symbol to replace. If you find
-yourself wanting to fake `sensor_sample_fetch()`, the answer is a port header, not a
-linker trick.
+yourself wanting to fake `gpio_pin_set_dt()` or `sensor_sample_fetch()`, the answer is a
+port header, not a linker trick.
 
 ## Before you call it done
 

@@ -2,132 +2,142 @@
 
 ## ★ warm-up
 
-1. **Link the real thing on purpose.** Add `src/alarm_port_led.c` to the
-   `target_sources()` call in `tests/fff/CMakeLists.txt`, then build:
+1. **Read what the fake recorded.** Add a print at the end of
+   `test_a_jam_is_retried_and_the_feed_still_counts` in `tests/fff/src/main.c`:
 
-   ```bash
-   west build -b native_sim/native -p -s apps/08-fff-mocks/tests/fff -d build_fff
+   ```c
+   printk("calls=%d arg0[0]=%u arg0[1]=%u\n", auger_run_fake.call_count,
+          auger_run_fake.arg0_history[0], auger_run_fake.arg0_history[1]);
    ```
 
-   *Check:* you can quote the duplicate symbol error, and explain in one sentence why
-   it is the whole mechanism this app relies on. Take the line back out when you are
-   done.
-
-2. **Forget a reset.** Remove `alarm_port_set` from the `FFF_FAKES_LIST` macro, then
-   run the suite:
-
    ```bash
-   west twister -T apps/08-fff-mocks -p native_sim
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output -v
    ```
 
-   *Check:* you can name a test that now fails, and confirm it passes when you run it
-   on its own. That combination is what state leaking between tests looks like. Put it
-   back when you are done.
+   *Check:* both history entries are 250, and you can say why they are the same value
+   even though the first call returned `-EIO`. Take the print back out afterwards.
 
-3. **Break the edge detection.** In `climate_service_tick()`, call
-   `alarm_port_set(next)` unconditionally instead of only on a change, then run the
-   suite.
+2. **Break the retry on purpose.** In `src/dispenser.h`, change
+   `DISPENSER_ATTEMPTS` from 2 to 1 and run the suite again.
 
-   *Check:* `test_alarm_is_driven_only_on_the_edge` fails and prints the call count.
-   Then name which of the other tests stayed green, and say why that is worth noticing.
-   Put it back when you are done.
+   ```bash
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output
+   ```
 
-4. **Fake a function that does not exist yet.** Declare
-   `int sensor_port_selftest(void)` in `sensor_port.h`, add a `FAKE_VALUE_FUNC` for it
-   in the test, and write a test for behaviour you have not implemented.
+   *Check:* exactly one test fails, and its name tells you what broke without opening
+   the file. Put the 2 back when you are done.
 
-   *Check:* the suite builds and the new test fails because the behaviour is missing,
-   not because the link broke.
+3. **Stop the `before` hook from resetting anything.** In `tests/fff/src/main.c`,
+   delete everything in the body of `fff_before` except the last line, so it becomes:
+
+   ```c
+   static void fff_before(void *f)
+   {
+   	ARG_UNUSED(f);
+   	auger_run_fake.return_val = 0;
+   }
+   ```
+
+   ```bash
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output
+   ```
+
+   Three of the four tests fail. Read the PASS and FAIL lines in the output rather than
+   the source file: ztest runs tests inside a suite alphabetically, not in the order
+   they appear.
+
+   *Check:* you can say why the one surviving test survived, and name the two pieces of
+   state that leaked between the others. Put the body back when you are done.
+
+   Leaving the hook registered but empty is deliberate. Removing it from the
+   `ZTEST_SUITE` line instead leaves `fff_before` defined and unused, and the build
+   fails with `-Werror=unused-function` before any test runs.
+
+4. **Ask for a portion the app never asks for.** Add a test that feeds 1 gram and
+   predict `call_count` and `d.dispensed_g` before you run it.
+
+   *Check:* your prediction matched. If it did not, the interesting question is whether
+   `dispenser_feed()` is wrong or your expectation was.
 
 ## ★★ go deeper
 
-1. **Use `custom_fake_seq`.** FFF supports a sequence of custom fakes, not just a
-   sequence of return values. Rewrite
-   `test_room_warming_up_raises_the_alarm_on_the_third_tick` to use one. The macro list
-   is in the header:
+1. **Add a second dependency and fake it too.** Give the dispenser a hopper level to
+   check: declare `uint16_t hopper_grams(void);` in a new `src/hopper_port.h`, have
+   `dispenser_feed()` refuse with `-ENOSPC` when the hopper holds less than the
+   portion, and write the shipping implementation in `src/hopper_port_sim.c`.
 
-   ```bash
-   grep -n "custom_fake_seq\|SET_CUSTOM_FAKE_SEQ" $ZEPHYR_BASE/subsys/testsuite/include/zephyr/fff.h
-   ```
+   In the test, add it to the fakes and to the reset list:
 
-   *Check:* you can say whether the result reads better than the stateful fake it
-   replaced, and why.
-
-2. **Assert on the argument a fake was given.** `sensor_port_read` takes an
-   out-pointer. Prove the service passes the same address every call, or prove it does
-   not.
-
-   *Check:* you used `arg0_history`, and you can say what `arg0_val` on its own would
-   have missed.
-
-3. **Add a retry policy and test it.** Make the service retry a failed read once before
-   counting an error. Assert the call count, not just the outcome.
-
-   *Check:* at least one existing test breaks, and you can say why that break is
-   correct rather than a regression.
-
-4. **Give `sensor_port.h` a third implementation.** A recorded trace read out of an
-   array, for replaying a fault you saw in the field. Wire it into the `if(CONFIG_...)`
-   block in `CMakeLists.txt`.
-
-   *Check:* CMake selects it, the app still builds, and `git status` shows you changed
-   no test file.
-
-5. **Port one test to the emulator style.** Take
-   `test_read_error_is_counted_and_returned` and write the equivalent against
-   `apps/06-sensor`'s emulated BME280.
-
-   ```bash
-   time west twister -T apps/08-fff-mocks -p native_sim
+   ```c
+   FAKE_VALUE_FUNC(uint16_t, hopper_grams);
    ```
 
    ```bash
-   time west twister -T apps/06-sensor -p native_sim
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output -v
    ```
 
-   *Check:* you have both times written down, and a sentence on what the extra seconds
-   bought you.
+   *Check:* twister passes with `src/hopper_port_sim.c` absent from
+   `tests/fff/CMakeLists.txt`, and you have a test that proves the motor is never told
+   to run on an empty hopper.
+
+2. **Use a `custom_fake` for an out-parameter.** `return_val` covers a return code and
+   nothing else. Change `auger_run()` to `int auger_run(uint16_t grams, uint16_t *actual)`
+   so the motor can report it moved less than asked, then make `dispenser_feed()` count
+   `*actual` rather than `grams`.
+
+   A fake with a body is the only way to fill that pointer:
+
+   ```c
+   static int short_turn(uint16_t grams, uint16_t *actual) { *actual = grams / 2; return 0; }
+   ```
+
+   ```bash
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output -v
+   ```
+
+   *Check:* `auger_run_fake.custom_fake = short_turn;` in one test makes
+   `d.dispensed_g` half the portion, and the other tests still pass unchanged.
+
+3. **Compare the two frameworks on the same code.** Build the C++ version and read its
+   test file next to this one:
+
+   ```bash
+   west twister -T apps/09-gtest-gmock -p native_sim -O /tmp/tw --clobber-output -v
+   ```
+
+   *Check:* you can point at the line in `apps/09-gtest-gmock/tests/gtest/src/test_dispenser.cpp`
+   that fails the test when the auger is called the wrong number of times, and say why
+   there is no equivalent single line in the FFF suite.
 
 ## ★★★ off the map
 
-1. **Fake a Zephyr API directly and find out why it hurts.** Try to `FAKE_VALUE_FUNC`
-   around `sensor_sample_fetch()` instead of around your own port. Read the declaration
-   first:
+1. **Move the seam and see what it costs.** Rewrite `dispenser.c` so it calls
+   `gpio_pin_set_dt()` directly instead of `auger_run()`, then try to keep the four
+   tests passing.
+
+   *Why it is interesting:* you end up either faking a Zephyr API you do not own, or
+   building a `gpio_emul` overlay the way `apps/03-emul-gpio` does. Both work. Working
+   out which one you would actually ship, and at what point in a project you would
+   decide, is the question worth sitting with.
+
+2. **Decide what these tests are worth.** Delete `src/auger_port_sim.c` entirely and run
+   the suite.
 
    ```bash
-   grep -n -B4 "int sensor_sample_fetch" $ZEPHYR_BASE/include/zephyr/drivers/sensor.h
+   west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output
    ```
 
-   *Why it is interesting:* it is `static inline` over an API struct, so there is no
-   symbol to replace. Working out exactly why is the strongest argument there is for
-   the port header.
-
-2. **Decide how many ports a module should have.** This service has two. Add a clock
-   port so the service can time out, then a logging port, then a persistence port, and
-   notice where it stops being worth it.
-
-   *Why it is interesting:* every port is a file, a fake and an indirection, and
-   "inject everything" produces code nobody can follow.
-
-3. **Work out what a fake cannot catch.** List five bugs that would ship with this
-   suite green. Be specific about each one.
-
-   *Why it is interesting:* it is the list you hand to whoever asks why the
-   hardware-in-the-loop suite still exists.
-
-4. **Compare FFF against gmock on your own terms.** Read the C++ file that asserts the
-   same fourteen things:
-
-   ```bash
-   less ../09-gtest-gmock/tests/gtest/src/test_service.cpp
-   ```
-
-   Write down which file you would rather maintain, and which you would rather debug.
-
-   *Why it is interesting:* those may well be different answers.
+   *Why it is interesting:* it still passes, because the test build never linked that
+   file. Write down, in one sentence, what would have to break for this suite to notice,
+   and what other test you would need to cover the rest. `apps/06-sensor` is one answer.
+   Restore the file when you are done, the app build needs it.
 
 ## If you want to go further
 
-- [FFF README](https://github.com/meekrosoft/fff) - every macro, including `DECLARE_FAKE_*` for splitting fakes across files, and `FFF_ARG_HISTORY_LEN`.
-- [`fff.h` in Zephyr](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/testsuite/include/zephyr/fff.h) - the vendored copy that is already on your include path.
-- [`docs/concepts/testing-levels.md`](../../docs/concepts/testing-levels.md) - when to fake a dependency and when to emulate the hardware instead.
+- [FFF README](https://github.com/meekrosoft/fff) - the full macro list, including
+  `FAKE_VOID_FUNC`, argument history for more than one parameter, and the value/void
+  variants for variadic functions.
+- [`$ZEPHYR_BASE/include/zephyr/fff.h`](https://github.com/zephyrproject-rtos/zephyr/blob/main/include/zephyr/fff.h) -
+  the copy your build is using. The macro expansion is worth reading once.
+- [Test doubles, Martin Fowler](https://martinfowler.com/bliki/TestDouble.html) - stub,
+  fake, spy and mock, and where FFF sits among them.

@@ -1,10 +1,10 @@
 tests:
-  app08.climate.fff:
+  app08.dispenser.fff:
     # No devicetree node is bound and no driver is linked, so this would run
-    # on anything. native_sim is simply the fastest place to find out.
+    # anywhere. native_sim is simply the fastest place to find out.
     platform_allow:
       - native_sim
     tags:
-      - climate
+      - feeder
       - unit
       - fff

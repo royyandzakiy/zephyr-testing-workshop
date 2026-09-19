@@ -1,12 +1,12 @@
 tests:
-  app09.climate.gtest:
+  app09.feeder.gtest:
     # native_sim only. On a real target you would have to find a standard
     # library, a heap and 32 kB of stack for the test runner, which is the
     # conversation the README's Trivia section is about.
     platform_allow:
       - native_sim
     tags:
-      - climate
+      - feeder
       - unit
       - gtest
       - cpp

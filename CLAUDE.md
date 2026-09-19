@@ -74,8 +74,8 @@ are a second group about what you write once you have found the seam.
 | `05-pytest-advanced` | fixtures, parametrize, markers, plus the same suite with no twister |
 | `06-sensor` | I2C, the real Bosch BME280 driver, and an emulated chip written here |
 | `07-unit-conventions` | ztest conventions over a pond feeder schedule |
-| `08-fff-mocks` | FFF. Fake your own port functions, not the chip. |
-| `09-gtest-gmock` | GoogleTest and GoogleMock compiled into a Zephyr image |
+| `08-fff-mocks` | FFF over the feeder's auger. Fake your own port function, not the chip. |
+| `09-gtest-gmock` | the same auger in C++, with GoogleTest and GoogleMock in a Zephyr image |
 
 ## Reference docs
 

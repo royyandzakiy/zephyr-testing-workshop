@@ -173,8 +173,8 @@ Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
 | [`05-pytest-advanced`](apps/05-pytest-advanced) | pytest fixtures, parametrization and markers. Also the same assertions with no Twister. |
 | [`06-sensor`](apps/06-sensor) | I2C, the real Bosch BME280 driver, and an emulated chip written here because Zephyr ships none. |
 | [`07-unit-conventions`](apps/07-unit-conventions) | ztest conventions: naming, AAA, fixtures, suite hooks, table-driven cases. |
-| [`08-fff-mocks`](apps/08-fff-mocks) | FFF. Replacing the functions your module calls, rather than the chip underneath. |
-| [`09-gtest-gmock`](apps/09-gtest-gmock) | GoogleTest and GoogleMock compiled into a Zephyr image. |
+| [`08-fff-mocks`](apps/08-fff-mocks) | FFF over the feeder's auger motor. Replacing the function your module calls, rather than the chip underneath. |
+| [`09-gtest-gmock`](apps/09-gtest-gmock) | The same auger in C++, with GoogleTest and GoogleMock compiled into a Zephyr image. |
 
 Each folder is a complete application and can be opened on its own.
 

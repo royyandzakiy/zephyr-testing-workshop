@@ -3,9 +3,6 @@
 
 ## To Do
 
-- improve main readme to make it interesting
-- cleanup docs notes, make it a nice wiki or smthn
-- ci scripts, make also a nice list of ci scripts to choose from
 
 ## Hold
 

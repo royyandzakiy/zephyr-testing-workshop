@@ -1,37 +1,30 @@
 # 09-gtest-gmock
 
-This project is the same climate service as `08-fff-mocks`, written in C++ at the 2b
-standard, with GoogleTest and GoogleMock instead of ztest and FFF. You will build it
+This project is the same pond feeder dispenser as `08-fff-mocks`, written in C++ at the
+2b standard, with GoogleTest and GoogleMock instead of ztest and FFF. You will build it
 for native_sim and run the suite through twister, the same as every other app here. It
-does not use ztest, so twister decides whether it passed by reading the console.
+does not use ztest, so twister decides whether the run passed by reading the console.
 
-**What changed since `08-fff-mocks`:** the ports became abstract base classes and
-arrive through the constructor instead of through the linker. The assertions are the
-same ones, so you can read the two directories side by side.
+**What changed since `08-fff-mocks`:** the auger became an abstract base class and
+arrives through the constructor instead of through the linker. The behaviour under test
+is the same, so you can open the two test files side by side.
 
 ## What to learn here
 
-- Getting a third-party C++ test framework into a Zephyr build, and the four Kconfig
-  symbols it needs first. See [Trivia](#trivia) below.
+- Getting a third-party C++ test framework into a Zephyr build, and the Kconfig symbols
+  it needs first. See [Trivia](#trivia) below.
 - `CONFIG_REQUIRES_FULL_LIBCPP`, and why the symbol that looks right,
   `CONFIG_GLIBCXX_LIBCPP`, is silently discarded on native_sim.
-- `CONFIG_STD_CPP2B`, and what it turns on. `std::to_underlying` in
-  `include/climate/logic.hpp` is C++23 and does not compile without it.
-- Constructor injection versus link-time substitution. A vtable lets two
-  implementations live in the same binary and lets each test hand the service a
-  different one. FFF cannot, because a program has exactly one symbol called
-  `sensor_port_read`.
-- `EXPECT_CALL` declaring the expectation up front, with the mock failing the test at
-  destruction if it was not met. FFF records, and you assert afterwards.
-- `NiceMock`, the naggy default, and `StrictMock`. A bare mock warns about every
-  uninteresting call and still passes, which is how a large gmock suite ends up with
-  hundreds of warnings nobody reads.
-- `DoAll(SetArgReferee<0>(r), Return(0))`, which is the gmock answer to the custom
-  fake you hand-wrote in app 08.
-- `TEST_P` with a name generator, and `PrintTo`, without which the parameterized cases
-  print as a hex dump of your struct.
-- Compile-time tests. Both functions in `logic.hpp` are `constexpr`, so eight of the
-  assertions in `test_logic.cpp` are `static_assert` and never run at all.
+- Constructor injection against link-time substitution. A vtable lets two
+  implementations live in the same binary, so each test can hand the dispenser a
+  different one. FFF cannot do that, because a program has exactly one symbol called
+  `auger_run`.
+- `EXPECT_CALL` declaring the expectation before the call, with the mock failing the
+  test at destruction if it was not met. FFF records, and you assert afterwards.
+- `TEST_P` with a name generator, which gives one result per row of a table. ztest has
+  no parametrization, so a table there is one test with a loop inside it.
+- `static_assert` over a `constexpr` function, checked while the file compiles and never
+  run.
 - `harness: console` in `testcase.yaml`, which is how twister runs a suite that is not
   ztest.
 
@@ -41,16 +34,13 @@ same ones, so you can read the two directories side by side.
 09-gtest-gmock/
 ├── CMakeLists.txt            find_package(Zephyr), project(... CXX)
 ├── prj.conf                  CONFIG_CPP, CONFIG_STD_CPP2B, REQUIRES_FULL_LIBCPP
-├── boards/
-│   └── native_sim_native.conf
-├── include/climate/
-│   ├── reading.hpp
-│   ├── ports.hpp             ISensorPort, IAlarmPort, plus two concepts
-│   ├── logic.hpp             constexpr thresholds and two constexpr functions
-│   └── service.hpp           the unit under test
+├── include/feeder/
+│   ├── auger.hpp             IAuger, one pure virtual function
+│   ├── portion.hpp           the Portion enum and two constexpr functions
+│   └── dispenser.hpp         the unit under test
 ├── src/
-│   ├── service.cpp           same behaviour as 08-fff-mocks, line for line
-│   ├── sawtooth_sensor.hpp   a production impl, not a test double
+│   ├── dispenser.cpp         same job as apps/08-fff-mocks/src/dispenser.c
+│   ├── belt_auger.hpp        a shipping implementation, not a test double
 │   └── main.cpp              the app. A Zephyr main() in C++.
 └── tests/
     └── gtest/
@@ -58,9 +48,9 @@ same ones, so you can read the two directories side by side.
         ├── prj.conf          exceptions, RTTI, a full libstdc++, a big heap
         ├── testcase.yaml     harness: console, matching the [ PASSED ] line
         └── src/
-            ├── main.cpp      InitGoogleMock, RUN_ALL_TESTS, nsi_exit
-            ├── test_logic.cpp    static_assert, TEST, TEST_P, TEST_F, matchers
-            └── test_service.cpp  MOCK_METHOD, EXPECT_CALL, InSequence, Strict/Nice
+            ├── main.cpp            InitGoogleMock, RUN_ALL_TESTS, nsi_exit
+            ├── test_portion.cpp    TEST_P over a table, plus static_assert
+            └── test_dispenser.cpp  MOCK_METHOD and EXPECT_CALL
 ```
 
 ## Run it
@@ -70,65 +60,79 @@ cd apps/09-gtest-gmock
 ```
 
 ```bash
-west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
+west build -b native_sim/native -p
 ```
 
-The suite:
-
 ```bash
-west twister -T apps/09-gtest-gmock -p native_sim
+./build/zephyr/zephyr.exe
 ```
 
-Or build and run it directly, which is the faster loop while you are editing tests:
-
 ```bash
-west build -b native_sim/native -p -s apps/09-gtest-gmock/tests/gtest -d build_gt && ./build_gt/zephyr/zephyr.exe
+west twister -T apps/09-gtest-gmock -p native_sim -O /tmp/tw --clobber-output
 ```
 
-The first configure downloads googletest. On a machine with no network, clone it once
-and point at your copy:
+The first build downloads googletest through `FetchContent`. On a machine with no
+network, clone it once and point the build at it:
 
 ```bash
-west build -b native_sim/native -p -s apps/09-gtest-gmock/tests/gtest -d build_gt -- -DGTEST_SRC_DIR=/path/to/googletest
+west build -b native_sim/native -p apps/09-gtest-gmock/tests/gtest -- -DGTEST_SRC_DIR=/path/to/googletest
 ```
 
 ## Expected outcome
 
-The application:
+The app feeds a large portion once a second. A 750 g portion is three turns of a 250 g
+auger, and the simulated auger jams every seventh turn:
 
 ```
 *** Booting Zephyr OS build v4.4.2 ***
-Climate service starting
-T: 24500 mC | P: 100650 Pa | H: 56500 m%RH | ALARM OFF
-T: 25000 mC | P: 100650 Pa | H: 58000 m%RH | ALARM OFF
+Pond feeder dispenser starting
+auger: 250 g
+auger: 250 g
+auger: 250 g
+feed -> 0 | total 750 g | jams 0
+auger: 250 g
+auger: 250 g
+auger: 250 g
+feed -> 0 | total 1500 g | jams 0
+auger: JAM
+feed -> -5 | total 1500 g | jams 1
 ```
 
-The suite prints GoogleTest's own output and exits with code 0:
+The suite, which twister reads off the console:
 
 ```
-[----------] Global test environment tear-down
-[==========] 30 tests from 4 test suites ran. (0 ms total)
-[  PASSED  ] 30 tests.
+[       OK ] Dispenser.SplitsAPortionIntoWholeTurns (0 ms)
+[       OK ] Dispenser.ZeroGramsNeverReachesTheMotor (0 ms)
+[       OK ] Dispenser.AJamStopsTheRemainingTurns (0 ms)
+[       OK ] Portion/TurnsFor.MatchesTheTable/NothingAsked (0 ms)
+[       OK ] Portion/TurnsFor.MatchesTheTable/OnePelletStillCostsAWholeTurn (0 ms)
+[       OK ] Portion/TurnsFor.MatchesTheTable/ExactlyOneTurn (0 ms)
+[       OK ] Portion/TurnsFor.MatchesTheTable/OneOverRoundsUp (0 ms)
+[       OK ] Portion/TurnsFor.MatchesTheTable/ALargePortion (0 ms)
+[  PASSED  ] 8 tests.
 ```
 
-That last line is what `testcase.yaml` matches on, so twister reports:
-
-```
-INFO    - 1 of 1 executed test configurations passed (100.00%)
-```
-
-The nine parameterized cases print with the names the generator gave them:
-
-```
-[ RUN      ] Thresholds/AlarmHysteresis.MatchesTheTruthTable/exactly_on_the_temp_trip
-[       OK ] Thresholds/AlarmHysteresis.MatchesTheTruthTable/exactly_on_the_temp_trip (0 ms)
-```
-
-Thirty tests run in under a millisecond. The image they run in is **6.8 MB**, against
-roughly 100 kB for the ztest suite in app 07, and the twister run takes about 90
-seconds because almost all of it is compiling GoogleTest.
+Twister reports `1 of 1 executed test configurations passed`, and **one** test case, not
+eight. `harness: console` gives one result for the whole binary.
 
 ## Trivia
+
+### The same behaviour, two frameworks
+
+`tests/gtest/src/test_dispenser.cpp` and
+[`apps/08-fff-mocks/tests/fff/src/main.c`](../08-fff-mocks/tests/fff/src/main.c) cover
+the same three questions. The difference is when the expectation gets written down.
+
+| | FFF | gmock |
+|---|---|---|
+| declaring what you expect | after the call, by reading `auger_run_fake.call_count` | before the call, with `EXPECT_CALL` |
+| an unmet expectation | nothing happens unless you wrote an assertion for it | fails the test when the mock is destroyed |
+| returning different values per call | `SET_RETURN_SEQ(auger_run, arr, n)` | `.WillOnce(Return(0)).WillOnce(Return(-EIO))` |
+| checking an argument | `zassert_equal(auger_run_fake.arg0_val, 250)` | `EXPECT_CALL(auger, run(250))`, part of the match |
+| a call that should not happen | assert `call_count == 0` afterwards | `EXPECT_CALL(auger, run(_)).Times(0)` |
+| what it costs to run | a header, no C++ runtime | exceptions, RTTI, a full standard library, 256 kB of heap |
+
+The last row is the one that decides it on a real target.
 
 ### Getting GoogleTest into a Zephyr build
 
@@ -141,7 +145,7 @@ flowchart TD
     fc --> src["gtest-all.cc<br/>gmock-all.cc"]
 
     tests["tests/gtest/src/*.cpp"] --> app["app"]
-    svc["src/service.cpp"] --> app
+    svc["src/dispenser.cpp"] --> app
     src --> app
 
     kcfg["REQUIRES_FULL_LIBCPP<br/>-> EXTERNAL_LIBCPP"] --> img["zephyr.exe"]
@@ -179,14 +183,14 @@ native_sim uses neither libc, so Kconfig drops the symbol without a word and lea
 Kconfig:
 
 ```
-include/climate/ports.hpp:18:10: fatal error: concepts: No such file or directory
+tests/gtest/src/test_portion.cpp:11:10: fatal error: string: No such file or directory
 ```
 
 The second sign is in the compiler command line, `-nostdinc++ -isystem
-.../lib/cpp/minimal/include`, and the honest answer is in `build/zephyr/.config`,
-where `CONFIG_GLIBCXX_LIBCPP` simply is not present. This is the same lesson
-[`apps/00-hello/EXERCISE.md`](../00-hello/EXERCISE.md) warm-up 2 sets up with
-`CONFIG_PRINTK`, and it cost a build to relearn here.
+.../lib/cpp/minimal/include`, and the honest answer is in `build/zephyr/.config`, where
+`CONFIG_GLIBCXX_LIBCPP` simply is not present and `CONFIG_MINIMAL_LIBCPP=y` is. This is
+the same lesson [`apps/00-hello/EXERCISE.md`](../00-hello/EXERCISE.md) warm-up 2 sets up
+with `CONFIG_PRINTK`, and it cost a build to relearn here.
 
 The symbol that works on a native target is `CONFIG_REQUIRES_FULL_LIBCPP`, because:
 
@@ -204,13 +208,13 @@ grep LIBCPP build/zephyr/.config
 
 ### The Kconfig symbols, and why each one is there
 
-`tests/gtest/prj.conf` is longer than any other test in this repo. Every line earns
-its place:
+`tests/gtest/prj.conf` is longer than any other test in this repo. Every line earns its
+place:
 
 | Symbol | Needed because |
 |---|---|
 | `CONFIG_CPP` | there is C++ in the image at all |
-| `CONFIG_STD_CPP2B` | `std::to_underlying` and the concepts in `ports.hpp` |
+| `CONFIG_STD_CPP2B` | `std::to_underlying` in `include/feeder/portion.hpp` is C++23 |
 | `CONFIG_CPP_EXCEPTIONS` | GoogleTest throws to unwind out of a failed assertion in a subroutine |
 | `CONFIG_CPP_RTTI` | the matcher machinery uses `dynamic_cast` |
 | `CONFIG_REQUIRES_FULL_LIBCPP` | `std::string`, `std::vector` and streams, which gtest uses throughout |
@@ -224,13 +228,13 @@ ask for. On a Cortex-M with 64 kB of RAM, the last three rows are where it stops
 ### Ending the run
 
 `main()` returning does not end a native_sim process. The kernel carries on with the
-idle thread, and the binary sits there until something kills it, which for twister
-means waiting out the full timeout on every run. `tests/gtest/src/main.cpp` calls
+idle thread, and the binary sits there until something kills it, which for twister means
+waiting out the full timeout on every run. `tests/gtest/src/main.cpp` calls
 `nsi_exit(failures)` from `<nsi_main.h>`, the native simulator's own shutdown, and
 passes the GoogleTest failure count out as the process exit code.
 
-ztest does this for you. It is one of several small things you give up by bringing
-your own framework.
+ztest does this for you. It is one of several small things you give up by bringing your
+own framework.
 
 ### Two harnesses, one twister
 
@@ -250,21 +254,20 @@ harness_config:
 ```
 
 One pass or fail for the whole binary rather than per test, which is the cost.
-GoogleTest prints `[  FAILED  ]` and a non-zero count when anything breaks, so the
-line never appears and twister reports the scenario as failed.
+GoogleTest prints `[  FAILED  ]` and a non-zero count when anything breaks, so the line
+never appears and twister reports the scenario as failed.
 
-Note the single quotes. In a double-quoted YAML scalar a backslash starts an escape,
-so `\[` is a parse error and you would have to write `\\[` instead.
+Note the single quotes. In a double-quoted YAML scalar a backslash starts an escape, so
+`\[` is a parse error and you would have to write `\\[` instead.
 
 ## References
 
 | | |
 |---|---|
-| [GoogleTest primer](https://google.github.io/googletest/primer.html) | `TEST`, `TEST_F`, and the `EXPECT_` versus `ASSERT_` distinction |
-| [Advanced GoogleTest](https://google.github.io/googletest/advanced.html) | `TEST_P`, `PrintTo`, typed tests |
-| [gMock for dummies](https://google.github.io/googletest/gmock_for_dummies.html) | the shortest path into `MOCK_METHOD` and `EXPECT_CALL` |
-| [gMock cookbook](https://google.github.io/googletest/gmock_cook_book.html) | `NiceMock` / `StrictMock`, `DoAll`, `SetArgReferee`, and matchers |
+| [GoogleTest primer](https://google.github.io/googletest/primer.html) | `TEST`, `TEST_F`, the assertion macros, and the difference between `ASSERT_` and `EXPECT_` |
+| [gMock for dummies](https://google.github.io/googletest/gmock_for_dummies.html) | `MOCK_METHOD`, `EXPECT_CALL`, and how a mock verifies itself |
 | [gMock cheat sheet](https://google.github.io/googletest/gmock_cheat_sheet.html) | the one-page summary of matchers, actions and cardinalities |
-| [Zephyr C++ support](https://docs.zephyrproject.org/latest/develop/languages/cpp/index.html) | every `CONFIG_CPP_*` symbol and what each standard library option contains |
-| [Twister harnesses](https://docs.zephyrproject.org/latest/develop/test/twister.html#harnesses) | `console`, `one_line` versus `multi_line`, and the other harness types |
-| [apps/08-fff-mocks](../08-fff-mocks) | the same assertions in C, for comparison |
+| [Value-parameterized tests](https://google.github.io/googletest/advanced.html#value-parameterized-tests) | `TEST_P`, `INSTANTIATE_TEST_SUITE_P` and the name generator used in `test_portion.cpp` |
+| [Zephyr C++ support](https://docs.zephyrproject.org/latest/develop/languages/cpp/index.html) | which parts of the standard library exist on which libc, and what `CONFIG_MINIMAL_LIBCPP` leaves out |
+| [Twister harnesses](https://docs.zephyrproject.org/latest/develop/test/twister.html#harnesses) | `console`, `ztest`, `pytest` and the rest, and what `harness_config` takes |
+| [`apps/08-fff-mocks/README.md`](../08-fff-mocks/README.md) | the same dispenser with FFF, in C |

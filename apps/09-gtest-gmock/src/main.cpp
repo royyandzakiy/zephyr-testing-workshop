@@ -1,42 +1,31 @@
 // src/main.cpp
 //
-// The application. An ordinary Zephyr main(), written in C++, wiring the
-// sawtooth sensor to the service and ticking once a second.
+// An ordinary Zephyr main(), written in C++, wiring an auger to a dispenser
+// and feeding once a second.
 //
-// This file is the composition root: the only place that knows both which
-// port implementations exist and which service uses them. tests/gtest brings
-// its own main and its own implementations, which is why the service never had
-// to know.
+// This is the composition root: the only place that knows both which auger
+// implementation exists and which dispenser uses it. tests/gtest brings its
+// own main and its own auger, which is why the dispenser never had to know.
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-#include "climate/service.hpp"
-#include "sawtooth_sensor.hpp"
+#include "belt_auger.hpp"
+#include "feeder/dispenser.hpp"
+#include "feeder/portion.hpp"
 
 int main(void)
 {
-    printk("Climate service starting\n");
+    printk("Pond feeder dispenser starting\n");
 
-    climate::SawtoothSensor sensor;
-    climate::LedAlarm alarm;
-    climate::Service svc(sensor, alarm);
-
-    if (!sensor.ready()) {
-        printk("Error: sensor port not ready\n");
-        return 0;
-    }
+    feeder::BeltAuger auger;
+    feeder::Dispenser dispenser(auger);
 
     while (true) {
-        const int ret = svc.tick();
+        const int ret = dispenser.feed(feeder::gramsOf(feeder::Portion::Large));
 
-        if (ret != 0) {
-            printk("tick failed: %d (errors=%u)\n", ret, svc.errors());
-        } else {
-            printk("T: %d mC | P: %d Pa | H: %d m%%RH | ALARM %s\n",
-                   svc.last().temp_mc, svc.last().press_pa, svc.last().hum_mrh,
-                   svc.alarm() ? "ON" : "OFF");
-        }
+        printk("feed -> %d | total %u g | jams %u\n",
+               ret, dispenser.dispensed(), dispenser.jams());
 
         k_sleep(K_SECONDS(1));
     }

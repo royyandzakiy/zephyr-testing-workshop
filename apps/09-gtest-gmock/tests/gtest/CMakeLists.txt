@@ -12,7 +12,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(climate_gtest CXX)
+project(feeder_gtest CXX)
 
 # --------------------------------------------------------------------------
 # GoogleTest source.
@@ -76,15 +76,14 @@ zephyr_include_directories(
 # testing::. One target has no such problem.
 #
 # src/main.cpp of the APP is not here. This directory brings its own main, and
-# the mocks in test_service.cpp are the only ISensorPort and IAlarmPort in this
-# binary.
+# MockAuger in test_dispenser.cpp is the only IAuger in this binary.
 # --------------------------------------------------------------------------
 
 target_sources(app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_logic.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_portion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/test_dispenser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src/dispenser.cpp
 
     ${GTEST_SRC_DIR}/googletest/src/gtest-all.cc
     ${GTEST_SRC_DIR}/googlemock/src/gmock-all.cc

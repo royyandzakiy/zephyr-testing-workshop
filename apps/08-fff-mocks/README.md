@@ -1,149 +1,170 @@
 # 08-fff-mocks
 
-This project tests a climate service by replacing the functions it calls, instead of
-replacing the chip underneath it. You will run one suite of fourteen tests that has no
-driver, no bus and no devicetree in it at all. The tool is FFF, the Fake Function
-Framework, which Zephyr already vendors as `<zephyr/fff.h>`, so there is nothing to
-install.
+This project is the part of a pond feeder that turns the motor, plus a ztest suite that
+replaces the motor with a fake. You will run the suite and read what the fake recorded
+about how it was called. There is no GPIO and no board overlay here, because nothing in
+this app binds a devicetree node.
 
-**What changed since `06-sensor`:** the same climate domain, restructured around two
-port headers. `sensor_port.h` and `alarm_port.h` have declarations and no
-implementation attached, and `climate_service.c` depends on nothing else.
-`tests/fff/` links the service and defines those symbols itself.
+**What changed since `07-unit-conventions`:** the feeder in app 07 decides when to feed
+and calls nothing. This one calls a motor, so its tests need something to stand in for
+the motor.
 
 ## What to learn here
 
-- The mechanism, which is link-time and smaller than it looks. See
-  [Trivia](#trivia) below.
-- What a fake records for you: `call_count`, `arg0_val`, `arg0_history[]`,
-  `return_val`, `return_val_seq`, and `custom_fake` when the function communicates
-  through an out-parameter.
-- The assertion an emulator cannot make, which is "nothing ever tried to change it".
-  An LED can only tell you its final state.
-- That making a dependency misbehave is a one-line change here.
-  `SET_RETURN_SEQ(sensor_port_read, seq, 4)` gives you two failures, a success and a
-  failure, which is fiddly to arrange with an emulated BME280.
-- Why the reset lives in a `FFF_FAKES_LIST` macro rather than as three `RESET_FAKE`
-  lines.
-- What this technique does **not** tell you. Every test here still passes with
-  `sensor_port_bme280.c` deleted, and the last test in the file says so in its own
-  name.
+- Where a fake comes from: `src/auger_port.h` declares `auger_run()` and defines it
+  nowhere, so the test file is free to define it instead. See [Trivia](#trivia) below.
+- The four things FFF records for you: how many times a function was called, the
+  argument on the last call, the argument on each call, and what it hands back.
+- `SET_RETURN_SEQ`, for a dependency that fails once and then recovers. The same
+  scenario with a real motor is a morning of work.
+- Asserting that a function was **not** called. `test_zero_grams_never_reaches_the_motor`
+  does nothing else.
+- Why `tests/fff/CMakeLists.txt` deliberately leaves `src/auger_port_sim.c` out of the
+  source list, and what the linker does about the missing symbol.
+- What this kind of test cannot tell you, which is anything about whether the motor is
+  wired to the right pin.
 
 ## Layout
 
 ```
 08-fff-mocks/
 ├── src/
-│   ├── sensor_port.h            THE SEAM. Declaration, no implementation.
-│   ├── alarm_port.h             THE OTHER SEAM. Where the decision goes out.
-│   ├── climate_service.{c,h}    THE UNIT UNDER TEST. Includes no Zephyr header.
-│   ├── climate_logic.{c,h}      copied from 06-sensor, unchanged
-│   ├── sensor_port_bme280.c     production impl, built when CONFIG_BME280
-│   ├── sensor_port_sim.c        production impl, built otherwise
-│   ├── alarm_port_led.c         production impl, an LED on the led0 alias
-│   └── main.c                   the composition root, and the only file that
-│                                knows about both halves
+│   ├── auger_port.h        one function, declared and not defined
+│   ├── dispenser.{c,h}     feed a portion, retry once on a jam
+│   ├── auger_port_sim.c    the shipping implementation, jams every third call
+│   └── main.c              feeds every second so the app runs
 └── tests/
     └── fff/
-        ├── CMakeLists.txt       read what it links, then what it does not
-        ├── testcase.yaml        app08.climate.fff
-        └── src/main.c           the fakes and fourteen tests
+        ├── CMakeLists.txt  read what is MISSING from target_sources
+        ├── testcase.yaml   app08.dispenser.fff
+        └── src/main.c      the fake, and four tests
 ```
-
-`tests/fff/prj.conf` has no `CONFIG_GPIO`, no `CONFIG_I2C` and no `CONFIG_SENSOR`.
-Nothing under test touches a driver, so nothing enables one.
 
 ## Run it
 
 ```bash
-west twister -T apps/08-fff-mocks -p native_sim
+cd apps/08-fff-mocks
 ```
-
-The app, with `src/sensor_port_sim.c` selected automatically because `CONFIG_BME280`
-is off:
 
 ```bash
-cd apps/08-fff-mocks && west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
+west build -b native_sim/native -p
 ```
+
+```bash
+./build/zephyr/zephyr.exe
+```
+
+```bash
+west twister -T apps/08-fff-mocks -p native_sim -O /tmp/tw --clobber-output
+```
+
+The `-O /tmp/tw --clobber-output` part is only needed on a Windows bind mount. See
+[`docs/troubleshooting.md`](../../docs/troubleshooting.md#twister).
 
 ## Expected outcome
 
-One scenario, `app08.climate.fff`, grouped into five sections in the source:
-
-| Section | Tests |
-|---|---|
-| call counts | the sensor is read once; a quiet reading never touches the alarm |
-| argument capture | the alarm is raised with `true`, on the edge only, in the right order |
-| return sequences | errors counted, a raised alarm survives a read failure, three in a row latch a fault |
-| stateful custom fake | a room warming up raises the alarm on the third tick |
-| the limit | the one that says what none of the others prove |
-
-The app prints a sawtooth and flips the alarm as it crosses 30 degC:
+The app, with the simulated auger jamming every third call:
 
 ```
-Climate service starting
-T: 24500 mC | P: 100650 Pa | H: 56500 m%RH | ALARM OFF
-...
-alarm: ON
-T: 30500 mC | P: 100650 Pa | H: 74500 m%RH | ALARM ON
+*** Booting Zephyr OS build v4.4.2 ***
+Pond feeder dispenser starting
+auger: 250 g
+feed -> 0 | total 250 g | jams 0
+auger: 250 g
+feed -> 0 | total 500 g | jams 0
+auger: JAM
+auger: 250 g
+feed -> 0 | total 750 g | jams 0
 ```
 
-> Not yet run in the devcontainer. `<zephyr/fff.h>` is on the include path whenever
-> `CONFIG_ZTEST=y`, so there is nothing to add to `west.yml`, but treat the first run
-> as part of the exercise.
+The third feed took two turns and still succeeded, which is the retry in
+`dispenser_feed()`.
+
+The suite:
+
+```
+SUITE PASS - 100.00% [dispenser_fff]: pass = 4, fail = 0, skip = 0, total = 4
+ - PASS - [dispenser_fff.test_a_jam_is_retried_and_the_feed_still_counts]
+ - PASS - [dispenser_fff.test_feeding_runs_the_auger_once_with_the_portion_size]
+ - PASS - [dispenser_fff.test_two_jams_give_up_and_dispense_nothing]
+ - PASS - [dispenser_fff.test_zero_grams_never_reaches_the_motor]
+```
+
+Twister reports `1 of 1 executed test configurations passed` and
+`4 of 4 executed test cases passed`.
 
 ## Trivia
 
-### The mechanism is the linker
+### Where the fake comes from
 
-`sensor_port.h` declares three functions and defines none of them. In the app build,
-`sensor_port_bme280.c` or `sensor_port_sim.c` supplies them. In the test build, those
-files are simply not listed in `CMakeLists.txt`, so the symbols are undefined until
-`FAKE_VALUE_FUNC` and `FAKE_VOID_FUNC` define them instead:
+`auger_run()` is declared in `src/auger_port.h` and defined in exactly one file,
+`src/auger_port_sim.c`. The test build leaves that file out of `target_sources()`, so
+the symbol is undefined until `tests/fff/src/main.c` defines it with `FAKE_VALUE_FUNC`.
+The linker does not know or care which one it got.
 
 ```mermaid
 flowchart TD
-    svc["climate_service.c<br/>calls sensor_port_read()"]
+    h["src/auger_port.h<br/>declares auger_run()<br/>defines nothing"]
 
-    svc --> appbuild["app image"]
-    svc --> testbuild["test image"]
+    subgraph appbuild["the app build"]
+        d1["src/dispenser.c"]
+        s1["src/auger_port_sim.c<br/>defines auger_run()"]
+        d1 -->|"calls"| s1
+    end
 
-    prod["sensor_port_bme280.c<br/>alarm_port_led.c"] --> appbuild
-    fakes["FAKE_VALUE_FUNC<br/>in tests/fff/src/main.c"] --> testbuild
+    subgraph testbuild["the test build"]
+        d2["src/dispenser.c"]
+        f["tests/fff/src/main.c<br/>FAKE_VALUE_FUNC(int, auger_run, uint16_t)"]
+        d2 -->|"calls"| f
+    end
 
-    appbuild --> hw["I2C, GPIO, a board"]
-    testbuild --> rec["call counts and<br/>argument history"]
+    h --> d1
+    h --> d2
 ```
 
-No `--wrap`, no weak symbols, no `#ifdef TEST` in production code. The only thing that
-differs between the two columns is which files got compiled, and that is decided in
-`CMakeLists.txt`.
+No `--wrap`, no weak symbols, no `#ifdef TEST` in production code. The one requirement
+is that `dispenser.c` calls `auger_run()` and not `gpio_pin_set_dt()` directly. A module
+that reaches straight for a driver has nothing to substitute.
 
-This is also the constraint you have to design for. It works because
-`climate_service.c` calls `sensor_port_read()` rather than `sensor_sample_fetch()`
-directly. Zephyr's sensor API is `static inline` over an API struct, so there is no
-symbol to replace, which is why the port header exists at all.
+### What FFF gives you
 
-### What a fake is not
+For every function declared with `FAKE_VALUE_FUNC` or `FAKE_VOID_FUNC`:
 
-A fake is not an emulator and it does not know anything about a BME280. It knows that
-something called it, how many times, with what, and what you told it to return. That is
-enough to answer a class of questions an emulator is bad at:
-
-| Question | Answer it with |
+| | |
 |---|---|
-| does my code drive this chip correctly? | an emulator, `apps/06-sensor` |
-| does my code do the right thing on three `-EIO` in a row? | a fake, this app |
-| does it drive the alarm once per edge, not once per tick? | a fake, `call_count` |
-| is the I2C address right? | neither. Only real hardware. |
+| `<fn>_fake.call_count` | how many times it was called |
+| `<fn>_fake.arg0_val` | the first argument on the last call |
+| `<fn>_fake.arg0_history[i]` | the first argument on call `i` |
+| `<fn>_fake.return_val` | what it returns, every time |
+| `SET_RETURN_SEQ(<fn>, arr, n)` | a different return value per call, in order |
+| `<fn>_fake.custom_fake` | your own function body, for out-parameters |
+| `RESET_FAKE(<fn>)` | wipe all of the above |
 
-A suite that has only one of these halves can pass while the product does not work.
+FFF has no `EXPECT_CALL`. You call the code, then you read the counters and assert. The
+`before` hook in the suite resets every fake, because a fake left holding yesterday's
+`call_count` makes a test pass only when the whole suite runs in order.
+
+`apps/09-gtest-gmock` does the same job with gmock, where the expectation is declared
+before the call and checked for you.
+
+### What a fake cannot tell you
+
+Every test in `tests/fff` passes with `src/auger_port_sim.c` deleted. They pin what
+`dispenser.c` does with the answers it gets, and nothing at all about whether the real
+implementation drives the right pin at the right speed.
+
+`apps/06-sensor` is the other half. It fakes the **chip**, an emulated BME280 on an
+emulated I2C bus, with the real Bosch driver in between, and answers "does my code drive
+this part correctly?". A fake port answers "does my code do the right thing when the
+part returns `-EIO` twice in a row?". Both questions are real, and each technique is bad
+at the other one.
 
 ## References
 
 | | |
 |---|---|
-| [FFF](https://github.com/meekrosoft/fff) | the upstream README is the reference. Every macro it defines, on one page. |
-| [`$ZEPHYR_BASE/subsys/testsuite/include/zephyr/fff.h`](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/testsuite/include/zephyr/fff.h) | the vendored copy. Open it to see what the macros expand to. |
-| [Zephyr tests using FFF](https://github.com/search?q=repo%3Azephyrproject-rtos%2Fzephyr+DEFINE_FFF_GLOBALS&type=code) | upstream suites doing the same thing, for convention |
-| [apps/09-gtest-gmock](../09-gtest-gmock) | the same service, the same assertions, with gmock instead |
+| [FFF on GitHub](https://github.com/meekrosoft/fff) | the README is the full API. Zephyr vendors this file as `<zephyr/fff.h>`. |
+| [`$ZEPHYR_BASE/include/zephyr/fff.h`](https://github.com/zephyrproject-rtos/zephyr/blob/main/include/zephyr/fff.h) | the vendored copy. Open it to see what the macros expand to. |
+| [Test doubles, Martin Fowler](https://martinfowler.com/bliki/TestDouble.html) | the vocabulary: stub, fake, spy, mock, and which one FFF makes |
+| [`apps/06-sensor/README.md`](../06-sensor/README.md) | the emulator approach, for the same problem one level down |
+| [`apps/09-gtest-gmock/README.md`](../09-gtest-gmock/README.md) | the same dispenser with gmock instead |
