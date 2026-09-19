@@ -1,33 +1,44 @@
 // src/main.cpp
 //
-// A host binary, so `apps/09-gtest-gmock` is a project you can run and not
-// just a test directory. There is no Zephyr here at all: no kernel, no
-// devicetree, no board. That is the point of this app, and also its limit.
+// The application. An ordinary Zephyr main(), written in C++, wiring the
+// sawtooth sensor to the service and ticking once a second.
+//
+// This file is the composition root: the only place that knows both which
+// port implementations exist and which service uses them. tests/gtest brings
+// its own main and its own implementations, which is why the service never had
+// to know.
 
-#include <cstdio>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 #include "climate/service.hpp"
 #include "sawtooth_sensor.hpp"
 
-int main() {
+int main(void)
+{
+    printk("Climate service starting\n");
+
     climate::SawtoothSensor sensor;
-    climate::PrintingAlarm alarm;
+    climate::LedAlarm alarm;
     climate::Service svc(sensor, alarm);
 
     if (!sensor.ready()) {
-        std::puts("sensor not ready");
-        return 1;
+        printk("Error: sensor port not ready\n");
+        return 0;
     }
 
-    for (int i = 0; i < 40; ++i) {
-        if (svc.tick() != 0) {
-            std::printf("tick failed (errors=%u)\n", svc.errors());
-            continue;
+    while (true) {
+        const int ret = svc.tick();
+
+        if (ret != 0) {
+            printk("tick failed: %d (errors=%u)\n", ret, svc.errors());
+        } else {
+            printk("T: %d mC | P: %d Pa | H: %d m%%RH | ALARM %s\n",
+                   svc.last().temp_mc, svc.last().press_pa, svc.last().hum_mrh,
+                   svc.alarm() ? "ON" : "OFF");
         }
 
-        std::printf("T: %d mC | H: %d m%%RH | ALARM %s\n",
-                    svc.last().temp_mc, svc.last().hum_mrh,
-                    svc.alarm() ? "ON" : "OFF");
+        k_sleep(K_SECONDS(1));
     }
 
     return 0;

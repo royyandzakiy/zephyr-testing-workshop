@@ -16,24 +16,35 @@ logger = logging.getLogger(__name__)
 def test_dut_sees_boot_output(dut: DeviceAdapter):
     """Asserting on something nobody asked the device for.
 
-    The banner is printed once, at boot, before any shell command exists. The
-    Shell fixture cannot see it. `dut.readlines()` can, because it reads the
-    buffer the adapter has been filling since launch.
+    The banner is printed once at boot, before any shell command exists.
+
+    Note what this test does NOT ask for: the `shell` fixture. `Shell` wraps
+    this same adapter and drains the buffer while it waits for its first
+    prompt, so a test that takes both fixtures finds the banner already gone.
+    Asking only for `dut` is what leaves it there to be read.
     """
-    lines = dut.readlines()
-    assert any('GPIO Button + LED Toggle started' in line for line in lines), \
-        f'no boot banner in {lines[:20]}'
+    lines = dut.readlines_until(regex='GPIO Button .* Toggle started', timeout=5.0)
+
+    assert lines, 'no boot banner before the timeout'
 
 
-def test_dut_readlines_until(dut: DeviceAdapter, shell: Shell):
+def test_dut_readlines_until(dut: DeviceAdapter):
     """Waiting for a specific line instead of a fixed sleep.
 
-    `time.sleep(2)` is the reflex here and it is wrong twice over: too short
-    on a loaded CI runner, and wasted seconds everywhere else.
+    `time.sleep(2)` is the reflex here and it is wrong twice over: too short on
+    a loaded CI runner, and wasted seconds everywhere else.
+
+    The command goes straight to the device rather than through
+    `shell.exec_command()`, for the same reason as the test above.
+    `exec_command` reads until it sees the prompt again, which consumes the
+    very line this test is waiting for.
     """
-    dut.clear_buffer()
-    shell.exec_command('app btn 1')
+    dut.readlines_until(regex='Ready. Press the button', timeout=5.0)
+
+    dut.write(b'app btn 1\n')
+
     lines = dut.readlines_until(regex='Button pressed!', timeout=5.0)
+
     assert lines, 'device never reported the press'
 
 

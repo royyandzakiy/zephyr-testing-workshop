@@ -3,13 +3,13 @@
 // A production implementation, not a test double. It walks temperature up and
 // down so src/main.cpp has something to print.
 //
-// The distinction matters and gets blurred constantly: a fake that ships is a
-// simulator, and it is allowed to be wrong in ways a mock is not, because
-// nobody is asserting on it.
+// The distinction gets blurred constantly: a fake that ships is a simulator,
+// and it is allowed to be wrong in ways a mock is not, because nobody is
+// asserting on it.
 
 #pragma once
 
-#include <cstdio>
+#include <zephyr/sys/printk.h>
 
 #include "climate/ports.hpp"
 
@@ -17,9 +17,10 @@ namespace climate {
 
 class SawtoothSensor final : public ISensorPort {
 public:
-    bool ready() const override { return true; }
+    [[nodiscard]] bool ready() const override { return true; }
 
-    int read(Reading& out) override {
+    [[nodiscard]] int read(Reading& out) override
+    {
         temp_mc_ += step_;
         hum_mrh_ += step_ * 3;
         if (temp_mc_ > 32000 || temp_mc_ < 24000) {
@@ -38,9 +39,9 @@ private:
     std::int32_t step_{500};
 };
 
-class PrintingAlarm final : public IAlarmPort {
+class LedAlarm final : public IAlarmPort {
 public:
-    void set(bool on) override { std::printf("alarm: %s\n", on ? "ON" : "OFF"); }
+    void set(bool on) override { printk("alarm: %s\n", on ? "ON" : "OFF"); }
 };
 
 }  // namespace climate

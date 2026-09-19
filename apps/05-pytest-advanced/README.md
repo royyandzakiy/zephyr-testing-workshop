@@ -94,8 +94,10 @@ One test fails and reports as **xfail**:
 The raw suite will give a message naming the missing binary if you have not built the
 image yet.
 
-> Not yet run end to end in the devcontainer. The C and the Python are written against
-> the same APIs as `04-shell-pytest`, but treat the first run as part of the exercise.
+```
+INFO    - 4 of 4 executed test configurations passed (100.00%)
+INFO    - 83 of 83 executed test cases passed (100.00%)
+```
 
 ## Trivia
 
@@ -144,6 +146,24 @@ The first is what you want on a serial console. The second is what pytest parses
 Keeping them separate means somebody can reword the human line without breaking the
 suite, and `parse_kv()` in `conftest.py` turns the second into a dict the assertions
 can talk about.
+
+### `shell` and `dut` share one buffer
+
+The two fixtures are not independent. `Shell` wraps the same `DeviceAdapter` the `dut`
+fixture hands you, and both read from one buffer. Two consequences, and both of them
+bite the first time:
+
+- **Asking for `shell` consumes the boot banner.** It drains the buffer while waiting
+  for its first prompt. A test that takes both fixtures and then goes looking for the
+  banner finds nothing. `test_dut_sees_boot_output` asks for `dut` alone for exactly
+  that reason.
+- **`exec_command()` consumes the response.** It reads until the prompt comes back, so
+  a `readlines_until()` afterwards has nothing left to match.
+  `test_dut_readlines_until` writes the command with `dut.write()` instead.
+
+There is a third one that is not about buffers at all. `dut` is function-scoped, so a
+session-scoped fixture may not depend on it. pytest raises `ScopeMismatch` at setup
+rather than at collection, so you find out when you run, not when you write.
 
 ### What twister was doing for you
 

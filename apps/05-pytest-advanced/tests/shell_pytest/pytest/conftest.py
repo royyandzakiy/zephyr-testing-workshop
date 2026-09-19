@@ -81,11 +81,13 @@ def app(shell: Shell):
     return a
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture()
 def board_name(dut: DeviceAdapter) -> str:
     """The platform twister is running against.
 
-    Session-scoped on purpose: it never changes during a run, and this is the
-    fixture the skipif tests in test_markers.py key off.
+    Function-scoped, and it has to be. `dut` is function-scoped by default, and
+    a session-scoped fixture may not depend on a function-scoped one. pytest
+    catches it at setup with ScopeMismatch rather than at collection, so the
+    error arrives once you run, not once you write it.
     """
     return dut.device_config.platform

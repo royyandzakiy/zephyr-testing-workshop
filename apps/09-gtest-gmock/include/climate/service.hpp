@@ -1,8 +1,8 @@
 // include/climate/service.hpp
 //
 // Same behaviour as apps/08-fff-mocks/src/climate_service.c, line for line.
-// Read them side by side; the only interesting difference is that the ports
-// arrive through the constructor instead of through the linker.
+// Read them side by side. The interesting difference is that the ports arrive
+// through the constructor instead of through the linker.
 
 #pragma once
 
@@ -28,11 +28,11 @@ public:
 
     void clearFault();
 
-    bool alarm() const { return alarm_; }
-    bool faulted() const { return faulted_; }
-    std::uint32_t reads() const { return reads_; }
-    std::uint32_t errors() const { return errors_; }
-    const Reading& last() const { return last_; }
+    [[nodiscard]] bool alarm() const { return alarm_; }
+    [[nodiscard]] bool faulted() const { return faulted_; }
+    [[nodiscard]] std::uint32_t reads() const { return reads_; }
+    [[nodiscard]] std::uint32_t errors() const { return errors_; }
+    [[nodiscard]] const Reading& last() const { return last_; }
 
 private:
     ISensorPort& sensor_;

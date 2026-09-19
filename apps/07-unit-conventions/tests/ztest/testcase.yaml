@@ -1,0 +1,9 @@
+tests:
+  app07.feeder.ztest:
+    # Integer arithmetic on a struct. Runs anywhere; native_sim is just the
+    # fastest place to find that out.
+    platform_allow:
+      - native_sim
+    tags:
+      - feeder
+      - unit

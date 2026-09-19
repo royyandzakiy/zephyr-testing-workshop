@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(climate_cpp CXX)
+project(unit_conventions)
 
 target_sources(app PRIVATE
-    src/main.cpp
-    src/service.cpp
+    src/main.c
+    src/feeder.c
 )
-
-target_include_directories(app PRIVATE include src)

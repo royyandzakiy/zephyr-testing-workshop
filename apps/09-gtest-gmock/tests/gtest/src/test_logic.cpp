@@ -28,6 +28,29 @@ using climate::alarmState;
 using climate::toMilli;
 
 // --------------------------------------------------------------------------
+// Tests that never run.
+//
+// Both functions in logic.hpp are `constexpr`, so the compiler can evaluate
+// them. That makes these assertions build errors rather than test failures,
+// and they cost nothing at run time because there is no run time involved.
+//
+// The limit is that a static_assert reports one failure and stops, and it
+// cannot tell you "9 cases ran, case 4 disagreed". Use it for the handful of
+// properties you never want to compile without, and TEST_P below for the
+// table.
+// --------------------------------------------------------------------------
+
+static_assert(toMilli(25, 0) == 25000);
+static_assert(toMilli(25, 500500) == 25501, "halves round away from zero");
+static_assert(toMilli(-25, -500500) == -25501, "and that includes negatives");
+static_assert(toMilli(0, 999999) == 1000, "truncating here would give 999");
+
+static_assert(!alarmState(20000, 40000, false), "cold and dry stays off");
+static_assert(alarmState(climate::kTempOnMilliC, 40000, false), "trips on the point");
+static_assert(alarmState(29000, 40000, true), "inside the band it holds");
+static_assert(!alarmState(climate::kTempOffMilliC, 40000, true), "releases on the point");
+
+// --------------------------------------------------------------------------
 // TEST: the plain one. Suite name, test name, body.
 // --------------------------------------------------------------------------
 

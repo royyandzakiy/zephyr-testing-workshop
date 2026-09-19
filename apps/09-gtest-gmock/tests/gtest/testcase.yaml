@@ -1,0 +1,23 @@
+tests:
+  app09.climate.gtest:
+    # native_sim only. On a real target you would have to find a standard
+    # library, a heap and 32 kB of stack for the test runner, which is the
+    # conversation the README's Trivia section is about.
+    platform_allow:
+      - native_sim
+    tags:
+      - climate
+      - unit
+      - gtest
+      - cpp
+
+    # No CONFIG_ZTEST here, so twister cannot use its ztest harness. It reads
+    # the console instead and decides from what GoogleTest printed.
+    harness: console
+    harness_config:
+      type: one_line
+      # Single-quoted on purpose. In a double-quoted YAML scalar a backslash
+      # starts an escape, so `\[` is a parse error and `\\[` is what you would
+      # have to write. Single quotes take the regex exactly as typed.
+      regex:
+        - '\[  PASSED  \] \d+ tests?\.'
