@@ -130,4 +130,4 @@
 - [Emulator API](https://docs.zephyrproject.org/latest/hardware/emulator/index.html) - `EMUL_DT_INST_DEFINE`, backend APIs, and the emulated bus controllers.
 - [Zephyr's sensor emulator tests](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/drivers/sensor) - a large collection of worked examples, and the place to take conventions from.
 - [Sensor API](https://docs.zephyrproject.org/latest/hardware/peripherals/sensor.html) - the `sensor_value` convention, and which `SENSOR_CHAN_*` are defined.
-- [`docs/NOTES-testing.md`](../../docs/NOTES-testing.md) - local notes on where each kind of suite belongs.
+- [`docs/concepts/testing-levels.md`](../../docs/concepts/testing-levels.md) - what an emulated driver test answers, and what it is blind to.

@@ -109,4 +109,4 @@
 
 - [pytest fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html) - scopes, `yield` teardown, and `conftest.py`, all of which app 05 leans on.
 - [twister_harness API](https://docs.zephyrproject.org/latest/develop/test/pytest.html) - `DeviceAdapter`, `Shell`, `MCUmgr`, and what each fixture actually wraps.
-- [`docs/NOTES-ci-self-hosted.md`](../../docs/NOTES-ci-self-hosted.md) - what changes when this suite runs on a runner with a board attached.
+- [`docs/guides/self-hosted-runner.md`](../../docs/guides/self-hosted-runner.md) - what changes when this suite runs on a runner with a board attached.

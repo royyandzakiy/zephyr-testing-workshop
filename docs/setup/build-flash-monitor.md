@@ -1,6 +1,11 @@
-# Preparation: Build, Flash, Monitor
+# Build, flash and monitor a board
 
-In this section, you will make sure your environment is working by trying to build and flash to a board, and also run a native_sim binary
+For someone checking their environment works. Build and run a native_sim binary, then
+build and flash a real board if you have one. Each vendor needs slightly different
+setup, and those are below.
+
+Once this works, [`../reference/boards.md`](../reference/boards.md) is the full command
+reference.
 
 ## Off-Target: Native Sim
 
@@ -12,23 +17,26 @@ export BOARD="native_sim/native"
 west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
 
 # Monitor, just run like a normal executable
-build_hello_world\zephyr\zephyr.exe
+./build_hello_world/zephyr/zephyr.exe
 ```
 
 ## On-Target
 
-## Searching for boards
+### Searching for boards
 
 - You can search for your specific board or development kit by accessing this page
 
 [Zephyr - Supported Boards & Shields](https://docs.zephyrproject.org/latest/boards/index.html#supported-boards-and-shields)
 
-![alt text](imgs/board-search-1.png)
-![alt text](imgs/board-search-2.png)
+![Zephyr supported boards index](../imgs/board-search-1.png)
+![Filtering the board list by vendor](../imgs/board-search-2.png)
 
-Below are some examples and different steps needed for Nordic, Espressif, and ST Microelectronics boards needs to be able to build, flash and monitor
+Below are the steps for Nordic, Espressif and ST Microelectronics boards.
 
-## Nordic
+Port numbers depend on enumeration order and on what else is plugged in. Check yours
+with `ls /dev/ttyACM* /dev/ttyUSB*` rather than copying the ones here.
+
+### Nordic
 
 No setup, all nrf boards ready to use
 
@@ -52,14 +60,14 @@ python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
 ### Additional Resources
 - https://docs.zephyrproject.org/latest/boards/nordic/nrf5340dk/doc/index.html
 
-## Espressif
+### Espressif
 
-The Xtensa toolchains are **already installed** — `ZSDK_TOOLCHAINS` in
-[`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json) lists both
+The Xtensa toolchains are **already installed** - `ZSDK_TOOLCHAINS` in
+[`.devcontainer/devcontainer.json`](../../.devcontainer/devcontainer.json) lists both
 `xtensa-espressif_esp32_zephyr-elf` and `xtensa-espressif_esp32s3_zephyr-elf`, and
 `setup-sdks.sh` installs them on first container start. `zephyr-stores` shows what you have.
 
-One thing still needed per workspace — the Espressif binary blobs are not in the git tree:
+One thing still needed per workspace - the Espressif binary blobs are not in the git tree:
 
 ```bash
 west blobs fetch hal_espressif
@@ -101,7 +109,7 @@ Solution: you must install the correct sdk for your board using the `west sdk in
 ### Additional Resources:
 - https://docs.zephyrproject.org/latest/boards/espressif/esp32s3_devkitc/doc/index.html
 
-## ST Microelectronics
+### ST Microelectronics
 
 Additional setup to be able to compile to board
 

@@ -132,8 +132,8 @@ before you need it.
 Hardware is optional. If you have a board, build and flash to it and register a local
 `actions-runner`. Nothing here requires one.
 
-Setup notes: [`docs/PRE-general-guide.md`](docs/PRE-general-guide.md) and
-[`docs/PRE-build-flash-monitor.md`](docs/PRE-build-flash-monitor.md).
+Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
+[`docs/setup/build-flash-monitor.md`](docs/setup/build-flash-monitor.md).
 
 ## The apps
 
@@ -243,7 +243,7 @@ The repo carries [`CLAUDE.md`](CLAUDE.md) with its conventions, and four skills 
 | `zephyr-build-run` | building, flashing, monitoring, running Twister, and digging into a run that failed |
 | `zephyr-ztest` | scoping and writing tests in C that run on the device |
 | `zephyr-pytest` | writing tests that run off the device and drive it from outside |
-| `workshop-app-docs` | the format the `README.md` and `EXERCISE.md` files here follow |
+| `repo-docs` | the format every `README.md`, `EXERCISE.md` and `docs/` page here follows |
 
 They carry the parts that are specific to this repo and easy to get wrong: which runner
 and flags each board needs, the `native_sim` console modes, how the emulation is wired
@@ -263,13 +263,15 @@ they are. A few of the ★★★ ones want a board.
 
 | | |
 |---|---|
-| [`docs/NOTES-build-flash.md`](docs/NOTES-build-flash.md) | per-board build, flash and Twister commands, with what each flag is for |
-| [`docs/NOTES-testing.md`](docs/NOTES-testing.md) | the same suite run off-target and on-target, and why the flags differ |
-| [`docs/PYTEST_GUIDE.md`](docs/PYTEST_GUIDE.md) | `twister_harness`, the `dut` and `Shell` fixtures |
-| [`docs/NOTES-native-sim.md`](docs/NOTES-native-sim.md) | running and debugging the native binary, and the console modes |
-| [`docs/NOTES-ci-self-hosted.md`](docs/NOTES-ci-self-hosted.md) | runner registration, USB passthrough, `nrfutil` |
-| [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | container internals and SDK layout |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | working on this repo itself |
+| [`docs/README.md`](docs/README.md) | the index, with three routes through the rest |
+| [`docs/reference/boards.md`](docs/reference/boards.md) | build, flash and Twister commands per board, and what each flag does |
+| [`docs/reference/native-sim.md`](docs/reference/native-sim.md) | the console modes, and running the native binary |
+| [`docs/reference/pytest-harness.md`](docs/reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, `harness_config` |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | failures keyed by what you are looking at |
+| [`docs/glossary.md`](docs/glossary.md) | the vocabulary these docs assume |
+| [`docs/concepts/`](docs/concepts/) | what each kind of test answers, and what it cannot |
+| [`docs/guides/self-hosted-runner.md`](docs/guides/self-hosted-runner.md) | registering a runner so CI can flash hardware |
+| [`docs/setup/devcontainer.md`](docs/setup/devcontainer.md) | container internals and SDK layout |
 
 Boards with overlays in the tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`,
 `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.

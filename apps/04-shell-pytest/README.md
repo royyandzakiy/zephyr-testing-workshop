@@ -135,7 +135,7 @@ device. `apps/05-pytest-advanced` is all four.
 
 | | |
 |---|---|
-| [`docs/PYTEST_GUIDE.md`](../../docs/PYTEST_GUIDE.md) | local notes on `twister_harness`, the `dut` and `Shell` fixtures |
+| [`docs/reference/pytest-harness.md`](../../docs/reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, and `harness_config` |
 | [Twister pytest harness](https://docs.zephyrproject.org/latest/develop/test/pytest.html) | the fixtures, and what `harness_config` accepts |
 | [Shell subsystem](https://docs.zephyrproject.org/latest/services/shell/index.html) | `SHELL_CMD_REGISTER`, subcommand sets, and the argument count checks |
 | [apps/05-pytest-advanced](../05-pytest-advanced) | fixtures, parametrization, markers, and the same thing with no twister at all |

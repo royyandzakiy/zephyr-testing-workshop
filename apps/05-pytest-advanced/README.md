@@ -181,4 +181,4 @@ native_sim.
 | [pytest fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html) | scopes, `yield` teardown, and why `conftest.py` is found automatically |
 | [pytest parametrize](https://docs.pytest.org/en/stable/how-to/parametrize.html) | `ids=`, stacking decorators, and indirect parametrization |
 | [pytest markers](https://docs.pytest.org/en/stable/how-to/mark.html) | `--strict-markers`, and why registering markers is worth the two lines |
-| [`docs/PYTEST_GUIDE.md`](../../docs/PYTEST_GUIDE.md) | local notes, including the marker taxonomy this app uses |
+| [`docs/reference/pytest-harness.md`](../../docs/reference/pytest-harness.md) | the fixtures, their scope, and the one buffer `shell` and `dut` share |

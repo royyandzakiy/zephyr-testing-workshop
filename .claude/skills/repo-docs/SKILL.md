@@ -1,9 +1,36 @@
 ---
-name: workshop-app-docs
-description: Write or refresh the README.md and EXERCISE.md that sit inside an app folder under apps/. Use this whenever a new app folder is added, an existing app's code changes enough that its docs are stale, or the user asks for a README, exercises, extra practice, or "something for people who finish early" for a folder in this repo. Also use it to check existing app docs against the house format.
+name: repo-docs
+description: Write or refresh any prose documentation in this repo. Covers the README.md and EXERCISE.md inside each apps/ folder, and everything under docs/. Use this whenever a new app folder is added, an app's code changes enough that its docs are stale, a docs/ page needs writing or correcting, or the user asks for a README, exercises, a guide, a reference page or "something for people who finish early". Also use it to check existing docs against the house format.
 ---
 
-# App docs
+# Repo docs
+
+Two surfaces, one set of rules.
+
+**`apps/NN-name/`** carries the examples. **`docs/`** carries everything around them:
+`setup/`, `concepts/`, `guides/`, `reference/`, `troubleshooting.md`, `glossary.md`,
+and `notes/` for working material that is not written for a reader.
+
+The reader to write for is someone alone with the repo. When a page could be aimed at
+either a learner or a maintainer, aim it at the learner and put the maintainer version
+in `docs/notes/`.
+
+## Rules that apply everywhere
+
+- **Every doc names its reader in the first line.** It is how you tell whether a new
+  file belongs in `guides/` or `concepts/`, and it is the first thing to write.
+- **One owner per fact.** An app README owns how to run that app. `docs/reference/`
+  owns how the tool works in general. If a command would appear in both, the app
+  README links instead of repeating.
+- **Commands in `docs/reference/` are verified**, and say which Zephyr version they
+  were verified against.
+- **`docs/notes/` is allowed to be scrappy and says so at the top of each file.**
+  Nothing outside it is.
+- **Check that a link's text matches what the target contains.** Three links in this
+  repo once promised content the target did not have, and that is the failure a reader
+  working alone cannot recover from.
+
+## App docs
 
 Every folder under `apps/` carries two files that are not code:
 
@@ -17,6 +44,9 @@ Do not merge them and do not let one drift into the other.
 **`apps/00-hello/README.md` and `apps/00-hello/EXERCISE.md` are the reference.**
 Royyan rewrote that pair by hand to set the standard. When this file and those files
 disagree, those files win. Read them before writing anything.
+
+For `docs/`, [`docs/README.md`](../../../docs/README.md) is the index and shows what
+belongs where.
 
 ## The two rules that get broken most
 

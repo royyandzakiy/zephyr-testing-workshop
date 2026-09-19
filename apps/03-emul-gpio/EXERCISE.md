@@ -99,4 +99,4 @@
 
 - [Emulator API](https://docs.zephyrproject.org/latest/hardware/emulator/index.html) - `EMUL_DT_DEFINE`, the backend APIs, and how a bus emulator is registered.
 - [Zephyr's own emulated driver tests](https://github.com/zephyrproject-rtos/zephyr/tree/main/tests/drivers) - the largest collection of worked examples, and the place to take conventions from.
-- [`docs/NOTES-testing.md`](../../docs/NOTES-testing.md) - local notes on where each suite should run.
+- [`docs/concepts/what-you-cannot-test.md`](../../docs/concepts/what-you-cannot-test.md) - the full list of what `gpio_emul` does not model, and what else no test here covers.

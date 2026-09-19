@@ -155,5 +155,5 @@ not.
 |---|---|
 | [ztest](https://docs.zephyrproject.org/latest/develop/test/ztest.html) | `ZTEST_SUITE`, `ZTEST`, and the whole `zassert_*` family |
 | [Twister](https://docs.zephyrproject.org/latest/develop/test/twister.html) | `testcase.yaml` keys, especially `platform_allow` and `tags` |
-| [`docs/NOTES-testing.md`](../../docs/NOTES-testing.md) | the local notes on both of the above |
+| [`docs/concepts/testing-levels.md`](../../docs/concepts/testing-levels.md) | which level a given test belongs at |
 | [apps/07-unit-conventions](../07-unit-conventions) | fixtures, table-driven cases and naming, once you want more than three tests |

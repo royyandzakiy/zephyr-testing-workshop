@@ -1,7 +1,12 @@
+# native_sim
+
+For someone running the native binary directly, or working out why a harness cannot
+see the console. Verified against Zephyr v4.4.2.
+
 ## Communicating with Native Sim
 
 - By default native sim will create a pseudo tty (PTY) that you can find with `ls /dev/tty*`
-- it allocates said PYT once you run the zephyr.exe
+- it allocates that PTY once you run the zephyr.exe
 
 ```bash
 west build -p always -b native_sim/native -s <app> -d build
