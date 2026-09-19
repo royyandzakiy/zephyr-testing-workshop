@@ -37,13 +37,20 @@ Zephyr **v4.4.2**, SDK **1.0.1**
 │       ├── tests/             suites for this app, each its own Zephyr application
 │       ├── CMakeLists.txt, prj.conf
 │       └── README.md, EXERCISE.md
-├── docs/                  reference notes, see the table at the end
+├── docs/                  everything around the examples
+│   ├── README.md              the index, and three routes through the rest
+│   ├── setup/                 getting an environment working
+│   ├── concepts/              what each kind of test answers, and what it cannot
+│   ├── guides/                task walkthroughs, for example putting a board in CI
+│   ├── reference/             commands, flags, fixtures
+│   ├── troubleshooting.md     failures keyed by what you are looking at
+│   ├── glossary.md            the vocabulary the docs assume
+│   └── notes/                 working material, not written for a reader
 ├── .github/workflows/     GitHub Actions pipelines
 ├── .devcontainer/         the container definition. The whole toolchain lives in here.
 ├── .claude/skills/        Claude Code skills for building, testing and writing docs here
 ├── .clangd                so the editor resolves Zephyr headers instead of underlining them
-├── .vscode/               editor settings
-└── dump/                  scratch material kept for reference
+└── .vscode/               editor settings
 ```
 
 `.devcontainer`, `.clangd` and `.vscode` exist to make the thing work on your machine.
@@ -55,7 +62,9 @@ Documentation sits at three depths, and they do different jobs:
 |---|---|
 | each app's `README.md` | what that app is, how to run it, and what output to expect |
 | each app's `EXERCISE.md` | things to change, break and look up, once the app itself makes sense |
-| [`docs/`](docs/) | reference across all of them: per-board commands, Twister flags, the pytest harness, CI |
+| [`docs/`](docs/) | everything that is not about one app: setup, commands, concepts, troubleshooting |
+
+[`docs/README.md`](docs/README.md) is the way in to that last one.
 
 ### CI
 
@@ -261,19 +270,13 @@ they are. A few of the ★★★ ones want a board.
 
 ## Reference
 
+[`docs/README.md`](docs/README.md) is the index. The pages people reach for most:
+
 | | |
 |---|---|
-| [`docs/README.md`](docs/README.md) | the index, with three routes through the rest |
 | [`docs/reference/boards.md`](docs/reference/boards.md) | build, flash and Twister commands per board, and what each flag does |
-| [`docs/reference/native-sim.md`](docs/reference/native-sim.md) | the console modes, and running the native binary |
-| [`docs/reference/pytest-harness.md`](docs/reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, `harness_config` |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | failures keyed by what you are looking at |
-| [`docs/glossary.md`](docs/glossary.md) | the vocabulary these docs assume |
-| [`docs/concepts/`](docs/concepts/) | what each kind of test answers, and what it cannot |
-| [`docs/guides/self-hosted-runner.md`](docs/guides/self-hosted-runner.md) | registering a runner so CI can flash hardware |
-| [`docs/setup/devcontainer.md`](docs/setup/devcontainer.md) | container internals and SDK layout |
+| [`docs/glossary.md`](docs/glossary.md) | the vocabulary the docs assume |
 
 Boards with overlays in the tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`,
 `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
-
-`dump/` is scratch material kept for reference.
