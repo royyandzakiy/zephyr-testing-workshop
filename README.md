@@ -68,9 +68,19 @@ Documentation sits at three depths, and they do different jobs:
 
 ### CI
 
-Five workflows under [`.github/workflows/`](.github/workflows/), covering different kinds of tests.
-Some work purely in the github actions CI, some others run in the users PC via a local github actions
-runner.
+Four workflows under [`.github/workflows/`](.github/workflows/). Two run on every push,
+on GitHub's own runners, and need no hardware. Two are manual and want a runner on your
+own machine, one of them with a board attached.
+
+| | Answers | When |
+|---|---|---|
+| `test-native-sim.yml` | do all the test suites still pass | push, pull request |
+| `sanitizers.yml` | does one app run clean under ASan and UBSan | push, pull request |
+| `build-check.yml` | does the toolchain work at all | manual |
+| `test-hardware.yml` | does it build, flash and pass on a real board | manual |
+
+[`docs/guides/ci.md`](docs/guides/ci.md) covers what each one does and the two things to
+change for your own board.
 
 ## What is here
 
@@ -93,7 +103,7 @@ and whether a given peripheral is the real driver or an emulated one.
 They are independent of each other. `gpio_emul`, `i2c_emul` and the rest are ordinary
 drivers gated on a devicetree node, not a `native_sim` feature, so an emulated button
 works just as well on an nRF5340DK. The suite in `apps/04-shell-pytest` runs both ways,
-and [`.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml`](.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml)
+and [`.github/workflows/test-hardware.yml`](.github/workflows/test-hardware.yml)
 runs it on the board.
 
 What differs between targets is cost and reach. `native_sim` builds in seconds, needs no

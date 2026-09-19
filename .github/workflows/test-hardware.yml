@@ -1,0 +1,60 @@
+# Proves: firmware from this repo builds, flashes and passes its tests on a real
+# board. Needs a self-hosted runner with the board attached, so it is manual.
+#
+# Two things to change for your own hardware:
+#   BOARD below, and apps/04-shell-pytest/hardware-map.yaml
+
+name: Tests (hardware)
+
+on:
+  workflow_dispatch:
+
+env:
+  BOARD: nrf5340dk/nrf5340/cpuapp
+
+jobs:
+  hardware:
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 30
+
+    # One board, one job at a time. Two runs flashing the same board would
+    # interleave and both would fail in confusing ways.
+    concurrency:
+      group: hardware
+      cancel-in-progress: false
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # west reads the board out of the build directory and picks the runner
+      # itself, so this line is the same for nRF, ESP32 and Nucleo. With a single
+      # probe attached it needs no serial number.
+      - name: Build and flash an app
+        run: |
+          set -euo pipefail
+          west build -b "$BOARD" apps/01-blinky -d build -p
+          west flash -d build
+
+      # Twister does its own build and flash. The probe and the serial port come
+      # from the hardware map, which is the only place they are written down.
+      - name: Run the shell and emul suite on the board
+        run: |
+          set -euo pipefail
+          west twister --device-testing \
+            --hardware-map apps/04-shell-pytest/hardware-map.yaml \
+            -T apps/04-shell-pytest
+
+      # A hardware failure cannot be reproduced without the board, so keep the
+      # evidence. The native_sim workflow has no equivalent because you can just
+      # run it again locally.
+      - name: Upload twister output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twister-out
+          path: twister-out/
+          if-no-files-found: warn

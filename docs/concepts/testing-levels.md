@@ -86,7 +86,7 @@ put in CI.
 
 Note that emulated tests run here too. Emulation is a devicetree choice, not an
 off-target one, and
-`.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml` runs the emul suite on
+`.github/workflows/test-hardware.yml` runs the emul suite on
 an nRF5340DK.
 
 ## Picking

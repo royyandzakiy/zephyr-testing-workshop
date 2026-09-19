@@ -1,0 +1,71 @@
+# Proves: one app runs clean under AddressSanitizer and UndefinedBehaviorSanitizer.
+# native_sim only. The sanitizers are host-toolchain features, so a cross-compiled
+# Cortex-M build has no equivalent.
+
+name: Sanitizers
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  sanitize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    container:
+      image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.2-sdk1.0.1
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      # Any app works. 01-blinky is the smallest one that gives the sanitizers
+      # something to chew on: GPIO driver, gpio_emul, an interrupt callback.
+      # 00-hello is two printk calls, so a green run there would prove nothing.
+      APP: apps/01-blinky
+      # Simulated seconds before native_sim stops itself. Without it the app sits
+      # in k_sleep(K_FOREVER), has to be killed, and LeakSanitizer never reports.
+      STOP_AT: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build with ASAN and UBSAN
+        run: |
+          set -euo pipefail
+          west build -b native_sim/native -d build -p always "$APP" \
+            -- -DEXTRA_CONF_FILE="$PWD/.github/sanitize.conf"
+
+      - name: Assert the sanitizers actually got enabled
+        run: |
+          set -euo pipefail
+          # A wrong EXTRA_CONF_FILE path is silently ignored by CMake, which would
+          # leave this job passing while sanitizing nothing.
+          grep -q '^CONFIG_ASAN=y'  build/zephyr/.config || { echo "::error::CONFIG_ASAN not set, sanitize.conf was not applied"; exit 1; }
+          grep -q '^CONFIG_UBSAN=y' build/zephyr/.config || { echo "::error::CONFIG_UBSAN not set, sanitize.conf was not applied"; exit 1; }
+
+      - name: Run, and fail on any finding
+        run: |
+          set -euo pipefail
+          export ASAN_OPTIONS="halt_on_error=1:detect_leaks=1:print_summary=1"
+          export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1"
+          ./build/zephyr/zephyr.exe "-stop_at=$STOP_AT" > run.log 2>&1
+          cat run.log
+          # The load-bearing check. ASAN can be built to report and continue, so a
+          # clean exit code on its own is not evidence of a clean run.
+          if grep -nE "AddressSanitizer|LeakSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY: " run.log; then
+            echo "::error::sanitizer reported the findings above"
+            exit 1
+          fi
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanitizer-logs
+          path: |
+            run.log
+            build/zephyr/.config
+          if-no-files-found: warn

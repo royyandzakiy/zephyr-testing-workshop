@@ -1,0 +1,28 @@
+# Proves: every test suite under apps/ still passes, off target.
+# This is the same command the README tells you to run locally. No hardware.
+
+name: Tests (native_sim)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  twister:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    container:
+      image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.2-sdk1.0.1
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # west finds its workspace through ZEPHYR_BASE, which the image sets, so
+      # this runs from the checkout without any west init.
+      - name: Run every suite on native_sim
+        run: west twister -T apps/ -p native_sim
