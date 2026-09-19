@@ -19,7 +19,8 @@
 3. **Move the LED to a different pin.** In `boards/native_sim_native.overlay`, change
    the LED from pin 10 to pin 12 and rebuild.
 
-   *Check:* it still builds, and `git status` shows nothing changed under `src/`.
+   *Check:* it still builds, and `git status` shows nothing changed under `src/`. Put
+   the pin back when you are done.
 
 4. **Predict the polarity.** The button in the native_sim overlay is
    `GPIO_PULL_UP | GPIO_ACTIVE_LOW`. Write down which raw pin level means "pressed",

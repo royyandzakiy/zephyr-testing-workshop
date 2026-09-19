@@ -1,7 +1,8 @@
 # 02-ztest
 
-Same behaviour as `01-blinky`, with the decisions pulled out into `blink_logic.c` and
-a ztest suite pointed at them. The first app in this repo that has a test.
+This project is the same button and LED as `01-blinky`, with the decision logic pulled
+out into its own file and a ztest suite pointed at it. You will build the app, then run
+the test suite with twister. The test itself never touches a GPIO.
 
 **What changed since `01-blinky`:**
 
@@ -12,15 +13,16 @@ a ztest suite pointed at them. The first app in this repo that has a test.
 
 ## What to learn here
 
-- What a seam is, concretely: `blink_logic_toggle()` takes a bool and returns a bool,
+- What a ztest suite actually is: a second Zephyr application that happens to link
+  some of your app's sources. See [Trivia](#trivia) below.
+- What a seam is, concretely. `blink_logic_toggle()` takes a bool and returns a bool,
   so a test needs no board, no driver and no devicetree to call it.
-- That a ztest suite is just another Zephyr application, with its own `CMakeLists.txt`
-  and `prj.conf`, that sets `CONFIG_ZTEST=y` and links some of the app's sources.
-- What `tests/unit/CMakeLists.txt` links, and what it leaves out: `blinky.c` is
+- What `tests/unit/CMakeLists.txt` links, and what it leaves out. `blinky.c` is
   absent, so no GPIO driver is pulled in at all.
-- How twister finds this without a registry. It walks the tree looking for
-  `testcase.yaml`, which is why tests live next to the app they test.
-- What `zassert_str_equal` buys you over `zassert_equal` on two `char *`.
+- Familiarizing with twister: how it finds a suite without a registry, what a scenario
+  name is, and where it puts the logs.
+- `ZTEST_SUITE`, `ZTEST`, and what `zassert_str_equal` buys you over `zassert_equal`
+  on two `char *`.
 
 ## Layout
 
@@ -43,6 +45,8 @@ a ztest suite pointed at them. The first app in this repo that has a test.
 ```bash
 cd apps/02-ztest
 ```
+
+The application:
 
 ```bash
 west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
@@ -86,6 +90,64 @@ press 2: LED is now OFF
 
 The application itself behaves exactly as `01-blinky` did, and still does nothing on
 `native_sim`, because nothing can press the emulated button yet.
+
+## Trivia
+
+### A test suite is just another application
+
+`tests/unit/` has its own `CMakeLists.txt`, its own `prj.conf` and its own
+`src/main.c`. It is a complete Zephyr application. The only unusual thing about it is
+that it sets `CONFIG_ZTEST=y`, which replaces the normal `main()` with ztest's runner,
+and that it reaches back up into `../../src/` for the one file it wants to test.
+
+That is the whole trick. Two builds come out of one `src/` directory, and each one
+links a different subset:
+
+```mermaid
+flowchart TD
+    logic["src/blink_logic.c<br/>pure functions"]
+    drv["src/blinky.c<br/>GPIO + devicetree"]
+    appmain["src/main.c"]
+    tmain["tests/unit/src/main.c<br/>ZTEST_SUITE"]
+
+    appmain --> app["app image<br/>needs a board"]
+    drv --> app
+    logic --> app
+
+    tmain --> test["test image<br/>needs nothing"]
+    logic --> test
+```
+
+The right-hand build has no GPIO driver in it, no devicetree node to bind and nothing
+to emulate, which is why it runs anywhere and finishes in milliseconds. The price is
+that it can only tell you about `blink_logic.c`. App 03 is about widening that.
+
+### How twister finds this
+
+Twister walks the tree looking for `testcase.yaml`, so there is no registry to keep up
+to date and no place to forget to register a suite. That is the reason tests live next
+to the app they test rather than in one big `tests/` directory at the repo root.
+
+Each key under `tests:` in that file is a **scenario**, and the name is what you see in
+the summary and what `--test` matches on:
+
+```yaml
+tests:
+  app02.blink.logic:          # the scenario name
+    platform_allow:
+      - native_sim
+    tags:
+      - blink
+      - unit
+```
+
+Results land in `twister-out/`, one directory per platform and scenario. The two files
+worth knowing:
+
+- **`build.log`** for anything that did not compile.
+- **`handler.log`** for what the device actually printed while running.
+
+When a run goes red, those are the answer far more often than the console summary is.
 
 ## References
 
