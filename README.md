@@ -80,9 +80,9 @@ seam. They can be read in any order and none of them needs a board.
 
 | App | What it is |
 |---|---|
-| [`07-unit-conventions`](apps/07-unit-conventions) | Naming, AAA, fixtures, table-driven cases, suite hooks. The habits, not the API. |
+| [`07-unit-conventions`](apps/07-unit-conventions) | Naming, AAA, fixtures, table-driven cases, suite hooks, over a pond feeder schedule. |
 | [`08-fff-mocks`](apps/08-fff-mocks) | FFF. Fake the function your code calls, not the chip. Zephyr already vendors it. |
-| [`09-gtest-gmock`](apps/09-gtest-gmock) | No Zephyr at all. Host C++ with GoogleTest and GoogleMock, in half a second. |
+| [`09-gtest-gmock`](apps/09-gtest-gmock) | The same service in C++23, with GoogleTest and GoogleMock built into a Zephyr image. |
 
 Inside an app:
 
@@ -135,12 +135,6 @@ west twister -T apps/03-emul-gpio -p native_sim
 
 ```bash
 west twister -T apps/ -p native_sim
-```
-
-**Run the host C++ suite** — [`09-gtest-gmock`](apps/09-gtest-gmock) has no `testcase.yaml`, so twister walks past it
-
-```bash
-cmake -S apps/09-gtest-gmock -B apps/09-gtest-gmock/build && cmake --build apps/09-gtest-gmock/build -j && ctest --test-dir apps/09-gtest-gmock/build --output-on-failure
 ```
 
 **Run against real hardware**

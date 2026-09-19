@@ -1,18 +1,5 @@
 ## To Do
 
-- add new apps
-    - add exercise.md for all apps
-    - 05: advanced and variative pytest usage
-    - XX about unit test conventions
-    - XX* using fff to mock functions
-    - XX* using gtest gmock with a cpp project
-    - 06* refine: will be about board bringup (bme280) to native sim
-    - XX about finding seams in legacy projects
-    - XX* custom sensor api + native sim fake equivalent
-    - XX create large project, portray good unit test coverage (will be called in ci with lcov and coverage report)
-    - XX create simple project that will fail in sanitizer
-    - XX about fuzz testing in ci
-    - XX create bluetooth/wifi/usb cdc app, create tests for these hard to test things
 - test all current apps/ working fine
     - 06: assemble REAL board + bme280, ensure works fine.  currently fails to compile
     - 02 create a diff ztest, showing logic. remove button example
@@ -34,6 +21,19 @@
 
 ## Done
 
+- add new apps
+    - add exercise.md for all apps
+    - 05: advanced and variative pytest usage
+    - XX about unit test conventions
+    - XX* using fff to mock functions
+    - XX* using gtest gmock with a cpp project
+    - 06* refine: will be about board bringup (bme280) to native sim
+    - XX about finding seams in legacy projects
+    - XX* custom sensor api + native sim fake equivalent
+    - XX create large project, portray good unit test coverage (will be called in ci with lcov and coverage report)
+    - XX create simple project that will fail in sanitizer
+    - XX about fuzz testing in ci
+    - XX create bluetooth/wifi/usb cdc app, create tests for these hard to test things
 - compact HDD
 - upload docker to ghcr
     - create ci version to run on github actions

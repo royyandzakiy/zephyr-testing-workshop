@@ -10,7 +10,7 @@
 # "file not found" on <zephyr/...> means you haven't built that app yet.
 
 CompileFlags:
-  CompilationDatabase: build_esp32s3_sensor/
+  # CompilationDatabase: .
 
   Remove:
     - -Werror
