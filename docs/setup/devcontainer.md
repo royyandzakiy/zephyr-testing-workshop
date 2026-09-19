@@ -123,7 +123,7 @@ under an attendee mid-workshop. Keep the tag in step across both files here.
 | `initializeCommand` | on the **host**, before the container exists | host-side prep |
 | `onCreateCommand` | once, at container creation | one-time per-container setup |
 | `updateContentCommand` | at creation and on content updates | dependency refresh |
-| `postCreateCommand` | once, after creation | `pip install -r requirements-dev.txt` |
+| `postCreateCommand` | once, after creation | installing project dependencies, a `pip install` for example |
 | `postStartCommand` | **every start**, including restarts | `setup-sdks.sh` - must be idempotent |
 | `postAttachCommand` | every time an editor attaches | editor-only fixups |
 

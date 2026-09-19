@@ -18,8 +18,6 @@ static const struct device *bme280_dev = DEVICE_DT_GET(BME280_NODE);
 K_THREAD_STACK_DEFINE(sensor_stack, SENSOR_THREAD_STACK_SIZE);
 static struct k_thread sensor_thread_data;
 
-static bool alarm_state;
-
 int bme280_read_once(struct climate_reading *out)
 {
 	struct sensor_value temp, press, humidity;
@@ -50,17 +48,12 @@ int bme280_read_once(struct climate_reading *out)
 	}
 
 	/* The driver hands back degrees C, kPa and %RH as val1 + val2/1e6.
-	 * climate_milli() is the seam -- and note milli-kPa happens to be Pa. */
+	 * climate_milli() is the seam, and note milli-kPa happens to be Pa. */
 	out->temp_mc = climate_milli(temp.val1, temp.val2);
 	out->press_mpa = climate_milli(press.val1, press.val2);
 	out->hum_mrh = climate_milli(humidity.val1, humidity.val2);
 
 	return 0;
-}
-
-bool bme280_alarm_state(void)
-{
-	return alarm_state;
 }
 
 static void bme280_read_and_display(void)
@@ -74,10 +67,8 @@ static void bme280_read_and_display(void)
 		return;
 	}
 
-	alarm_state = climate_alarm(r.temp_mc, r.hum_mrh, alarm_state);
-
-	printk("T: %d mC | P: %d Pa | H: %d m%%RH | ALARM %s\n",
-	       r.temp_mc, r.press_mpa, r.hum_mrh, alarm_state ? "ON" : "OFF");
+	printk("T: %d mC | P: %d Pa | H: %d m%%RH\n",
+	       r.temp_mc, r.press_mpa, r.hum_mrh);
 }
 
 static void sensor_thread(void *arg1, void *arg2, void *arg3)

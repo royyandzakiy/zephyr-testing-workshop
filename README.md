@@ -297,3 +297,14 @@ they are. A few of the ★★★ ones want a board.
 
 Boards with overlays in the tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`,
 `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
+
+## Contributing
+
+Corrections are welcome, to the code and to the docs equally. A README that describes
+output an app no longer prints is as much of a bug as a failing test.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) covers running the suites, what to check before
+opening a pull request, and the house rules for prose and code style.
+
+If the container will not come up or an app will not build, there is a
+[setup issue form](https://github.com/royyandzakiy/zephyr-testing-workshop/issues/new?template=setup-problem.yml) that asks for the things
+needed to reproduce it.

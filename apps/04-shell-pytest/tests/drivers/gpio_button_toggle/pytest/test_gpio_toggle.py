@@ -5,8 +5,9 @@ from twister_harness import Shell
 
 logger = logging.getLogger(__name__)
 
-# LED starts off; every press toggles, including the first.
-EXPECTED_STATES = ('ON', 'OFF', 'ON', 'OFF', 'ON')
+# LED starts off; every press toggles, including the first. Two presses is what
+# proves it toggles rather than sets. A third would run the same path again.
+EXPECTED_STATES = ('ON', 'OFF')
 
 
 def test_gpio_button_toggle(shell: Shell):

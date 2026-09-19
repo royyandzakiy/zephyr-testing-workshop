@@ -1,0 +1,90 @@
+name: Setup problem
+description: The devcontainer will not come up, or an app will not build
+title: "[setup] "
+labels: ["setup"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For problems getting an environment working. If your environment is fine and a
+        test fails, open a blank issue instead with the command and its full output.
+
+        Please check [docs/troubleshooting.md](https://github.com/royyandzakiy/zephyr-testing-workshop/blob/main/docs/troubleshooting.md)
+        first. It is keyed by what you are looking at.
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Host OS
+      options:
+        - Windows
+        - macOS (Apple silicon)
+        - macOS (Intel)
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: docker
+    attributes:
+      label: Docker version
+      description: Output of `docker --version`.
+      placeholder: Docker version 27.3.1, build ce12230
+    validations:
+      required: true
+
+  - type: dropdown
+    id: step
+    attributes:
+      label: Which step failed
+      options:
+        - Building the container image
+        - First run, downloading Zephyr and the SDK
+        - Building an app
+        - Running the tests with Twister
+        - Flashing a board
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: The exact command you ran
+      description: Leave blank if it failed before you got a shell.
+      placeholder: west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
+    validations:
+      required: false
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Full output
+      description: >
+        Everything, not just the last line. The first line that reports an error is
+        usually the one that says which tool produced it. This is rendered as a code
+        block, so no backticks are needed.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hello
+    attributes:
+      label: Does apps/00-hello build?
+      description: >
+        Run `west build -b native_sim apps/00-hello -p`. This separates a broken
+        environment from a problem with one app.
+      options:
+        - "Yes"
+        - "No"
+        - I could not get far enough to try
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: Anything you already tried
+    validations:
+      required: false

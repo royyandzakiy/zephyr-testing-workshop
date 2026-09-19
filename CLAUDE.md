@@ -99,3 +99,9 @@ touching any `README.md` or `EXERCISE.md` under `apps/`, or anything under `docs
 Code comments explain *why*, especially where a line exists to avoid a specific bug.
 `apps/07-unit-conventions/src/feeder.c` is the model: the comment says what the
 tempting wrong version does and what it would cost.
+
+C and C++ are 4 spaces, no tabs, 100 columns, recorded in `.editorconfig` and
+`.clang-format`. That differs from Zephyr upstream, which uses tabs, and is deliberate.
+The repo is not consistent with it yet: apps 07 and 08 are tab-indented and two apps are
+internally split. No reformatting pass has been run, so match the file you are editing
+rather than reformatting it as part of an unrelated change.

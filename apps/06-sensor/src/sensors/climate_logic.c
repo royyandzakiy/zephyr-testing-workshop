@@ -20,15 +20,3 @@ int32_t climate_milli(int32_t val1, int32_t val2)
 
     return val1 * 1000 + milli;
 }
-
-bool climate_alarm(int32_t temp_mc, int32_t hum_mrh, bool prev)
-{
-    if (prev) {
-        /* Already on: hold until BOTH readings fall back under their release
-         * points. Either one still high keeps it latched. */
-        return (temp_mc > CLIMATE_TEMP_OFF_MC) || (hum_mrh > CLIMATE_HUM_OFF_MRH);
-    }
-
-    /* Off: either reading reaching its trip point is enough. */
-    return (temp_mc >= CLIMATE_TEMP_ON_MC) || (hum_mrh >= CLIMATE_HUM_ON_MRH);
-}
