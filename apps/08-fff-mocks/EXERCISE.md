@@ -130,4 +130,4 @@
 
 - [FFF README](https://github.com/meekrosoft/fff) - every macro, including `DECLARE_FAKE_*` for splitting fakes across files, and `FFF_ARG_HISTORY_LEN`.
 - [`fff.h` in Zephyr](https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/testsuite/include/zephyr/fff.h) - the vendored copy that is already on your include path.
-- [`docs/NOTES-testing.md`](../../docs/NOTES-testing.md) - local notes on which kind of suite belongs where.
+- [`docs/concepts/testing-levels.md`](../../docs/concepts/testing-levels.md) - when to fake a dependency and when to emulate the hardware instead.

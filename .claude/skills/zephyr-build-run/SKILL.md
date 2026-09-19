@@ -5,7 +5,7 @@ description: Build, flash, monitor and test a Zephyr app in this repo, on native
 
 # Build, flash, run, diagnose
 
-[`docs/NOTES-build-flash.md`](../../../docs/NOTES-build-flash.md) is the authoritative
+[`docs/reference/boards.md`](../../../docs/reference/boards.md) is the authoritative
 per-board command reference in this repo, with a cheat sheet per platform. **Read it
 before inventing a command.** This skill covers the decisions around those commands:
 which target to pick, which console mode, how the emulation is wired, and what to do
@@ -99,7 +99,7 @@ CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY=y    # allocates /dev/pts/N and prints it
 
 This matters for tests. A `harness: console` or `harness: pytest` run needs the
 harness to reach the console, and choosing the wrong mode produces a timeout with no
-useful message. [`docs/NOTES-native-sim.md`](../../../docs/NOTES-native-sim.md) has
+useful message. [`docs/reference/native-sim.md`](../../../docs/reference/native-sim.md) has
 the details.
 
 ### Shell mode input
@@ -200,7 +200,7 @@ nrfutil, `--board-id` for pyocd, `--esp-device` for esp32), which is why the map
 needs no `--west-flash` escape hatch. The map and `-p` / `--device-serial` are
 alternative approaches; do not mix them.
 
-Board specifics that bite, all expanded in `docs/NOTES-build-flash.md`:
+Board specifics worth knowing, all expanded in `docs/reference/boards.md`:
 
 | Board | Watch for |
 |---|---|

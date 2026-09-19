@@ -1,6 +1,10 @@
-# Setting up CI
+# Self-hosted runner
 
-## Self-hosted Runner setup
+For someone putting this repo's tests on their own machine or on a board, so CI can
+flash real hardware. The workflows that use it are in
+[`../../.github/workflows/`](../../.github/workflows/).
+
+## Registering the runner
 
 Activate runners by opening the settings for self-hosted runner
 
@@ -12,12 +16,12 @@ https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runner
 `/actions-runner` by the published devel image ([zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)), and its state lives in a
 per-project volume (`${localWorkspaceFolderBasename}-actions-runner`) so a registration survives
 container rebuilds. That volume is deliberately *not* shared between projects the way the SDK
-volumes are — it holds one runner registration, so a shared name would make two projects fight
+volumes are - it holds one runner registration, so a shared name would make two projects fight
 over it. Jump to "Run the actions-runner" below.
 
 Two caveats on the baked copy: Docker seeds a named volume from the image only when the volume
 is **empty**, so bumping the runner version in the image will not update an existing
-volume — delete it first. And the version bundled in the image is the one pinned there, not
+volume - delete it first. And the version bundled in the image is the one pinned there, not
 necessarily the newest.
 
 The rest of this section is for setting a runner up on a **bare host**, outside the container.
@@ -45,7 +49,7 @@ Run the actions-runner NOT as root (here we create a user called runner)
 cd /actions-runner
 
 # config if not yet
-./config.sh --url https://github.com/YOUR_USERNAME/zephyr-testing-workshop --token YOUR_TOKEN_HERE" --ephemeral
+./config.sh --url https://github.com/YOUR_USERNAME/zephyr-testing-workshop --token YOUR_TOKEN_HERE --ephemeral
 
 ./run.sh
 ```
@@ -82,17 +86,23 @@ Error: Not Found
 # Http response code: NotFound from 'POST https://api.github.com/actions/runner-registration' (Request Id: 14ED:2450BC:5DE3A:66F10:6A7E54AF)
 # {"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}
 # Response status code does not indicate success: 404 (Not Found).
-
-# TBD?
 ```
 
-## Build & Flashing
+The registration token is wrong or has expired. They are short-lived. Generate a fresh
+one from the repository's Settings, Actions, Runners, New self-hosted runner page, and
+check the `--url` points at a repository you can administer.
+
+## Checking the runner can flash
+
+Before wiring it into a workflow, confirm the runner's own shell can build and flash:
 
 ```bash
 west build -b nrf5340dk/nrf5340/cpuapp -d build_nrf -p always
-
-west flash -r nrfjprog --snr 1050073602 -d build_nrf
-# or
-nrfjprog --snr 1050073602 --program /workspaces/zephyr-testing-workshop/build_nrf/zephyr/zephyr.hex --ch
-iperase --reset
 ```
+
+```bash
+west flash -d build_nrf --runner nrfutil --dev-id 1050073602
+```
+
+Full per-board commands are in
+[`../reference/boards.md`](../reference/boards.md#per-platform).

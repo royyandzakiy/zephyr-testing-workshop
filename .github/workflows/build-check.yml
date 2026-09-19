@@ -1,0 +1,61 @@
+# Proves: the toolchain works. Builds an upstream Zephyr sample, not this repo,
+# so a failure here is the environment rather than anything under apps/.
+#
+# Run it when setting up a self-hosted runner, or when something else fails and
+# you want to know whether the problem is yours.
+
+name: Build check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hosted:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    container:
+      image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.2-sdk1.0.1
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Build and run hello_world
+        run: |
+          set -euo pipefail
+          west build -b native_sim/native "$ZEPHYR_BASE/samples/hello_world" -d build -p
+          # -stop_at makes native_sim exit cleanly, so this asserts on real output
+          # instead of timing out and swallowing the exit code.
+          ./build/zephyr/zephyr.exe -stop_at=1 > run.log 2>&1
+          cat run.log
+          grep -q "Hello World" run.log
+
+  self-hosted:
+    runs-on: [self-hosted, linux]
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # The runner is expected to be running inside the devcontainer, which is
+      # where the SDK lives. Without this the build fails much later and much
+      # less clearly.
+      - name: Check the runner can see the SDK
+        run: |
+          set -euo pipefail
+          for v in ZEPHYR_BASE ZEPHYR_SDK_INSTALL_DIR ZEPHYR_TOOLCHAIN_VARIANT; do
+            [ -n "${!v:-}" ] || { echo "::error::$v is unset. Is this runner inside the devcontainer?"; exit 1; }
+          done
+          test -f "$ZEPHYR_BASE/VERSION" || { echo "::error::no Zephyr checkout at $ZEPHYR_BASE"; exit 1; }
+
+      - name: Build and run hello_world
+        run: |
+          set -euo pipefail
+          west build -b native_sim/native "$ZEPHYR_BASE/samples/hello_world" -d build -p
+          ./build/zephyr/zephyr.exe -stop_at=1 > run.log 2>&1
+          cat run.log
+          grep -q "Hello World" run.log

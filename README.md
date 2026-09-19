@@ -37,13 +37,20 @@ Zephyr **v4.4.2**, SDK **1.0.1**
 │       ├── tests/             suites for this app, each its own Zephyr application
 │       ├── CMakeLists.txt, prj.conf
 │       └── README.md, EXERCISE.md
-├── docs/                  reference notes, see the table at the end
+├── docs/                  everything around the examples
+│   ├── README.md              the index, and three routes through the rest
+│   ├── setup/                 getting an environment working
+│   ├── concepts/              what each kind of test answers, and what it cannot
+│   ├── guides/                task walkthroughs, for example putting a board in CI
+│   ├── reference/             commands, flags, fixtures
+│   ├── troubleshooting.md     failures keyed by what you are looking at
+│   ├── glossary.md            the vocabulary the docs assume
+│   └── notes/                 working material, not written for a reader
 ├── .github/workflows/     GitHub Actions pipelines
 ├── .devcontainer/         the container definition. The whole toolchain lives in here.
 ├── .claude/skills/        Claude Code skills for building, testing and writing docs here
 ├── .clangd                so the editor resolves Zephyr headers instead of underlining them
-├── .vscode/               editor settings
-└── dump/                  scratch material kept for reference
+└── .vscode/               editor settings
 ```
 
 `.devcontainer`, `.clangd` and `.vscode` exist to make the thing work on your machine.
@@ -55,13 +62,25 @@ Documentation sits at three depths, and they do different jobs:
 |---|---|
 | each app's `README.md` | what that app is, how to run it, and what output to expect |
 | each app's `EXERCISE.md` | things to change, break and look up, once the app itself makes sense |
-| [`docs/`](docs/) | reference across all of them: per-board commands, Twister flags, the pytest harness, CI |
+| [`docs/`](docs/) | everything that is not about one app: setup, commands, concepts, troubleshooting |
+
+[`docs/README.md`](docs/README.md) is the way in to that last one.
 
 ### CI
 
-Five workflows under [`.github/workflows/`](.github/workflows/), covering different kinds of tests.
-Some work purely in the github actions CI, some others run in the users PC via a local github actions
-runner.
+Four workflows under [`.github/workflows/`](.github/workflows/). Two run on every push,
+on GitHub's own runners, and need no hardware. Two are manual and want a runner on your
+own machine, one of them with a board attached.
+
+| | Answers | When |
+|---|---|---|
+| `test-native-sim.yml` | do all the test suites still pass | push, pull request |
+| `sanitizers.yml` | does one app run clean under ASan and UBSan | push, pull request |
+| `build-check.yml` | does the toolchain work at all | manual |
+| `test-hardware.yml` | does it build, flash and pass on a real board | manual |
+
+[`docs/guides/ci.md`](docs/guides/ci.md) covers what each one does and the two things to
+change for your own board.
 
 ## What is here
 
@@ -84,7 +103,7 @@ and whether a given peripheral is the real driver or an emulated one.
 They are independent of each other. `gpio_emul`, `i2c_emul` and the rest are ordinary
 drivers gated on a devicetree node, not a `native_sim` feature, so an emulated button
 works just as well on an nRF5340DK. The suite in `apps/04-shell-pytest` runs both ways,
-and [`.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml`](.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml)
+and [`.github/workflows/test-hardware.yml`](.github/workflows/test-hardware.yml)
 runs it on the board.
 
 What differs between targets is cost and reach. `native_sim` builds in seconds, needs no
@@ -132,8 +151,8 @@ before you need it.
 Hardware is optional. If you have a board, build and flash to it and register a local
 `actions-runner`. Nothing here requires one.
 
-Setup notes: [`docs/PRE-general-guide.md`](docs/PRE-general-guide.md) and
-[`docs/PRE-build-flash-monitor.md`](docs/PRE-build-flash-monitor.md).
+Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
+[`docs/setup/build-flash-monitor.md`](docs/setup/build-flash-monitor.md).
 
 ## The apps
 
@@ -243,7 +262,7 @@ The repo carries [`CLAUDE.md`](CLAUDE.md) with its conventions, and four skills 
 | `zephyr-build-run` | building, flashing, monitoring, running Twister, and digging into a run that failed |
 | `zephyr-ztest` | scoping and writing tests in C that run on the device |
 | `zephyr-pytest` | writing tests that run off the device and drive it from outside |
-| `workshop-app-docs` | the format the `README.md` and `EXERCISE.md` files here follow |
+| `repo-docs` | the format every `README.md`, `EXERCISE.md` and `docs/` page here follows |
 
 They carry the parts that are specific to this repo and easy to get wrong: which runner
 and flags each board needs, the `native_sim` console modes, how the emulation is wired
@@ -261,17 +280,13 @@ they are. A few of the ★★★ ones want a board.
 
 ## Reference
 
+[`docs/README.md`](docs/README.md) is the index. The pages people reach for most:
+
 | | |
 |---|---|
-| [`docs/NOTES-build-flash.md`](docs/NOTES-build-flash.md) | per-board build, flash and Twister commands, with what each flag is for |
-| [`docs/NOTES-testing.md`](docs/NOTES-testing.md) | the same suite run off-target and on-target, and why the flags differ |
-| [`docs/PYTEST_GUIDE.md`](docs/PYTEST_GUIDE.md) | `twister_harness`, the `dut` and `Shell` fixtures |
-| [`docs/NOTES-native-sim.md`](docs/NOTES-native-sim.md) | running and debugging the native binary, and the console modes |
-| [`docs/NOTES-ci-self-hosted.md`](docs/NOTES-ci-self-hosted.md) | runner registration, USB passthrough, `nrfutil` |
-| [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | container internals and SDK layout |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | working on this repo itself |
+| [`docs/reference/boards.md`](docs/reference/boards.md) | build, flash and Twister commands per board, and what each flag does |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | failures keyed by what you are looking at |
+| [`docs/glossary.md`](docs/glossary.md) | the vocabulary the docs assume |
 
 Boards with overlays in the tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`,
 `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
-
-`dump/` is scratch material kept for reference.

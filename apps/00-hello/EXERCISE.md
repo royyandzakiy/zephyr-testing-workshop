@@ -101,7 +101,7 @@
 1. **Make native_sim print to a pseudo-terminal instead of your shell.**
    `boards/native_sim_native.conf` has the other option commented out. Switch it,
    rebuild, and attach a terminal to the pty the binary announces.
-   [`docs/NOTES-native-sim.md`](../../docs/NOTES-native-sim.md) has the commands.
+   [`docs/reference/native-sim.md`](../../docs/reference/native-sim.md) has the commands.
 
    *Why it is interesting:* this is the configuration that lets a test harness drive
    the binary while you watch it, and it is how the pytest suite in app 04 talks to the

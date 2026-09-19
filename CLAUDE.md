@@ -32,7 +32,7 @@ Always pass `-O /tmp/<name> --clobber-output`. Twister rotates `twister-out/` in
 | `zephyr-build-run` | building, flashing, monitoring, running twister, or working out why a run went red |
 | `zephyr-ztest` | writing on-device tests in C: unit, integration, or emulated-driver |
 | `zephyr-pytest` | writing tests that run off the device and talk to it, usually end to end |
-| `workshop-app-docs` | writing or refreshing any `README.md` or `EXERCISE.md` under `apps/` |
+| `repo-docs` | writing or refreshing any prose: an app `README.md` or `EXERCISE.md`, or anything under `docs/` |
 
 Pick between the two test skills by scope, not by habit. `zephyr-ztest` covers
 everything that runs *on* the device. `zephyr-pytest` covers everything that drives
@@ -81,20 +81,20 @@ are a second group about what you write once you have found the seam.
 
 | | |
 |---|---|
-| [`docs/NOTES-build-flash.md`](docs/NOTES-build-flash.md) | the authoritative per-board command reference. Read it before inventing a flash command. |
-| [`docs/NOTES-testing.md`](docs/NOTES-testing.md) | on-target and off-target runs for the same suite, with the reason for each flag |
-| [`docs/NOTES-native-sim.md`](docs/NOTES-native-sim.md) | PTY versus stdin/stdout console modes |
-| [`docs/PYTEST_GUIDE.md`](docs/PYTEST_GUIDE.md) | `twister_harness`, the `dut` and `Shell` fixtures |
-| [`docs/NOTES-ci-self-hosted.md`](docs/NOTES-ci-self-hosted.md) | runner registration, USB passthrough |
+| [`docs/README.md`](docs/README.md) | the index. Start here to find the right page. |
+| [`docs/reference/boards.md`](docs/reference/boards.md) | the authoritative per-board command reference. Read it before inventing a flash command. |
+| [`docs/reference/native-sim.md`](docs/reference/native-sim.md) | PTY versus stdin/stdout console modes |
+| [`docs/reference/pytest-harness.md`](docs/reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, `harness_config` |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | failures keyed by symptom |
+| [`docs/guides/self-hosted-runner.md`](docs/guides/self-hosted-runner.md) | registering a runner so CI can flash hardware |
 
 ## House style
 
 No em dashes anywhere, in code comments, docs or commit messages. Use a comma, a
 spaced hyphen, parentheses, or two sentences.
 
-Docs under `apps/` are attendee-facing and have their own rules, which live in the
-`workshop-app-docs` skill. Load it before touching any `README.md` or `EXERCISE.md`
-there.
+Prose docs have their own rules, which live in the `repo-docs` skill. Load it before
+touching any `README.md` or `EXERCISE.md` under `apps/`, or anything under `docs/`.
 
 Code comments explain *why*, especially where a line exists to avoid a specific bug.
 `apps/07-unit-conventions/src/feeder.c` is the model: the comment says what the

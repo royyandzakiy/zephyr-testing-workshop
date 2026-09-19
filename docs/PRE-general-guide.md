@@ -1,1 +1,0 @@
-[[preworkshop steps after setup: build blinky, flash to board, take notes of compile & flash cmds, will be useful later]]

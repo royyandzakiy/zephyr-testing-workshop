@@ -144,7 +144,7 @@ What you do not get:
 Almost every app in this repo runs on native_sim, including every test in CI. The board
 overlays under `boards/` are what let the same `src/` build for native_sim and for a
 real board without changing a line of C. Console options, including the pseudo-terminal
-mode, are in [`docs/NOTES-native-sim.md`](../../docs/NOTES-native-sim.md).
+mode, are in [`docs/reference/native-sim.md`](../../docs/reference/native-sim.md).
 
 ## References
 
@@ -154,4 +154,4 @@ mode, are in [`docs/NOTES-native-sim.md`](../../docs/NOTES-native-sim.md).
 | [West](https://docs.zephyrproject.org/latest/develop/west/index.html) | the tool itself, and the difference between `west build` and plain CMake |
 | [native_sim](https://docs.zephyrproject.org/latest/boards/native/native_sim/doc/index.html) | the board that is your laptop, including the console options in `boards/native_sim_native.conf` |
 | [Kconfig](https://docs.zephyrproject.org/latest/build/kconfig/index.html) | why `CONFIG_PRINTK=y` is a build-time decision and not a runtime one |
-| [`docs/PRE-general-guide.md`](../../docs/PRE-general-guide.md) | setup, if this app did not run |
+| [`docs/setup/first-run.md`](../../docs/setup/first-run.md) | setup, if this app did not run |

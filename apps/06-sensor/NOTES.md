@@ -80,7 +80,7 @@ undefined behaviour in C. It is not an artefact of the emulator: a real BME280
 returns the same shape of calibration data and would trip the same check.
 
 Left in place deliberately. Nothing in CI runs UBSAN against this app
-(`.github/workflows/sanitizers_native-sim_ci.yml` builds `apps/01-blinky`), and
+(`.github/workflows/sanitizers.yml` builds `apps/01-blinky`), and
 it makes a better exercise than a footnote: turn the sanitizer on, read the
 report, work out whether it is your bug, and decide what you would do about it
 in a vendor driver you do not own.

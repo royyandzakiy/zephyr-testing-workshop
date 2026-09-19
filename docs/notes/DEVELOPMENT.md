@@ -1,3 +1,6 @@
+> Working notes. Not written for a reader, and parts of it are out of date.
+> See [`../README.md`](../README.md) if you are looking for the documentation.
+
 ## To Do
 
 - improve main readme to make it interesting
