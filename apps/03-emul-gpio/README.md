@@ -117,7 +117,7 @@ flowchart TD
     dt -.-> emul
 ```
 
-The dashed line is the point of the whole app. Your C never chooses. The `sw0` and
+The dashed line is where the choice happens. Your C never makes it. The `sw0` and
 `led0` aliases resolve to whichever controller the merged devicetree put them on, and
 `tests/emul/app.overlay` is what moves them onto `gpio_emul` for this one build.
 
@@ -143,9 +143,8 @@ compiles, links, and dies on the first `gpio_pin_toggle_dt()`.
 
 It is a variable with callbacks attached, so it gets pin levels, interrupt edges and
 pull-ups right. It knows nothing about drive strength, slew rate, contact bounce,
-current limits, or two things driving the same net. Every one of those is a bug class
-this suite will stay green through, and that list is how you decide what still has to
-run on a board.
+current limits, or two things driving the same net. This suite will pass through every
+one of those, so that list is how you decide what still has to run on a board.
 
 ## References
 

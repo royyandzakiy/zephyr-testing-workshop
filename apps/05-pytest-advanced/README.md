@@ -87,13 +87,12 @@ Four scenarios from `tests/shell_pytest/testcase.yaml`:
 | `app05.shell.pytest.parametrize` | `pytest/test_parametrize.py` only |
 | `app05.shell.builtin_harness` | `harness: shell`, no Python |
 
-One test reports as **xfail** rather than as a pass:
+One test fails and reports as **xfail**:
 `test_reset_also_turns_the_led_off`. It is `strict=True`, so if somebody makes
 `app reset` clear the LED, that test starts failing and you go delete it.
 
-The raw suite skips itself with a message naming the missing binary if you have not
-built the image, which is what you want from a test that depends on something outside
-its control.
+The raw suite will give a message naming the missing binary if you have not built the
+image yet.
 
 > Not yet run end to end in the devcontainer. The C and the Python are written against
 > the same APIs as `04-shell-pytest`, but treat the first run as part of the exercise.

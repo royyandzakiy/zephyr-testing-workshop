@@ -91,8 +91,8 @@
    what would have to be true of the function for your answer to flip.
 
    *Why it is interesting:* this is the question you get asked when you take the
-   pattern back to your own codebase, and "test everything" does not survive contact
-   with a review.
+   pattern back to your own codebase, and "test everything" is not an answer that
+   holds up in a review.
 
 2. **Run the suite on a real board.** Add a board to `platform_allow` and run twister
    with `--device-testing`. The logic has no dependencies, so it should pass

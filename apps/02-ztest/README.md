@@ -100,8 +100,7 @@ The application itself behaves exactly as `01-blinky` did, and still does nothin
 that it sets `CONFIG_ZTEST=y`, which replaces the normal `main()` with ztest's runner,
 and that it reaches back up into `../../src/` for the one file it wants to test.
 
-That is the whole trick. Two builds come out of one `src/` directory, and each one
-links a different subset:
+Two builds come out of one `src/` directory, and each one links a different subset:
 
 ```mermaid
 flowchart TD
@@ -147,7 +146,8 @@ worth knowing:
 - **`build.log`** for anything that did not compile.
 - **`handler.log`** for what the device actually printed while running.
 
-When a run goes red, those are the answer far more often than the console summary is.
+When a test fails, those two files tell you what happened. The console summary does
+not.
 
 ## References
 

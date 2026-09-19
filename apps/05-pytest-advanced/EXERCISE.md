@@ -33,8 +33,8 @@
    west twister -T apps/05-pytest-advanced -p native_sim
    ```
 
-   *Check:* the suite goes RED, not green, and you can say why that is the correct
-   behaviour for `strict=True`. Put it back when you are done.
+   *Check:* the suite fails. You can say why an unexpected pass counts as a failure
+   under `strict=True`. Put it back when you are done.
 
 4. **Add a negative case.** `test_bad_press_count_is_rejected` has five inputs. Add
    one more that you expect the device to reject.
@@ -66,8 +66,8 @@
    `--strict-markers` in its `pytest_args`. Then misspell a marker on purpose and run
    it.
 
-   *Check:* the run fails at collection rather than at assertion time, and you can
-   quote the message. That is the whole reason to turn the flag on.
+   *Check:* the run fails at collection, before any test executes, and you can quote
+   the message. Without the flag a misspelled marker is silently ignored.
 
 5. **Compare the two conftests.**
 
@@ -107,6 +107,6 @@
 
 ## If you want to go further
 
-- [pytest how-to guides](https://docs.pytest.org/en/stable/how-to/index.html) - the whole index is worth a skim; `conftest.py`, marks and fixtures are the three that pay off fastest here.
+- [pytest how-to guides](https://docs.pytest.org/en/stable/how-to/index.html) - you can find about `conftest.py`, marks and fixtures in more detail.
 - [Twister harness configuration](https://docs.zephyrproject.org/latest/develop/test/pytest.html#usage) - every key `harness_config` accepts, including `pytest_dut_scope`, which changes how often the device is reset between tests.
 - [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) - read it, then read the second exercise under ★★★ again before you install it.

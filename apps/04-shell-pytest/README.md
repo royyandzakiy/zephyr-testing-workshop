@@ -3,8 +3,7 @@
 This project adds a shell command that the device exposes only in its test build, and
 a `pytest` suite that drives it from outside. You will run the suite against
 native_sim, and against a real board if you have one and a `hardware-map.yaml` filled
-in. The test process and the device are two separate programs here, which is the first
-time that is true in this repo.
+in. The test process and the device are two separate programs here.
 
 **What changed since `03-emul-gpio`:** the app went back to a flat `main.c` with no
 seam, and the test moved out of the device entirely. The suite sits in
@@ -14,8 +13,8 @@ seam, and the test moved out of the device entirely. The suite sits in
 
 - How the pieces connect: twister builds and flashes, `twister_harness` owns the
   serial port, and your pytest file only sees a fixture. See [Trivia](#trivia) below.
-- What the `shell` fixture gives you, and why the same test file works whether the
-  device is a native_sim process or a board on a runner.
+- Using a `shell` fixture that lets the same test file run whether the device is a
+  native_sim process or a board on a runner.
 - Why `test_harness.c` is a separate file from `src/main.c`. The shell command is
   compiled into the test image only, so the backdoor never ships.
 - That `harness: pytest` in `testcase.yaml` is the entire opt-in, and that
@@ -71,7 +70,7 @@ The scenario is `drivers.gpio.button_toggle`. The interesting output is in
 `twister-out/native_sim/.../handler.log`, which holds everything the device said,
 including the shell prompt and the echo of each `test_btn`.
 
-When it goes red, that log is the answer almost every time.
+When the test fails, you can find out what the exact failure was by looking there.
 
 ## Trivia
 
@@ -97,8 +96,8 @@ flowchart TD
 ```
 
 Your test file never opens a port, never resets a board and never knows which of the
-two it got. That is the whole value of the harness, and it is why the same file runs
-on your laptop and on a runner with hardware attached.
+two it got. The harness handles all of that, so the same file runs on your laptop and
+on a runner with hardware attached.
 
 The other fixture worth knowing is `dut`, the raw device adapter underneath `shell`.
 `shell` sends a command and waits for the prompt, so it can only see output that came

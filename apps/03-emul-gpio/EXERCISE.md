@@ -76,8 +76,8 @@
    LED on it while the button stays on the first.
 
    *Why it is interesting:* it forces you to notice that a `gpio_dt_spec` is a
-   `(port, pin, flags)` triple and not a pin number, which is most of what makes this
-   portable in the first place.
+   `(port, pin, flags)` triple and not a pin number. That is what lets the same code
+   bind a real controller and an emulated one.
 
 2. **Find out what `gpio_emul` cannot do.** Read the driver and list three behaviours
    of a real pin it does not model.

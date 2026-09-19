@@ -96,7 +96,7 @@ west build -b esp32s3_devkitc/esp32s3/procpu \
   -d build_esp32s3_test_gpio_toggle \
   -- -DEXTRA_DTC_OVERLAY_FILE="../../../boards/esp32s3_devkitc_esp32s3_procpu.overlay"
 
-west flash --runner esp32 --esp-device /dev/ttyACM0 -d build_esp32s3_test_gpio_toggle
+west flash --runner esp32 --esp-device /dev/ttyUSB0 -d build_esp32s3_test_gpio_toggle
 
 python3 -m serial.tools.miniterm --raw /dev/ttyACM0 115200
 ```

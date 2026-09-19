@@ -70,7 +70,45 @@ Cut on sight:
 | Colon-then-reveal | "There is one thing that changes everything: X." |
 | **Em dashes** | not the unicode one, not a doubled hyphen. Comma, spaced hyphen, parentheses, or two sentences. |
 
-Keep: second person, practical, slightly loose grammar, "just" as a softener. His own
+### The governing principle
+
+> "the nuance is more neutral, not trying to make anyone surprised (which ends up
+> being cringe)"
+
+Write to inform, never to land a point. A sentence built so the reader goes "oh!" is
+the thing to remove, even when what it says is true.
+
+Five habits that break it, with the actual line Royyan rewrote in each case:
+
+| Habit | Written | Rewritten |
+|---|---|---|
+| **Novelty claim.** Saying a thing is the first, the only, or a milestone. | "The test process and the device are two separate programs here, which is the first time that is true in this repo." | "The test process and the device are two separate programs here." |
+| **Trailing justification.** A clause after the fact explaining why the fact is good. | "The raw suite skips itself with a message naming the missing binary if you have not built the image, which is what you want from a test that depends on something outside its control." | "The raw suite will give a message naming the missing binary if you have not built the image yet." |
+| **Two-part setup.** "What X gives you, and why Y" invites a reveal. One idea, stated flat. | "What the `shell` fixture gives you, and why the same test file works whether the device is a native_sim process or a board on a runner." | "Using a `shell` fixture that lets the same test file run whether the device is a native_sim process or a board on a runner." |
+| **Vague emphasis and colour jargon.** "almost every time", "far more often", "goes red". | "When it goes red, that log is the answer almost every time." | "When the test fails, you can find out what the exact failure was by looking there." |
+| **"X rather than Y".** Contrast framing where a plain statement works. | "One test reports as **xfail** rather than as a pass." | "One test fails and reports as **xfail**." |
+
+Related patterns to strike on sight, all of which are the same instinct: "that is the
+whole trick", "which is the point of having it there", "is the whole value of", "does
+not survive contact with", "the naming rule that bites", "stays green while the
+product does not work", "walks straight past it".
+
+**Link descriptions say what is in the page, not how valuable it is.** "worth a skim",
+"the three that pay off fastest", "worth reading properly", "the page to keep open"
+are all value judgements the reader did not ask for.
+
+| Written | Rewritten |
+|---|---|
+| "the whole index is worth a skim; `conftest.py`, marks and fixtures are the three that pay off fastest here" | "you can find about `conftest.py`, marks and fixtures in more detail" |
+| "the page to keep open while writing" | "the one-page summary of matchers, actions and cardinalities" |
+| "the vendored copy, worth opening once to see what the macros expand to" | "the vendored copy. Open it to see what the macros expand to." |
+
+"Worth knowing by name" survives in `00-hello`, so the test is not the word "worth",
+it is whether you are rating the page or describing it.
+
+### Keep
+
+Second person, practical, slightly loose grammar, "just" as a softener. His own
 opening line is the model, so do not over-polish it away:
 
 > This project is just to test and ensure your toolchain works. You will build it and
@@ -94,10 +132,41 @@ If a claim cannot be checked against the tree, cut it.
 
 ## README.md
 
+**Every app README has the same sections in the same order, including Trivia, and
+Trivia always contains at least one mermaid diagram.** `00-hello` is the reference for
+all of it.
+
+### The opener
+
+Three plain sentences, in this order. Full sentences, never stacked fragments.
+
+1. **What this project is.** Starts "This project is...".
+2. **What the reader will do.** "You will build it and run the executable."
+3. **What it does not do**, pre-empting the obvious confusion. "It does not produce
+   any firmware to flash."
+
+Royyan's own:
+
+> This project is just to test and ensure your toolchain works. You will build it and
+> run the executable. It does not produce any firmware to flash.
+
+Openers he rejected, and the shape to avoid:
+
+| Rejected | What is wrong with it |
+|---|---|
+| "One flat `main.c`, no seam, no tests. This is roughly the code you would inherit on a real project." | stacked fragments, then a knowing aside. *"i really hate this style of talking"* |
+| "The odd one out. No Zephyr, no devicetree, no board, no twister." | same, opens on a fragment |
+| "Everything `04-shell-pytest` did, plus the pytest features that..." | noun phrase, never says what you will do |
+
+A point like "this is the untestable starting point" is real and belongs in a **What
+to learn here** bullet, not smuggled into the opener as an aside.
+
+### The sections
+
 ```markdown
 # NN-name
 
-<One or two sentences. What this app is for, and what the reader will do with it.>
+<The three-sentence opener above.>
 
 **What changed since `MM-previous`:** <one sentence, or a short bullet list if it is
 structural. Skip for the first app in a thread. Honest about zero: if nothing in
@@ -128,10 +197,9 @@ rather than inventing plausible output.>
 
 ## Trivia
 
-<Optional, and only where the reader genuinely needs background the app itself does
-not supply. Short explainers, a table or a mermaid diagram where it helps. This is
-where "briefly explain X" notes go, so that "What to learn here" stays a list.
-Verify any mermaid actually renders before committing it.>
+<REQUIRED. Two or three `###` subsections of background the app itself cannot show
+you, and at least one brief mermaid diagram. This is where "briefly explain X" notes
+go, so "What to learn here" can stay a list of one-liners that point here.>
 
 ## References
 
@@ -139,9 +207,59 @@ Verify any mermaid actually renders before committing it.>
 naming rule is halfway down" beats a bare URL. Prefer upstream docs over this repo.>
 ```
 
+### Trivia, in more detail
+
+Each app's Trivia answers "what would I have to already know for the code in this
+folder to make sense?" Three shapes that keep working:
+
+- **A table of the things that are easy to mix up.** `00-hello` does west / Kconfig /
+  devicetree / SDK. `01-blinky` does `.dts` / `.dtsi` / `.overlay` / binding / alias.
+- **A diagram of where the piece under discussion sits.** Usually a stack, a build
+  graph, or a lifecycle. Keep it brief; eight to twelve nodes is plenty.
+- **What you get and what you do not get**, as two short lists, when the app is
+  introducing a technique with real limits.
+
+Name generated files by their full path when you mention them. `.config`,
+`autoconf.h`, `devicetree_generated.h`, `twister-out/handler.log`. Being able to find
+them is half of what the reader is here for.
+
+**Validate every diagram before committing.** Extract the fenced blocks and run them
+through the real parser, do not eyeball them:
+
+```bash
+npm install --prefix <scratch> mermaid@11 jsdom && node <scratch>/check.mjs
+```
+
+`mermaid.parse()` needs a DOM, so jsdom globals have to be installed first. The
+diagrams currently in the repo all use `flowchart TD` with quoted labels, `<br/>` for
+line breaks, `subgraph`, dotted `-.->` and labelled `-->|like this|` edges, all of
+which parse cleanly on mermaid 11.
+
 ## EXERCISE.md
 
-No preamble. The file opens on `## ★ warm-up`.
+No preamble of any kind. The file opens on `## ★ warm-up`, including setup that every
+exercise needs, which goes inside the first exercise instead.
+
+### The shape of one exercise
+
+00-hello's are the model. Four parts, in this order:
+
+1. **A bold title that is a full imperative sentence**, ending in a period inside the
+   bold. "**Make the build fail on purpose.**"
+2. **Plain prose** giving the context and saying what to look for.
+3. **The command, in a fenced `bash` block.** Never inline in the prose, never
+   described as "run twister". If the exercise needs two steps, use two fences with a
+   sentence between them, the way `00-hello` warm-up 2 walks from `.config` to
+   `grep -rn "select PRINTK"`.
+4. **A blank line, then `*Check:*`** as its own paragraph. `★★★` uses
+   `*Why it is interesting:*` instead.
+
+Roughly three quarters of the exercises in a file should carry a fenced command.
+`00-hello` has 8 across 10. A file with 13 exercises and no fences is the failure mode
+to watch for: it means the exercises are being described rather than handed over.
+
+Commands are repo-relative and must actually run. Test the ones that do not need the
+devcontainer before committing.
 
 ```markdown
 # NN-name - exercises
@@ -191,9 +309,21 @@ Rules for the exercises:
 1. `grep -nEi 'session|workshop|the room|all day|before the break|on the clock'` over
    both files. The only legitimate hit is literal program output.
 2. Search for the em dash character and for a doubled hyphen used as one.
-3. Every `*Check:*` names something concrete the reader can do or say.
-4. Every command in "Run it" was actually run, or is flagged as unverified.
-5. Every file named in "Layout" exists. Every file that matters is named.
-6. Every link resolves and has a reason next to it.
-7. Read it back. If a sentence sounds like a product page or like a narrator, rewrite
+3. Run the neutral-nuance grep. Every hit is a sentence written to land a point:
+
+   ```bash
+   grep -nEi 'goes red|go red|green run|stays green|is the answer|almost every time|far more often|which is the point|that is the whole|which is what you want|rather than as a|pay off|worth a skim|survive contact|walks straight past|that bites|the first (time|app|suite) in this repo' apps/*/README.md apps/*/EXERCISE.md
+   ```
+4. The opener is three full sentences: what it is, what you will do, what it does not
+   do. No stacked fragments, no knowing asides.
+5. The README has a `## Trivia` section, and that section has a mermaid diagram that
+   you parsed rather than eyeballed.
+6. `EXERCISE.md` opens on `## ★ warm-up` with nothing above it, and most exercises
+   carry a fenced `bash` command rather than describing one. Run the ones that do not
+   need the devcontainer.
+7. Every `*Check:*` names something concrete the reader can do or say.
+8. Every command in "Run it" was actually run, or is flagged as unverified.
+9. Every file named in "Layout" exists. Every file that matters is named.
+10. Every link resolves and has a reason next to it.
+11. Read it back. If a sentence sounds like a product page or like a narrator, rewrite
    it as the plainer thing it is trying to say.
