@@ -1,5 +1,11 @@
 ## To Do
 
+- improve main readme to make it interesting
+- cleanup docs notes, make it a nice wiki or smthn
+- ci scripts, make also a nice list of ci scripts to choose from
+
+## Hold
+
 - test all current apps/ working fine
     - 06: assemble REAL board + bme280, ensure works fine.  currently fails to compile
     - 02 create a diff ztest, showing logic. remove button example

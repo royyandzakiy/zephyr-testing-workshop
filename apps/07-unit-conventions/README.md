@@ -5,9 +5,6 @@ You will run the suites and then go argue with them in [`EXERCISE.md`](EXERCISE.
 The module is deliberately small, because this app is about how the tests are written
 rather than about what the code does.
 
-**Where this sits:** apps 07, 08 and 09 form a second group. They assume you have found
-the seam already, they can be read in any order, and none of them needs a board.
-
 ## What to learn here
 
 - The ztest suite lifecycle: which hook runs once, which runs per test, and in what

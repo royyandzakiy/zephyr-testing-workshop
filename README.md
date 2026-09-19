@@ -1,192 +1,277 @@
 # Practical Embedded Automated Testing for Zephyr
 
-Workshop repository. Everything you build today lives under [`apps/`](apps/).
+This repository is made to help understand automated testing with Zephyr. It works through the tools the
+Zephyr ecosystem already provides for it: `native_sim` for running firmware on your own
+machine, `ztest` for tests that run on the device, the emulator framework for faking a
+pin or a chip, the shell subsystem as a way in from outside, Twister for building and
+running suites and deciding pass or fail, and the sanitizers. Alongside those sit a few
+things from outside Zephyr that fit the same job: FFF, GoogleTest, pytest, and GitHub
+Actions.
 
-**The thesis:** the seam between test and hardware belongs in the devicetree, not in your code. By the end of the day the same test file runs against an emulated GPIO controller on your laptop and against a physical board in CI, and the application source is identical in both cases.
+Inside [`apps/`](apps/) is a set of small Zephyr applications, each a working example of
+one way to test firmware:
 
----
+- test frameworks, `ztest` and GoogleTest, both compiled into a Zephyr image
+- emulated drivers, `gpio_emul` and `i2c_emul`, and an emulated I2C chip written here
+- fakes with FFF, replacing the functions a module calls rather than the hardware
+- the Zephyr shell as a test backdoor, driven from `pytest` for end to end runs
+- Twister, and the different harnesses it can use to read a result
+- CI with GitHub Actions: building, running under sanitizers, running off target, and
+  flashing and running on target through a self-hosted runner
 
-## Before the workshop
+Every app builds and runs on `native_sim`, which compiles Zephyr as an ordinary program
+for the machine you are sitting at. Several also carry overlays for common targets:
+nRF5340DK, ESP32-S3, Nucleo G474RE and QEMU. Each app has its own tests, its own
+`README.md` and its own `EXERCISE.md`.
 
-Do this **3–4 days ahead**, not the morning of. The CI session depends on step 1.
+Zephyr **v4.4.2**, SDK **1.0.1**
 
-1. **Fork this repository** to your own GitHub account. Session 4 pushes to your fork and watches your own Actions run.
-2. **Install Docker** — Docker Desktop (Windows/macOS) or Docker Engine (Linux). Confirm `docker run hello-world` works. Nothing else is required on your machine.
-3. **Clone your fork** and open it in VS Code. Accept the *"Reopen in Container"* prompt.
+## Repository structure
 
-   Two waits, both one-time:
-   - **~6 min** building the container image. It is built from Ubuntu rather than pulled, so you will see package installs scroll past, not a download bar.
-   - **~10 min** on first start, downloading Zephyr and the Zephyr SDK into a shared Docker volume. This happens **once per machine**, not once per project — you will see a `FIRST RUN ON THIS MACHINE` banner. Later starts take seconds and need no network.
+```
+.
+├── apps/                  the examples, one folder per application
+│   └── NN-name/
+│       ├── src/               application source
+│       ├── boards/            per-board overlays and Kconfig fragments
+│       ├── tests/             suites for this app, each its own Zephyr application
+│       ├── CMakeLists.txt, prj.conf
+│       └── README.md, EXERCISE.md
+├── docs/                  reference notes, see the table at the end
+├── .github/workflows/     GitHub Actions pipelines
+├── .devcontainer/         the container definition. The whole toolchain lives in here.
+├── .claude/skills/        Claude Code skills for building, testing and writing docs here
+├── .clangd                so the editor resolves Zephyr headers instead of underlining them
+├── .vscode/               editor settings
+└── dump/                  scratch material kept for reference
+```
 
-   Leave both running.
-4. **Verify** inside the container:
+`.devcontainer`, `.clangd` and `.vscode` exist to make the thing work on your machine.
+Nothing in them is part of the teaching material.
+
+Documentation sits at three depths, and they do different jobs:
+
+| | |
+|---|---|
+| each app's `README.md` | what that app is, how to run it, and what output to expect |
+| each app's `EXERCISE.md` | things to change, break and look up, once the app itself makes sense |
+| [`docs/`](docs/) | reference across all of them: per-board commands, Twister flags, the pytest harness, CI |
+
+### CI
+
+Five workflows under [`.github/workflows/`](.github/workflows/), covering different kinds of tests.
+Some work purely in the github actions CI, some others run in the users PC via a local github actions
+runner.
+
+## What is here
+
+```mermaid
+flowchart TD
+    src["src/ + tests/<br/>one source tree"]
+    dt["devicetree and Kconfig<br/>pick a real driver or an emulated one"]
+
+    src --> dt
+
+    dt --> nsim["native_sim"]
+    dt --> qemu["QEMU"]
+    dt --> board["a real board"]
+```
+
+Projects inside this repo are made such that the same source will build for all the
+different board targets. That is two separate decisions: which target you build for,
+and whether a given peripheral is the real driver or an emulated one.
+
+They are independent of each other. `gpio_emul`, `i2c_emul` and the rest are ordinary
+drivers gated on a devicetree node, not a `native_sim` feature, so an emulated button
+works just as well on an nRF5340DK. The suite in `apps/04-shell-pytest` runs both ways,
+and [`.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml`](.github/workflows/twister_shell_emul_nrf5340dk_self-hosted.yml)
+runs it on the board.
+
+What differs between targets is cost and reach. `native_sim` builds in seconds, needs no
+hardware and runs in CI on any runner. A real board is the only place real timing, a
+real peripheral or power behaviour shows up, and it costs a flash cycle, a board on
+somebody's desk, and a self-hosted runner to put it in CI.
+
+For the tests themselves, `ztest` is Zephyr's own framework and does most of the work
+here. FFF and GoogleTest show up too, as examples of what else fits. `pytest` covers the
+cases where the test needs to run outside the device and talk to it. There are other
+options; these are the ones with a working example in this repo.
+
+## Preparation
+
+Everything builds inside a devcontainer, so Docker is the only thing you need
+installed. The first container start downloads Zephyr and the SDK, so it is worth doing
+before you need it.
+
+1. **Use this template** to duplicate this repo to your own GitHub account, so you can push and watch your
+   own Github Actions run.
+2. **Install Docker.** Docker Desktop on Windows or macOS, Docker Engine on Linux.
+   Confirm `docker run hello-world` works. Nothing else is needed on your machine.
+3. **Clone your repository** and open it in VS Code. Accept the *"Reopen in Container"*
+   prompt.
+
+   There are two one-time waits. The first builds the container image, which is built
+   from Ubuntu rather than pulled, so you see package installs scroll past instead of a
+   download bar. The second downloads Zephyr and the Zephyr SDK into a shared Docker
+   volume, and prints a `FIRST RUN ON THIS MACHINE` banner. That one happens once per
+   machine, not once per project. Later starts take seconds and need no network.
+
+4. **Check the toolchain** inside the container:
 
    ```bash
-   cd apps/00-hello
-   west build -b native_sim/native -p
-   ./build/zephyr/zephyr.exe
+   cd apps/00-hello && west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
    ```
 
-   You should see a hello line and the board name.
-
-5. **Run the test suite once** — the step most likely to fail, so don't skip it:
+5. **Run the test suite once.** This is the step most likely to fail, so do not skip
+   it:
 
    ```bash
    west twister -T apps/ -p native_sim
    ```
 
-Optional, if you have hardware: build and flash to a board you own, and register a local `actions-runner`. Neither is required — nobody is gated on owning a board.
+Hardware is optional. If you have a board, build and flash to it and register a local
+`actions-runner`. Nothing here requires one.
 
-**Stuck?** Open an issue on this repo before the day, or join the 30-minute setup window at the start. We won't debug Docker during teaching time.
-
-Full setup notes: [`docs/PRE-general-guide.md`](docs/PRE-general-guide.md) · [`docs/PRE-build-flash-monitor.md`](docs/PRE-build-flash-monitor.md)
-
----
-
-## How this repo works
-
-Each folder under `apps/` is a **complete, standalone Zephyr application** and a milestone in the day.
-
-> **App N+1 is the solved state of app N.**
-
-That's the important part. If you fall behind, don't panic and don't try to catch up — `cd` into the next folder and you're back with the room. Nothing carries between folders except understanding.
-
-It also means the diff *is* the lesson:
-
-```bash
-diff -r apps/02-ztest apps/03-emul-gpio
-```
-
-One new directory. Zero changed source files. That's the whole of Session 2.
-
----
+Setup notes: [`docs/PRE-general-guide.md`](docs/PRE-general-guide.md) and
+[`docs/PRE-build-flash-monitor.md`](docs/PRE-build-flash-monitor.md).
 
 ## The apps
 
-The main line, 00 to 06, is one story about the seam between test and hardware.
-
-| App | Session | What it is |
-|---|---|---|
-| [`00-hello`](apps/00-hello) | Pre-work · S1 | Bare `printk`. No devicetree, nothing to bind. Your setup check. |
-| [`01-blinky`](apps/01-blinky) | S1 | Button toggles an LED. One flat `main.c` — deliberately the code you'd inherit. |
-| [`02-ztest`](apps/02-ztest) | S2 | Same behaviour, logic cut out behind a seam. First `ztest` suite. |
-| [`03-emul-gpio`](apps/03-emul-gpio) | S2 | `gpio_emul` drives a fake button. A **test-only overlay** reroutes the alias. |
-| [`04-shell-pytest`](apps/04-shell-pytest) | S3 | Shell command as a test backdoor. `pytest` asserts from outside the device. |
-| [`05-pytest-advanced`](apps/05-pytest-advanced) | S3 | Fixtures, parametrization, markers. Plus the same suite with no twister at all. |
-| [`06-sensor`](apps/06-sensor) | S4 | I2C, a real vendor driver, and an emulated BME280 this repo had to write. |
-
-Apps 07 to 09 are a second thread, about what you write once you have found the
-seam. They can be read in any order and none of them needs a board.
-
 | App | What it is |
 |---|---|
-| [`07-unit-conventions`](apps/07-unit-conventions) | Naming, AAA, fixtures, table-driven cases, suite hooks, over a pond feeder schedule. |
-| [`08-fff-mocks`](apps/08-fff-mocks) | FFF. Fake the function your code calls, not the chip. Zephyr already vendors it. |
-| [`09-gtest-gmock`](apps/09-gtest-gmock) | The same service in C++23, with GoogleTest and GoogleMock built into a Zephyr image. |
+| [`00-hello`](apps/00-hello) | `printk` only. No devicetree, nothing to bind. A toolchain check. |
+| [`01-blinky`](apps/01-blinky) | A button toggles an LED, through devicetree aliases. No tests. |
+| [`02-ztest`](apps/02-ztest) | The decision logic moved into its own file, with a `ztest` suite over it. |
+| [`03-emul-gpio`](apps/03-emul-gpio) | `gpio_emul` driving a fake button, with a test-only overlay that reroutes the aliases. |
+| [`04-shell-pytest`](apps/04-shell-pytest) | A shell command as a test backdoor, with `pytest` asserting from outside the device. |
+| [`05-pytest-advanced`](apps/05-pytest-advanced) | pytest fixtures, parametrization and markers. Also the same assertions with no Twister. |
+| [`06-sensor`](apps/06-sensor) | I2C, the real Bosch BME280 driver, and an emulated chip written here because Zephyr ships none. |
+| [`07-unit-conventions`](apps/07-unit-conventions) | ztest conventions: naming, AAA, fixtures, suite hooks, table-driven cases. |
+| [`08-fff-mocks`](apps/08-fff-mocks) | FFF. Replacing the functions your module calls, rather than the chip underneath. |
+| [`09-gtest-gmock`](apps/09-gtest-gmock) | GoogleTest and GoogleMock compiled into a Zephyr image. |
 
-Inside an app:
+Each folder is a complete application and can be opened on its own.
+
+Inside one:
 
 ```
 apps/03-emul-gpio/
 ├── CMakeLists.txt
 ├── prj.conf                 application config
 ├── boards/                  per-board overlays and configs
-│   ├── native_sim_native.overlay
-│   ├── nrf5340dk_nrf5340_cpuapp.overlay
-│   └── ...
 ├── src/                     application source
 ├── tests/                   suites for THIS app
 │   ├── unit/                ztest, native_sim only
 │   └── emul/                ztest + gpio_emul, with its own app.overlay
-├── README.md                what changed vs the previous app, and why
-└── EXERCISE.md              what to do if you finish early. Graded ★ to ★★★.
+├── README.md                what this app is, and how to run it
+└── EXERCISE.md              more to explore, graded ★ to ★★★
 ```
 
-**Tests live with the app they test.** Twister recurses, so `-T apps/` finds every suite in the repo without a registry to maintain. Each `tests/*/` subfolder is itself a small Zephyr app with its own `prj.conf` and `app.overlay` — that overlay is where the emulation gets swapped in.
+Tests live beside the app they test. Twister recurses, so `-T apps/` finds every suite
+without a registry to maintain. Each `tests/*/` folder is itself a small Zephyr
+application with its own `prj.conf` and `app.overlay`, and that overlay is where the
+emulation gets swapped in.
 
----
+## How Twister decides
+
+```mermaid
+flowchart LR
+    yaml["testcase.yaml<br/>scenario, platform_allow, harness"]
+    yaml --> build["build the test image"]
+    build --> run["run it<br/>native_sim process, or flash a board"]
+    run --> harness["harness reads the output<br/>ztest | gtest | console | shell | pytest"]
+    harness --> result["pass or fail, per test case"]
+    run -.-> logs["twister-out/<br/>build.log, handler.log, twister_harness.log"]
+```
 
 ## Commands
 
-Run everything from inside the devcontainer. Replace the app path as you move through the day.
+Run these inside the devcontainer.
 
-**Build and run natively**
+**Build and run on your machine**
 
 ```bash
-cd apps/01-blinky
-west build -b native_sim/native -p
-./build/zephyr/zephyr.exe
+cd apps/01-blinky && west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
 ```
 
 **Build for a board and flash**
 
 ```bash
-west build -b nrf5340dk/nrf5340/cpuapp -p
-west flash
+west build -b nrf5340dk/nrf5340/cpuapp -p && west flash
 ```
 
-**Run one app's tests on `native_sim`**
+**Run one app's tests**
 
 ```bash
 west twister -T apps/03-emul-gpio -p native_sim
 ```
 
-**Run everything** — what CI does
+**Run everything**, which is what CI does
 
 ```bash
 west twister -T apps/ -p native_sim
 ```
 
-**Run against real hardware**
+**Run against a board**
 
 ```bash
-west twister -T apps/04-shell-pytest \
-  --device-testing --hardware-map hardware-map.yaml
+west twister -T apps/04-shell-pytest --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml
 ```
 
-Edit [`hardware-map.yaml`](hardware-map.yaml) with your own probe serial and serial port first. On ESP32-S3 add `--flash-before`, or the harness holds a stale descriptor after the USB peripheral re-enumerates.
+Edit [`apps/04-shell-pytest/hardware-map.yaml`](apps/04-shell-pytest/hardware-map.yaml)
+with your own probe serial and serial port first. On ESP32-S3 add `--flash-before`, or
+the harness holds a stale descriptor after the USB peripheral re-enumerates.
 
-**When something is red:** the answer is in `twister-out/`. Look at `handler.log` for what the device actually said, and `build.log` for what didn't compile. Learning your way around that directory is most of debugging a failed CI run.
+**Compare two apps**
 
----
+```bash
+diff -r apps/02-ztest apps/03-emul-gpio
+```
 
-## The day
+**When a test fails**, the detail is in `twister-out/`, under the platform and scenario
+that failed. `handler.log` holds everything the device printed, `build.log` holds
+compile errors, and `twister_harness.log` holds the pytest side. The console summary
+tells you which scenario failed; those files tell you why.
 
-| | Session | Focus |
-|---|---|---|
-| 0:30 | 1 | `native_sim`, build system, devicetree |
-| 1:25 | 2 | ztest, emulation, test-only overlays |
-| *2:30* | | *break* |
-| 3:00 | 3 | Twister and pytest |
-| 4:05 | 4 | CI and self-hosted runners |
+## Working with Claude Code
 
-Two hard gates: everyone's emulated test green before the break, everyone's pytest suite green before Session 4.
+The repo carries [`CLAUDE.md`](CLAUDE.md) with its conventions, and four skills under
+[`.claude/skills/`](.claude/skills/) that load when they are relevant:
 
-Finished a block early? → the `EXERCISE.md` in the app folder you're in. Graded **★** to **★★★**, all self-serve, no board needed. The answers are in the Zephyr docs rather than in this repo — finding them is the exercise.
+| Skill | Covers |
+|---|---|
+| `zephyr-build-run` | building, flashing, monitoring, running Twister, and digging into a run that failed |
+| `zephyr-ztest` | scoping and writing tests in C that run on the device |
+| `zephyr-pytest` | writing tests that run off the device and drive it from outside |
+| `workshop-app-docs` | the format the `README.md` and `EXERCISE.md` files here follow |
 
-Out of exercises too? Apps [`07`](apps/07-unit-conventions), [`08`](apps/08-fff-mocks) and [`09`](apps/09-gtest-gmock) are not on the clock and don't need a board.
+They carry the parts that are specific to this repo and easy to get wrong: which runner
+and flags each board needs, the `native_sim` console modes, how the emulation is wired
+in each app, which Twister harness reads what, and where to look when a run goes wrong.
 
----
+Useful for reading an unfamiliar app, drafting a test suite at the right scope, and
+running the suites and reporting back what failed.
+
+## Exercises
+
+Every app has an `EXERCISE.md` next to its `README.md`. They go past what the app
+itself shows: things to change, things to break on purpose, and questions to answer
+from the Zephyr docs. Graded **★** to **★★★** by how long they take and how open-ended
+they are. A few of the ★★★ ones want a board.
 
 ## Reference
 
 | | |
 |---|---|
+| [`docs/NOTES-build-flash.md`](docs/NOTES-build-flash.md) | per-board build, flash and Twister commands, with what each flag is for |
+| [`docs/NOTES-testing.md`](docs/NOTES-testing.md) | the same suite run off-target and on-target, and why the flags differ |
 | [`docs/PYTEST_GUIDE.md`](docs/PYTEST_GUIDE.md) | `twister_harness`, the `dut` and `Shell` fixtures |
-| [`docs/NOTES-testing.md`](docs/NOTES-testing.md) | ztest, Twister, `testcase.yaml` |
-| [`docs/NOTES-native-sim.md`](docs/NOTES-native-sim.md) | Running and debugging the native binary |
-| [`docs/NOTES-ci-self-hosted.md`](docs/NOTES-ci-self-hosted.md) | Runner registration, USB passthrough, `nrfutil` |
-| [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | Container internals, SDK layout |
-| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Working on this repo itself |
+| [`docs/NOTES-native-sim.md`](docs/NOTES-native-sim.md) | running and debugging the native binary, and the console modes |
+| [`docs/NOTES-ci-self-hosted.md`](docs/NOTES-ci-self-hosted.md) | runner registration, USB passthrough, `nrfutil` |
+| [`docs/NOTES-devcontainer.md`](docs/NOTES-devcontainer.md) | container internals and SDK layout |
+| [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | working on this repo itself |
 
-Zephyr **v4.4.2**, SDK **1.0.1**. Boards with overlays in-tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`, `esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
+Boards with overlays in the tree: `native_sim`, `nrf5340dk`, `esp32_devkitc`,
+`esp32s3_devkitc`, `nucleo_g474re`, `qemu_cortex_m3`.
 
-`dump/` is scratch material kept for reference. Ignore it.
-
----
-
-## After the workshop
-
-Take a module from your own codebase — one you'd normally test by flashing and watching. Find which devicetree nodes it binds to, picture what an emulated version looks like, and write down what the first test would assert.
-
-You don't have to build it. Just find the seam. The interesting cases are the ones where you can't.
+`dump/` is scratch material kept for reference.
