@@ -7,12 +7,12 @@
     - 06 simplify and explain bme280 emul. give table of is register table from datasheet
 - create claude md, claude skills:
     - build flash run* (incl run tests and summarize results or errors)
+    - create n testing unit test*
+    - create n testing pytest*
     - board bring up dts (incl board migration)
     - kconfig helper (debug kconfig issues accurately)
     - memory analyzer (binary size, largest symbol)
     - (ensure all use zephyr mcp where possible)
-    - create n testing unit test*
-    - create n testing pytest*
     - create ci: build, sanitize, run on ci, run self hosted
 - ci
     - add ci lcov
