@@ -1,5 +1,12 @@
 # Practical Embedded Automated Testing for Zephyr
 
+[![Tests](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml)
+[![Sanitizers](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml)
+![Zephyr](https://img.shields.io/badge/Zephyr-v4.4.2-blue)
+![Zephyr SDK](https://img.shields.io/badge/Zephyr%20SDK-1.0.1-blue)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3A%2F%2Fms-vscode-remote.remote-containers%2FcloneInVolume%3Furl%3Dhttps%3A%2F%2Fgithub.com%2Froyyandzakiy%2Fzephyr-testing-workshop)
+
 This repository is made to help understand automated testing with Zephyr. It works through the tools the
 Zephyr ecosystem already provides for it: `native_sim` for running firmware on your own
 machine, `ztest` for tests that run on the device, the emulator framework for faking a

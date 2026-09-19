@@ -39,6 +39,43 @@ A stale build directory, usually after changing board. Rebuild pristine:
 west build -b <board> -p always
 ```
 
+### Every `<zephyr/...>` include is underlined in the editor
+
+The code compiles, but clangd found no compilation database for that file.
+
+clangd resolves this per file. It walks up from the source and checks each parent for
+`compile_commands.json`, and for a `build/` directory beside it. **Only a directory
+named exactly `build` counts**, so a build made with `-d build_native` or `-d build_conv`
+is not found.
+
+Build the app you are editing once, with no `-d`:
+
+```bash
+cd apps/06-sensor && west build -b native_sim/native
+```
+
+To see what clangd actually resolved, including the full command line it would use:
+
+```bash
+clangd --check=apps/06-sensor/src/main.c
+```
+
+It prints either `Loaded compilation database from ...` or
+`Failed to find compilation database for ...`, which settles it in one line.
+
+Two related cases:
+
+- **The test suites** under `apps/<app>/tests/` are separate Zephyr applications, and
+  the READMEs build them with `-d build_conv`, `-d build_gt` and so on. That is correct.
+  The editor follows the app's own `build/`, not those, so editing a test file wants a
+  plain build of the suite directory too.
+- **Wrong `CONFIG_` values in completion** means the database is from another board. The
+  flags and `autoconf.h` come from whichever board that `build/` was last made for.
+  Rebuild it for the board you care about.
+
+Pinning `CompilationDatabase` in `.clangd`, per repo or per app, also works. It is not
+the advice here because it goes stale the moment you build for another board.
+
 ### `undefined reference`, or `duplicate symbol`, in a test build
 
 The test's `CMakeLists.txt` links the wrong set. A test that fakes a dependency has to

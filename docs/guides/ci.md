@@ -128,3 +128,14 @@ container:
 It sets `ZEPHYR_BASE`, which is how `west` finds its workspace from a plain
 `actions/checkout` with no `west init`. That is why `west twister -T apps/` works
 directly in `test-native-sim.yml`.
+
+Two of these workflows have a status badge at the top of the root
+[`README.md`](../../README.md), and the badge URL contains the workflow's **file name**:
+
+```
+.../actions/workflows/test-native-sim.yml/badge.svg?branch=main
+```
+
+So renaming a workflow file breaks its badge, silently, into a broken image. Rename the
+badge URL at the same time. `build-check.yml` and `test-hardware.yml` have no badge on
+purpose: they only run manually, so a badge for either would report nothing.
