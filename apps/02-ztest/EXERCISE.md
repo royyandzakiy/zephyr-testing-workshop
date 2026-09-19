@@ -3,17 +3,32 @@
 ## ★ warm-up
 
 1. **Make a test fail on purpose.** Change one expected `"ON"` to `"OFF"` in
-   `tests/unit/src/main.c` and run twister.
+   `tests/unit/src/main.c`, then run the suite:
 
-   *Check:* you can name the file under `twister-out/` that holds the failing
-   assertion, and quote the line from it. Put the test back when you are done.
+   ```bash
+   west twister -T apps/02-ztest -p native_sim
+   ```
+
+   The console summary tells you the scenario failed and not much else. The detail is
+   on disk:
+
+   ```bash
+   find twister-out -name handler.log -newer apps/02-ztest/tests/unit/src/main.c
+   ```
+
+   *Check:* you can name the file that holds the failing assertion and quote the line
+   from it. Put the test back when you are done.
 
 2. **Add a fourth test.** Assert that toggling twice returns to where you started.
+
+   ```bash
+   west twister -T apps/02-ztest -p native_sim
+   ```
 
    *Check:* the scenario still reports as one configuration, and now runs four tests
    instead of three.
 
-3. **Tighten the scope.** Run only this scenario:
+3. **Tighten the scope.** Run only this scenario, out of everything in the repo:
 
    ```bash
    west twister -T apps/ -p native_sim --test app02.blink.logic
@@ -21,16 +36,21 @@
 
    *Check:* twister reports 1 scenario selected, not 1 selected out of many filtered.
 
-4. **Link the wrong thing.** Add `blinky.c` to `tests/unit/CMakeLists.txt` and
-   rebuild.
+4. **Link the wrong thing.** Add `blinky.c` to the `target_sources()` call in
+   `tests/unit/CMakeLists.txt`, then build the suite on its own:
+
+   ```bash
+   west build -b native_sim/native -p -s apps/02-ztest/tests/unit -d build_unit
+   ```
 
    *Check:* you can explain the error in terms of the devicetree, and say what
-   `tests/unit/prj.conf` would need before it would link. Take it back out when you
-   are done.
+   `tests/unit/prj.conf` would need before it would link. Take the line back out when
+   you are done.
 
 ## ★★ go deeper
 
-1. **Use the tags.** Add `- fast` to the `tags:` list in the scenario, then:
+1. **Use the tags.** Add `- fast` to the `tags:` list in `tests/unit/testcase.yaml`,
+   then select on it:
 
    ```bash
    west twister -T apps/ -p native_sim --tag fast
@@ -40,13 +60,17 @@
    `--test`.
 
 2. **Split the five-press test.** It currently loops and stops at the first failure.
-   Make each press its own `ZTEST`, then break two presses at once and compare the
-   output of both versions.
+   Make each press its own `ZTEST`, then break two presses at once and run both
+   versions.
 
    *Check:* you can say what you gained and what you lost, in one sentence each.
 
-3. **Watch the hooks fire.** Give the suite a `before` function that just prints. Run
-   the suite and see where the line lands relative to each test.
+3. **Watch the hooks fire.** Give the suite a `before` function that just prints, then
+   run the binary directly so you see the output in order:
+
+   ```bash
+   west build -b native_sim/native -p -s apps/02-ztest/tests/unit -d build_unit && ./build_unit/zephyr/zephyr.exe
+   ```
 
    *Check:* you can write out the order of `setup`, `before`, test, `after`,
    `teardown` from what you saw, without opening the docs.
@@ -62,9 +86,9 @@
 
 ## ★★★ off the map
 
-1. **Argue with the seam.** `blink_logic_toggle()` is `return !led_on;`. Write down
-   an honest answer to "is a test for this worth the two files it cost?" Then write
-   down what would have to be true of the function for your answer to flip.
+1. **Argue with the seam.** `blink_logic_toggle()` is `return !led_on;`. Write down an
+   honest answer to "is a test for this worth the two files it cost?" Then write down
+   what would have to be true of the function for your answer to flip.
 
    *Why it is interesting:* this is the question you get asked when you take the
    pattern back to your own codebase, and "test everything" does not survive contact
