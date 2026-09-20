@@ -12,6 +12,8 @@ Activate runners by opening the settings for self-hosted runner
 https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runners/new?arch=x64&os=linux
 ```
 
+![self-hosted-setup](../imgs/self-hosted-setup.png)
+
 **Inside the devcontainer you can skip the download.** The runner is already unpacked at
 `/actions-runner` by the published devel image ([zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)), and its state lives in a
 per-project volume (`${localWorkspaceFolderBasename}-actions-runner`) so a registration survives

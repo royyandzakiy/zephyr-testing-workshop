@@ -8,9 +8,9 @@ There are four, and each one answers a different question.
 
 | Workflow | Answers | Runs on | When |
 |---|---|---|---|
+| `build-check.yml` | does the toolchain work at all | both | manual |
 | `test-native-sim.yml` | do all the test suites still pass | GitHub's runner | every push and pull request |
 | `sanitizers.yml` | does one app run clean under ASan and UBSan | GitHub's runner | every push and pull request |
-| `build-check.yml` | does the toolchain work at all | both | manual |
 | `test-hardware.yml` | does it build, flash and pass on a real board | your runner | manual |
 
 The two that run automatically need no hardware and no setup. The two manual ones do.
@@ -82,6 +82,12 @@ west flash -d build
 `west flash` reads the board out of the build directory and picks the runner from it,
 so the same two lines work for nRF, ESP32 and Nucleo. With one probe attached it finds
 it without being told which.
+
+A sucecssful run in the CI looks like this
+
+![nrf5340dk](../imgs/nrf5340dk.png)
+![ci-hardware-2](../imgs/ci-hardware-2.png)
+![ci-hardware](../imgs/ci-hardware.png)
 
 ## When a run fails
 

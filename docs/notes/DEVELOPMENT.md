@@ -3,6 +3,8 @@
 
 ## To Do
 
+- add images to docs section & readmes
+- claude: add kconfig helper & dts helper to create new boards & analyze broken builds
 
 ## Hold
 
@@ -22,7 +24,6 @@
     - create ci: build, sanitize, run on ci, run self hosted
 - ci
     - add ci lcov
-    - fix sanitizer ci
     - add fuzzer ci
 
 ## Done
@@ -51,13 +52,3 @@
 - UBSAN trips inside Zephyr's own BME280 driver (bme280.c:103, left shift of a  negative value in the Bosch compensation formula). Upstream, not ours; see apps/06-sensor/NOTES.md.
 
 ## Docs
-
-- update all NOTES
-    - NOTES devcontainer
-    - NOTES setup
-    - NOTES zephyr vanilla ncs
-    - NOTES pre build flash
-    - NOTES pre general guide
-    - WORKSHOP: refine with using ai
-    - NOTES maintaining sdk toolchains + vscode ext
-    - NOTES Notes testing theory, conventions and best practices
