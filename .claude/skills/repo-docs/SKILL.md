@@ -5,7 +5,7 @@ description: Write or refresh any prose documentation in this repo. Covers the R
 
 # Repo docs
 
-Two surfaces, one set of rules.
+Two surfaces, one set of rules for voice, different shapes per surface.
 
 **`apps/NN-name/`** carries the examples. **`docs/`** carries everything around them:
 `setup/`, `concepts/`, `guides/`, `reference/`, `troubleshooting.md`, `glossary.md`,
@@ -146,6 +146,21 @@ opening line is the model, so do not over-polish it away:
 
 Say what the project is **for** and what the reader will **do**. Pre-empt the obvious
 confusion ("it does not produce any firmware to flash").
+
+### No addressing the reader from inside the page
+
+A concepts page or guide is read top to bottom by someone on their own. It does not
+turn to face them partway through. So no:
+
+- "The honest version is that..." A page does not have a version to be honest about.
+- "What to do about it", "Useful habits", "If you want to keep going" as closing
+  sections that switch from explaining to advising.
+- "When adding a test, write down..." Advice in the imperative, aimed at the reader.
+- "You might be wondering..." or any question put in the reader's mouth.
+
+State the principle flatly and let the reader apply it. "A green suite means the
+things you wrote tests for still work. It is not a statement about the product."
+Close the page on that, rather than on instructions for what to do next.
 
 ## Before writing anything
 
@@ -327,6 +342,104 @@ Rules for the exercises:
 - No answer keys and no solution section. A pointer to the right page of the Zephyr
   docs is usually the right amount.
 
+## Concepts pages
+
+`docs/concepts/` explains one idea per file, and is written as prose rather than as
+bullets. The reader is someone who wants to understand the idea, not someone who needs
+the app's run command. So the register is looser than an app README: full sentences,
+terms defined before they are used, and a paragraph allowed to build from a definition
+to a principle.
+
+What does not change is the voice section above. No atmosphere, no novelty claims, no
+trailing justification, no em dashes. A concepts page still informs rather than lands a
+point.
+
+### The shape of one section
+
+Each section follows the same three moves, in this order.
+
+1. **Define the thing.** Say what it is in a full sentence, before saying what it is
+   good for. "Unit testing is a form of testing in which it focuses on a single unit of
+   work." "Faking and mocking is a concept in which someone wants to test a work unit
+   in isolation."
+2. **Say what it is good for.** One or two sentences, with a concrete example from this
+   repo where one fits. "An example is faking a sensor read so it returns a fixed
+   value, or mocking a bus call so you can assert it was called with the right
+   arguments."
+3. **Say what it cannot do.** This is the part that earns the page. State the limit
+   plainly, then give the mechanism if it is not obvious. "Knowing that fakes and
+   mocks replace real dependencies, if we actually delete or alter those dependencies,
+   or make them work entirely differently, these fakes and mocks could potentially be
+   misleading."
+
+That third move is the same shape as Unit's "A unit suite is blind to integration."
+The section is not finished when the definition lands. It is finished when the reader
+knows what the thing cannot see.
+
+### What is different from an app README
+
+- **A paragraph may carry one idea across several sentences.** An app README bullet is
+  one idea, one line. A concepts page is allowed to define, then extend, then show why
+  the extension matters, in that order, without a bullet structure forcing it apart.
+- **No required sections.** A concepts page has whatever headings the idea needs. Do
+  not impose the README skeleton, and do not add a Trivia section or a mermaid diagram
+  unless the diagram is genuinely the clearest way to show where the piece sits.
+- **Lists are allowed, but prose carries the argument.** The bullet list under "what it
+  does not model" is fine because the surrounding sentences do the explaining. A page
+  made only of bullets is an app README that lost its code.
+- **Still no build-up to a payoff.** The seam paragraph in
+  `docs/concepts/testing-levels.md` is the model: it defines a seam, says to emphasize
+  it with decoupling, and states the result (better separation of concerns). That is a
+  principle being stated, not a surprise being set up, and the difference is whether
+  the last sentence tells the reader something they could not already see coming.
+
+### Closing a concepts page
+
+Close on the principle, not on advice. The model is the conclusion of
+`docs/concepts/what-you-cannot-test.md`:
+
+> Having a green (successful) test suite run acts as a clamp. It helps assure you that
+> what have been written and was running will still be running. Its shortcomings is
+> when one tries to understand hardware issues, or whether the business logic has been
+> written correctly.
+
+It states what the thing does and where it stops. It does not tell the reader what to
+do next, and it does not address them directly.
+
+### Tables in concepts pages
+
+A table that compares things should have a column for what each thing does and a column
+for what it leaves out. Not a column naming a downside with no explanation, and not a
+column that only lists which app uses it.
+
+| Concept | What it provides | App | What it does not cover |
+|---|---|---|---|
+| `gpio_emul` | pin levels, interrupt edges, pull-ups | `03-emul-gpio`, `04-shell-pytest` | drive strength, bounce, current limits, anything analog |
+
+The reader should be able to read one row and know what the thing gives them and what
+it costs them.
+
+### Cross-links
+
+Concepts pages cross-link to the apps that demonstrate the idea, and the app READMEs
+link back. The app owns how to run it; the concepts page owns what the idea is. A
+concepts page may also name its companion page at the top, the way
+`what-you-cannot-test.md` names `testing-levels.md`.
+
+## Guides and reference
+
+- A `guides/` page walks a task from start to finish. It names its reader in the first
+  line, says what the reader will have at the end, and gives one command per fenced
+  block the way an app README does.
+- A `reference/` page states how something works. Every command on it is verified, and
+  the Zephyr version it was verified against is named. It does not tell a story and it
+  does not walk a task.
+- A `troubleshooting.md` entry names the symptom the reader sees, then the cause, then
+  the fix. Start from the error text, since that is what the reader has in front of
+  them.
+- A `glossary.md` entry is one or two sentences. If it needs more, it is a concepts
+  page and should link to one.
+
 ## Cross-app consistency
 
 - The root `README.md` app table has a row for it.
@@ -342,18 +455,24 @@ Rules for the exercises:
 3. Run the neutral-nuance grep. Every hit is a sentence written to land a point:
 
    ```bash
-   grep -nEi 'goes red|go red|green run|stays green|is the answer|almost every time|far more often|which is the point|that is the whole|which is what you want|rather than as a|pay off|worth a skim|survive contact|walks straight past|that bites|the first (time|app|suite) in this repo' apps/*/README.md apps/*/EXERCISE.md
+   grep -nEi 'goes red|go red|green run|stays green|is the answer|almost every time|far more often|which is the point|that is the whole|which is what you want|rather than as a|pay off|worth a skim|survive contact|walks straight past|that bites|the first (time|app|suite) in this repo' apps/*/README.md apps/*/EXERCISE.md docs/concepts/*.md
    ```
-4. The opener is three full sentences: what it is, what you will do, what it does not
+4. Run the addressing-the-reader grep over `docs/concepts/` and `docs/guides/`. Every
+   hit is the page turning to face the reader:
+
+   ```bash
+   grep -nEi 'the honest version|what to do about it|useful habits|you might be wondering|when adding a|if you want to keep|the takeaway|keep in mind' docs/concepts/*.md docs/guides/*.md
+   ```
+5. The opener is three full sentences: what it is, what you will do, what it does not
    do. No stacked fragments, no knowing asides.
-5. The README has a `## Trivia` section, and that section has a mermaid diagram that
+6. The README has a `## Trivia` section, and that section has a mermaid diagram that
    you parsed rather than eyeballed.
-6. `EXERCISE.md` opens on `## ★ warm-up` with nothing above it, and most exercises
+7. `EXERCISE.md` opens on `## ★ warm-up` with nothing above it, and most exercises
    carry a fenced `bash` command rather than describing one. Run the ones that do not
    need the devcontainer.
-7. Every `*Check:*` names something concrete the reader can do or say.
-8. Every command in "Run it" was actually run, or is flagged as unverified.
-9. Every file named in "Layout" exists. Every file that matters is named.
-10. Every link resolves and has a reason next to it.
-11. Read it back. If a sentence sounds like a product page or like a narrator, rewrite
-   it as the plainer thing it is trying to say.
+8. Every `*Check:*` names something concrete the reader can do or say.
+9. Every command in "Run it" was actually run, or is flagged as unverified.
+10. Every file named in "Layout" exists. Every file that matters is named.
+11. Every link resolves and has a reason next to it.
+12. Read it back. If a sentence sounds like a product page or like a narrator, rewrite
+    it as the plainer thing it is trying to say.

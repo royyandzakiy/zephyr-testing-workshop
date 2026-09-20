@@ -1,10 +1,7 @@
 # Testing levels
 
-For someone deciding where a particular test belongs. The repo has a worked example of
-each level, listed at the end.
-
-The question is not which level is best. It is which one answers the question you
-actually have, because each level is blind to different things.
+Testing have different levels to it. Which level you will commit to depends on your
+current needs.
 
 ```mermaid
 flowchart TD
@@ -18,71 +15,83 @@ flowchart TD
 
     l1 --> t1["unit test<br/>ztest, no driver linked"]
     l2 --> t2["emulated driver test<br/>ztest + an emul node"]
-    l3 --> t3["fake the dependency<br/>FFF, or a mock"]
-    l4 --> t4["end to end<br/>pytest over a shell"]
-    l5 --> t5["on target<br/>the same suites, on a board"]
+    l3 --> t3["fake the dependency<br/>FFF, or a mock, or do fuzz testing"]
+    l4 --> t4["end-to-end test<br/>pytest over a shell"]
+    l5 --> t5["on target<br/>the same suites (unit or E2E test) on a board"]
 ```
 
 ## Unit
 
-One module, nothing else linked. No driver, no devicetree, no bus.
+Unit testing is a form of testing in which it focuses on a single unit of work. What
+defines a unit of work isn't exactly bound to file, class, etc. It may vary based on
+user preferences. A unit test tries to create the smallest level of self sufficient
+work unit, in which it can be tested decoupled from any external input or outputs.
+This way, if one day after a development the compile seems to break, one can easily
+narrow down and pinpoint which exact work unit has failed.
 
-Good for arithmetic, state machines, parsing, anything where you can name the input
-and the expected output. Fast enough to run on every save.
+Creating unit tests is good for arithmetic, state machines, and parsing, where you can
+name the input and the expected output. They run fast enough to run on every save.
 
-Blind to everything about integration. A unit test suite can be entirely green while
-the two modules it covers disagree about who calls whom.
+A unit suite is blind to integration. It can pass while two modules disagree about who
+calls whom.
 
-The prerequisite is a seam. If a module reaches for a driver in the middle of its
-logic, there is nothing to link on its own, and the answer is usually to extract the
-decision rather than to write a harder test.
+Creating a good unit test requires a seam, in which a logical boundary can be drawn
+between different work units. This seam should then be further emphasized by
+decoupling between these work units with say an API call or a dependency injection
+pattern. This way we can create better separation of concerns within our software. If a
+module reaches for a driver in the middle of its logic, extract the decision to make it
+testable.
 
 ## Emulated driver
 
-Your code, the real driver, and a fake peripheral underneath it. The devicetree
-decides that last part.
+Emulated driver testing runs your code against the real driver, with a fake peripheral
+underneath it. The devicetree decides that last part, so the driver itself stays
+unmodified.
 
-Good for whether you drive a chip correctly: the register sequence, the calibration
-handling, the bus transactions. In `apps/06-sensor` the real Bosch BME280 driver runs
-unmodified against an emulated chip and produces the datasheet's own numbers.
+This is what you reach for when the question is whether you drive a chip correctly:
+the register sequence, the calibration handling, the bus transactions. In
+`apps/06-sensor` the real Bosch BME280 driver runs against an emulated chip and
+produces the datasheet's own numbers.
 
-Blind to anything electrical, and to anything the emulator does not model. See
-[`what-you-cannot-test.md`](what-you-cannot-test.md).
+An emulated test is blind to anything electrical, and to anything the emulator does not
+model. See [`what-you-cannot-test.md`](what-you-cannot-test.md).
 
-Awkward for error paths. Making a plausible chip misbehave in a specific way is
-fiddly, which is what the next level is for.
+It is also awkward for error paths. Making a plausible chip misbehave in a specific way
+is fiddly, which is what the next level is for.
 
 ## Faked dependency
 
-The module under test, with the functions it calls replaced. FFF in C, gmock in C++.
+Faked dependency testing takes the module under test and replaces the functions it
+calls. FFF does this in C, gmock does this in C++.
 
-Good for the questions an emulator is bad at. Three `-EIO` in a row then a recovery is
-one line. So is "was this called at all", which no amount of looking at an LED will
-tell you.
+This level is good for the questions an emulator is bad at. Three `-EIO` in a row then
+a recovery is one line. So is "was this called at all", which no amount of looking at
+an LED will tell you.
 
-Blind to whether the real implementation behind the fake works. Every test at this
-level still passes if you delete the driver.
+It is blind to whether the real implementation behind the fake works. Every test at
+this level still passes if you delete the driver.
 
 ## End to end
 
-The whole application, driven from outside over a shell or a protocol, asserted from a
-process that has a network, a filesystem and a language with libraries.
+End to end testing runs the whole application, driven from outside over a shell or a
+protocol, and asserted from a process that has a network, a filesystem and a language
+with libraries.
 
-Good for whether the product works, and for anything needing computation or state
+It is good for whether the product works, and for anything needing computation or state
 across steps.
 
-Slow, and a failure tells you something is wrong without telling you where. A suite
-made only of these is expensive to own.
+End to end tests are slow, and a failure tells you something is wrong without telling
+you where. A suite made only of these is expensive to own.
 
 ## On target
 
-Any of the above, running on a real board.
+On target testing runs any of the above on a real board.
 
-The only level that sees real timing, real peripherals, real power behaviour, and the
-board actually being wired the way you think.
+It is the only level that sees real timing, real peripherals, real power behaviour, and
+the board actually being wired the way you think.
 
-Costs a flash cycle per run, a board on somebody's desk, and a self-hosted runner to
-put in CI.
+The cost is a flash cycle per run, a board on somebody's desk, and a self-hosted runner
+to put in CI.
 
 Note that emulated tests run here too. Emulation is a devicetree choice, not an
 off-target one, and
