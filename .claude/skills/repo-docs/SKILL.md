@@ -5,11 +5,12 @@ description: Write or refresh any prose documentation in this repo. Covers the R
 
 # Repo docs
 
-Two surfaces, one set of rules for voice, different shapes per surface.
+Two surfaces: **`apps/NN-name/`** carries the examples, **`docs/`** carries everything
+around them. One set of voice rules applies to both. The shape of a page differs by
+which surface it is on.
 
-**`apps/NN-name/`** carries the examples. **`docs/`** carries everything around them:
-`setup/`, `concepts/`, `guides/`, `reference/`, `troubleshooting.md`, `glossary.md`,
-and `notes/` for working material that is not written for a reader.
+`docs/` holds `setup/`, `concepts/`, `guides/`, `reference/`, `troubleshooting.md`,
+`glossary.md`, and `notes/` for working material that is not written for a reader.
 
 The reader to write for is someone alone with the repo. When a page could be aimed at
 either a learner or a maintainer, aim it at the learner and put the maintainer version
@@ -17,8 +18,11 @@ in `docs/notes/`.
 
 ## Rules that apply everywhere
 
-- **Every doc names its reader in the first line.** It is how you tell whether a new
-  file belongs in `guides/` or `concepts/`, and it is the first thing to write.
+- **Every app doc names its reader in the first line.** An app README and an
+  `EXERCISE.md` are the two files that get confused for each other, so each opens by
+  saying who it is for. A `docs/` page does not do this: the folder already says who it
+  is for, and an opener that names a reader turns into "For someone looking at the
+  GitHub Actions tab", which is the flat opener this file bans everywhere else.
 - **One owner per fact.** An app README owns how to run that app. `docs/reference/`
   owns how the tool works in general. If a command would appear in both, the app
   README links instead of repeating.
@@ -149,8 +153,8 @@ confusion ("it does not produce any firmware to flash").
 
 ### No addressing the reader from inside the page
 
-A concepts page or guide is read top to bottom by someone on their own. It does not
-turn to face them partway through. So no:
+A page is read top to bottom by someone on their own. It does not turn to face them
+partway through. So no:
 
 - "The honest version is that..." A page does not have a version to be honest about.
 - "What to do about it", "Useful habits", "If you want to keep going" as closing
@@ -161,6 +165,14 @@ turn to face them partway through. So no:
 State the principle flatly and let the reader apply it. "A green suite means the
 things you wrote tests for still work. It is not a statement about the product."
 Close the page on that, rather than on instructions for what to do next.
+
+**One exception: warn when the next command damages something.** A setup page that is
+about to run a command giving a workflow root on the reader's machine, or deleting a
+volume, says so plainly before the command. One or two sentences, in the same
+declarative register as the rest of the page. "Running the runner as root on a bare
+host is not recommended, since it gives any workflow full control of the machine.
+Create a dedicated user for it instead." That is advice, and it stays, because the
+alternative is a reader following a command that costs them their machine.
 
 ## Before writing anything
 
@@ -387,11 +399,6 @@ knows what the thing cannot see.
 - **Lists are allowed, but prose carries the argument.** The bullet list under "what it
   does not model" is fine because the surrounding sentences do the explaining. A page
   made only of bullets is an app README that lost its code.
-- **Still no build-up to a payoff.** The seam paragraph in
-  `docs/concepts/testing-levels.md` is the model: it defines a seam, says to emphasize
-  it with decoupling, and states the result (better separation of concerns). That is a
-  principle being stated, not a surprise being set up, and the difference is whether
-  the last sentence tells the reader something they could not already see coming.
 
 ### Closing a concepts page
 
@@ -426,11 +433,13 @@ link back. The app owns how to run it; the concepts page owns what the idea is. 
 concepts page may also name its companion page at the top, the way
 `what-you-cannot-test.md` names `testing-levels.md`.
 
-## Guides and reference
+## Setup, guides and reference
 
-- A `guides/` page walks a task from start to finish. It names its reader in the first
-  line, says what the reader will have at the end, and gives one command per fenced
-  block the way an app README does.
+- A `setup/` page gets one thing installed or registered. Commands in order, one per
+  fenced block, and the failure modes under `###` headings named by the error the
+  reader sees.
+- A `guides/` page walks a task from start to finish. It says what the reader will
+  have at the end, and gives one command per fenced block the way an app README does.
 - A `reference/` page states how something works. Every command on it is verified, and
   the Zephyr version it was verified against is named. It does not tell a story and it
   does not walk a task.
@@ -449,30 +458,38 @@ concepts page may also name its companion page at the top, the way
 
 ## Checklist before you call it done
 
-1. `grep -nEi 'session|workshop|the room|all day|before the break|on the clock'` over
-   both files. The only legitimate hit is literal program output.
-2. Search for the em dash character and for a doubled hyphen used as one.
-3. Run the neutral-nuance grep. Every hit is a sentence written to land a point:
+1. Run the three greps. Each one is a look-at-the-hits check, not a fail-the-build
+   check, except the first which should come back empty:
 
    ```bash
-   grep -nEi 'goes red|go red|green run|stays green|is the answer|almost every time|far more often|which is the point|that is the whole|which is what you want|rather than as a|pay off|worth a skim|survive contact|walks straight past|that bites|the first (time|app|suite) in this repo' apps/*/README.md apps/*/EXERCISE.md docs/concepts/*.md
+   # workshop context. only legitimate hit is literal program output.
+   grep -nEi 'session|workshop|the room|all day|before the break|on the clock' apps/*/README.md apps/*/EXERCISE.md
+
+   # sentences written to land a point.
+   grep -nEi 'goes red|go red|green run|stays green|is the answer|almost every time|far more often|which is the point|that is the whole|which is what you want|rather than as a|pay off|worth a skim|survive contact|walks straight past|that bites|the first (time|app|suite) in this repo' apps/*/README.md apps/*/EXERCISE.md docs/concepts/*.md docs/guides/*.md docs/setup/*.md
+
+   # the page turning to face the reader.
+   grep -nEi 'the honest version|what to do about it|useful habits|you might be wondering|when adding a|if you want to keep|the takeaway|keep in mind' docs/concepts/*.md docs/guides/*.md docs/setup/*.md
    ```
-4. Run the addressing-the-reader grep over `docs/concepts/` and `docs/guides/`. Every
-   hit is the page turning to face the reader:
+
+2. Search for em dashes. The unicode one is always wrong. The spaced hyphen is wrong
+   in prose but common in tables and YAML, so look at those hits rather than failing on
+   them:
 
    ```bash
-   grep -nEi 'the honest version|what to do about it|useful habits|you might be wondering|when adding a|if you want to keep|the takeaway|keep in mind' docs/concepts/*.md docs/guides/*.md
+   grep -rnP '\x{2014}' apps/ docs/
+   grep -rn ' - ' apps/ docs/
    ```
-5. The opener is three full sentences: what it is, what you will do, what it does not
+3. The opener is three full sentences: what it is, what you will do, what it does not
    do. No stacked fragments, no knowing asides.
-6. The README has a `## Trivia` section, and that section has a mermaid diagram that
+4. The README has a `## Trivia` section, and that section has a mermaid diagram that
    you parsed rather than eyeballed.
-7. `EXERCISE.md` opens on `## ★ warm-up` with nothing above it, and most exercises
+5. `EXERCISE.md` opens on `## ★ warm-up` with nothing above it, and most exercises
    carry a fenced `bash` command rather than describing one. Run the ones that do not
    need the devcontainer.
-8. Every `*Check:*` names something concrete the reader can do or say.
-9. Every command in "Run it" was actually run, or is flagged as unverified.
-10. Every file named in "Layout" exists. Every file that matters is named.
-11. Every link resolves and has a reason next to it.
-12. Read it back. If a sentence sounds like a product page or like a narrator, rewrite
-    it as the plainer thing it is trying to say.
+6. Every `*Check:*` names something concrete the reader can do or say.
+7. Every command in "Run it" was actually run, or is flagged as unverified.
+8. Every file named in "Layout" exists. Every file that matters is named.
+9. Every link resolves and has a reason next to it.
+10. Read it back. If a sentence sounds like a product page or a narrator, it is the
+    wrong register.
