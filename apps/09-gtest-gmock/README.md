@@ -1,7 +1,6 @@
 # 09-gtest-gmock
 
-This project is the same pond feeder dispenser as `08-fff-mocks`, written in C++ at the
-2b standard, with GoogleTest and GoogleMock instead of ztest and FFF. You will build it
+This project is the same pond feeder dispenser as `08-fff-mocks`, written in C++23, with GoogleTest and GoogleMock instead of ztest and FFF. You will build it
 for native_sim and run the suite through twister, the same as every other app here. It
 does not use ztest, so twister decides whether the run passed by reading the console.
 
