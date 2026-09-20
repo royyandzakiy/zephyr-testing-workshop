@@ -1,10 +1,26 @@
 # CI
 
-For someone looking at the GitHub Actions tab and working out what runs when, or
-adapting the workflows to their own board. The files are in
-[`../../.github/workflows/`](../../.github/workflows/).
+CI, or continuous integration, is a concept in which a software engineer is able to
+continuously run a set of checks on their code as they push changes. It is a very
+common tool in software fields, especially in web development. In terms of the embedded
+systems domain, CI means covering the process of building the firmware, running the
+test suites, and on setups with hardware attached, flashing and testing on real boards.
+This way, during development, the developers are able to act quickly and more precisely
+whenever an issue is found, whether that be a toolchain failure, an SDK mismatch, a
+specific work unit failing to run its usual work, a new work unit failing the address
+sanitizer test, or even running the usual hardware testing via a test farm, having
+dozens of devices connected with each their very own set of use cases covered, and
+sometimes running for days.
 
-There are four, and each one answers a different question.
+In our particular setup, all the CI related scripts can be found inside the
+`.github/workflows` folder, which is a standardized folder made by GitHub. These
+scripts are written in a standard CI YAML format, hence it by theory can be easily
+ported to other kinds of CI, such as GitLab or Bitbucket, with the exception of having
+some specific GitHub Actions only functions and variables like `checkout`.
+
+In this repo, you will be able to find several minimalistic CI scripts that
+demonstrate different kinds of capabilities. There are four, and each one answers a
+different question.
 
 | Workflow | Answers | Runs on | When |
 |---|---|---|---|
@@ -32,7 +48,7 @@ flowchart TD
     hw --> sh
 ```
 
-## Why build-check builds someone else's code
+## What build-check does?
 
 `build-check.yml` is the only one that does not touch `apps/`. It builds
 `samples/hello_world` from upstream Zephyr and greps the output for `Hello World`.
@@ -83,7 +99,7 @@ west flash -d build
 so the same two lines work for nRF, ESP32 and Nucleo. With one probe attached it finds
 it without being told which.
 
-A sucecssful run in the CI looks like this
+A successful run in the CI looks like this:
 
 ![nrf5340dk](../imgs/nrf5340dk.png)
 ![ci-hardware-2](../imgs/ci-hardware-2.png)
@@ -94,7 +110,9 @@ A sucecssful run in the CI looks like this
 Open the failing job in the Actions tab and read from the top of the log, not the
 bottom. The first line that reports an error tells you which tool produced it: `cmake`,
 `gcc`, `ld`, the flash runner, or the test harness. That is usually enough to know
-where to look.
+where to look. In this particular run, it fails because it fails to find the board, and in reality, the board is indeed not yet connected to the PC.
+
+![ci-hardware](../imgs/ci-hardware-fail.png)
 
 For the two native_sim workflows, the faster move is to reproduce it locally, because
 the command is the same one you run by hand:
