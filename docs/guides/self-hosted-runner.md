@@ -1,12 +1,13 @@
 # Self-hosted runner
 
-For someone putting this repo's tests on their own machine or on a board, so CI can
-flash real hardware. The workflows that use it are in
+A self-hosted runner is a machine you register with GitHub that runs your workflows
+instead of GitHub's own runners. This page is for putting this repo's tests on your own
+machine or on a board, so CI can flash real hardware. The workflows that use it are in
 [`../../.github/workflows/`](../../.github/workflows/).
 
 ## Registering the runner
 
-Activate runners by opening the settings for self-hosted runner
+Activate runners by opening the settings for self-hosted runner:
 
 ```bash
 https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runners/new?arch=x64&os=linux
@@ -14,21 +15,29 @@ https://github.com/YOUR_USERNAME/zephyr-testing-workshop/settings/actions/runner
 
 ![self-hosted-setup](../imgs/self-hosted-setup.png)
 
-**Inside the devcontainer you can skip the download.** The runner is already unpacked at
-`/actions-runner` by the published devel image ([zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)), and its state lives in a
-per-project volume (`${localWorkspaceFolderBasename}-actions-runner`) so a registration survives
-container rebuilds. That volume is deliberately *not* shared between projects the way the SDK
-volumes are - it holds one runner registration, so a shared name would make two projects fight
-over it. Jump to "Run the actions-runner" below.
+**Inside the devcontainer you can skip the download.** The runner is already unpacked
+at `/actions-runner` by the published devel image
+([zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)), and its
+state lives in a per-project volume (`${localWorkspaceFolderBasename}-actions-runner`)
+so a registration survives container rebuilds. That volume is deliberately *not*
+shared between projects the way the SDK volumes are, since it holds one runner
+registration, so a shared name would make two projects fight over it. Jump to
+"Running the runner" below.
 
-Two caveats on the baked copy: Docker seeds a named volume from the image only when the volume
-is **empty**, so bumping the runner version in the image will not update an existing
-volume - delete it first. And the version bundled in the image is the one pinned there, not
-necessarily the newest.
+The devcontainer sets `RUNNER_ALLOW_RUNASROOT=1` in `containerEnv`, so the runner runs
+as root inside the container and there is no separate user to create. This is safe
+here because the container is the boundary, and nothing the runner does reaches the
+host.
 
-The rest of this section is for setting a runner up on a **bare host**, outside the container.
+Two caveats on the baked copy: Docker seeds a named volume from the image only when the
+volume is **empty**, so bumping the runner version in the image will not update an
+existing volume. Delete it first. And the version bundled in the image is the one
+pinned there, not necessarily the newest.
 
-Download the actions runner for linux to `/`
+The rest of this section is for setting a runner up on a **bare host**, outside the
+container.
+
+Download the actions runner for Linux to `/`:
 
 ```bash
 # Create a folder
@@ -45,7 +54,7 @@ echo "04cf0be1aff4c3ec3554466c39124ca250e3effd8873bb7e8d68535aa9505d5d  actions-
 tar xzf ./actions-runner-linux-x64-2.336.0.tar.gz
 ```
 
-Run the actions-runner NOT as root (here we create a user called runner)
+Configure and start it:
 
 ```bash
 cd /actions-runner
@@ -56,15 +65,19 @@ cd /actions-runner
 ./run.sh
 ```
 
-### Troubleshooting
+Running the runner as root on a bare host is not recommended, since it gives any
+workflow full control of the machine. Create a dedicated user for it instead, or run it
+inside a container the way the devcontainer does.
 
-Error: Cannot configure the runner because it is already configured. To reconfigure the runner, run 'config.cmd remove' or './config.sh remove' first.
+## Troubleshooting
+
+### Cannot configure the runner because it is already configured
 
 ```bash
 ./config.sh remove --token YOUR_TOKEN_HERE
 ```
 
-Error: A runner already exists
+### A runner already exists
 
 ```bash
 # √ Connected to GitHub
@@ -82,11 +95,11 @@ pkill -9 -f Runner.Listener || true
 ./run.sh
 ```
 
-Error: Not Found
+### Not Found
 
 ```bash
 # Http response code: NotFound from 'POST https://api.github.com/actions/runner-registration' (Request Id: 14ED:2450BC:5DE3A:66F10:6A7E54AF)
-# {"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":"404"}
+# {"message":"Not Found","documentation_url":"https://docs.github.com/rest","status":404}
 # Response status code does not indicate success: 404 (Not Found).
 ```
 
