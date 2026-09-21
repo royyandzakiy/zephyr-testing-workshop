@@ -8,7 +8,8 @@ build that never worked at all, start with [`setup/first-run.md`](setup/first-ru
 ### `fatal error: <header>: No such file or directory`, on a `CONFIG_` you did set
 
 Kconfig dropped the symbol because its `depends on` was not met, and said nothing.
-`prj.conf` is a request, not the answer. Look at what the build decided:
+What `prj.conf` asks for and what the build settled on are two different things. Look
+at the second one:
 
 ```bash
 grep <SYMBOL> build/zephyr/.config
@@ -61,7 +62,7 @@ clangd --check=apps/06-sensor/src/main.c
 ```
 
 It prints either `Loaded compilation database from ...` or
-`Failed to find compilation database for ...`, which settles it in one line.
+`Failed to find compilation database for ...`.
 
 Two related cases:
 
@@ -73,8 +74,8 @@ Two related cases:
   flags and `autoconf.h` come from whichever board that `build/` was last made for.
   Rebuild it for the board you care about.
 
-Pinning `CompilationDatabase` in `.clangd`, per repo or per app, also works. It is not
-the advice here because it goes stale the moment you build for another board.
+Pinning `CompilationDatabase` in `.clangd`, per repo or per app, also works. It points
+at one directory, so it goes stale as soon as you build for another board.
 
 ### `undefined reference`, or `duplicate symbol`, in a test build
 
@@ -96,7 +97,8 @@ west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
 
 ### A scenario failed and the summary does not say why
 
-The summary never does. Read the logs under `<outdir>/<platform>/.../<scenario>/`:
+The summary line only carries counts. The reason is in the logs under
+`<outdir>/<platform>/.../<scenario>/`:
 
 | File | Holds |
 |---|---|
@@ -118,8 +120,8 @@ for t in d['testsuites']:
 
 ### A suite passes with fewer test cases than you wrote
 
-A collection error, not a pass. Check the count in the summary line against how many
-tests you think exist.
+Something failed to collect, and the cases that were collected all passed. Check the
+count in the summary line against how many tests you think exist.
 
 ## ztest
 
@@ -134,9 +136,9 @@ reasoning about the file.
 
 ### A suite reports PASS but you expected SKIP
 
-`ztest_test_skip()` reports SKIP. A suite predicate returning false skips the whole
-suite. Neither is the same as a test that ran and asserted nothing, which reports PASS
-and tells you nothing.
+`ztest_test_skip()` reports SKIP, and a suite predicate returning false skips the
+whole suite. A test that ran and asserted nothing reports PASS, which is the third
+case and looks identical to a test that checked something.
 
 ### The compiler error points at `ZTEST_F` rather than at your code
 

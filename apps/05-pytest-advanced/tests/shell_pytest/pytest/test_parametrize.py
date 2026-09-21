@@ -53,13 +53,13 @@ def test_bad_press_count_is_rejected(app, arg):
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('cycle', range(1, 11))
+@pytest.mark.parametrize('cycle', range(1, 4))
 def test_toggle_is_stable_over_many_cycles(app, cycle):
-    """Marked slow, so `-m "not slow"` skips all ten.
+    """Marked slow, so `-m "not slow"` skips every cycle.
 
-    Ten presses through a shell is not actually slow on native_sim. It is very
-    slow on a board over a 115200 baud UART, which is the case the marker is
-    there for.
+    Repeating a toggle is not actually slow on native_sim. It is slow on a
+    board over a 115200 baud UART, which is the case the marker is there for.
+    Three cycles, because the tenth would exercise the same path as the second.
     """
     app.press(2)
     assert app.led() == 'off', f'cycle {cycle} left the LED on'

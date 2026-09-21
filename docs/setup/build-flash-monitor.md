@@ -1,159 +1,216 @@
 # Build, flash and monitor a board
 
-For someone checking their environment works. Build and run a native_sim binary, then
-build and flash a real board if you have one. Each vendor needs slightly different
-setup, and those are below.
+A check that the toolchain works, using Zephyr's own `samples/hello_world` rather than
+anything in this repo. First on `native_sim`, which needs no hardware, then on a real
+board. Each vendor needs slightly different one-time setup, and those are below.
 
 Once this works, [`../reference/boards.md`](../reference/boards.md) is the full command
-reference.
+reference for the boards in this repo.
 
-## Off-Target: Native Sim
+## native_sim
 
-Here you can try to compile the sample hello world from zephyr, then run the binary
+Build the upstream sample:
 
 ```bash
-export BOARD="native_sim/native"
+west build -b native_sim/native -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
+```
 
-west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
+Run it like any other executable:
 
-# Monitor, just run like a normal executable
+```bash
 ./build_hello_world/zephyr/zephyr.exe
 ```
 
-## On-Target
+The Zephyr boot banner comes first, then the one line the sample prints:
 
-### Searching for boards
-
-- You can search for your specific board or development kit by accessing this page
-
-[Zephyr - Supported Boards & Shields](https://docs.zephyrproject.org/latest/boards/index.html#supported-boards-and-shields)
-
-![Zephyr supported boards index](../imgs/board-search-1.png)
-![Filtering the board list by vendor](../imgs/board-search-2.png)
-
-Below are the steps for Nordic, Espressif and ST Microelectronics boards.
-
-Port numbers depend on enumeration order and on what else is plugged in. Check yours
-with `ls /dev/ttyACM* /dev/ttyUSB*` rather than copying the ones here.
-
-### Nordic
-
-No setup, all nrf boards ready to use
-
-```bash
-export BOARD="nrf5340dk/nrf5340/cpuapp"
-
-# Build
-west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -d build_hello_world -p always
-
-# Flash & Reset
-west flash -d build_hello_world
-# Or use nrfutil directly
-nrfutil device erase
-nrfutil device program --firmware build_hello_world/zephyr/zephyr.hex
-nrfutil device reset
-
-# Monitor (press Ctrl+] to exit)
-python3 -m serial.tools.miniterm /dev/ttyACM1 115200 --raw
+```
+Hello World! native_sim/native
 ```
 
-### Additional Resources
-- https://docs.zephyrproject.org/latest/boards/nordic/nrf5340dk/doc/index.html
+The board target is not in the sample's source. `main()` prints `CONFIG_BOARD_TARGET`,
+which Kconfig generated, so the same binary built for another board prints that board's
+name instead.
 
-### Espressif
+## Finding your board
 
-The Xtensa toolchains are **already installed** - `ZSDK_TOOLCHAINS` in
+Every supported board has a page with its own build and flash notes, listed under
+[Supported Boards and Shields](https://docs.zephyrproject.org/latest/boards/index.html#supported-boards-and-shields).
+The filters down the left narrow by vendor, architecture and supported features.
+
+![The Zephyr supported boards index](../imgs/board-search-1.png)
+![The same list filtered by vendor](../imgs/board-search-2.png)
+
+The board target string that page gives you is what goes after `-b`. The three below
+are the ones this repo carries overlays for.
+
+Port numbers depend on enumeration order and on what else is plugged in, so the ones in
+these commands will not match your machine. Check which ports you have first:
+
+```bash
+ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+```
+
+## Nordic
+
+No one-time setup. `nrfutil` and the Nordic command line tools are in the image, and
+`arm-zephyr-eabi` is in the SDK.
+
+```bash
+west build -b nrf5340dk/nrf5340/cpuapp -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
+```
+
+```bash
+west flash -d build_hello_world
+```
+
+`west flash` reads the board out of the build directory and picks `nrfutil` from it.
+With one probe attached it finds the probe without being told which.
+
+```bash
+python3 -m serial.tools.miniterm --raw /dev/ttyACM1 115200
+```
+
+`Ctrl-]` exits the monitor. The nRF5340DK enumerates more than one port: flashing goes
+through the J-Link and the console is a separate CDC port, so the console is usually
+the higher-numbered one.
+
+Driving the tools directly, without west:
+
+```bash
+nrfutil device program --firmware build_hello_world/zephyr/zephyr.hex
+```
+
+```bash
+nrfutil device reset
+```
+
+[nRF5340DK board page](https://docs.zephyrproject.org/latest/boards/nordic/nrf5340dk/doc/index.html)
+
+## Espressif
+
+The Xtensa toolchains are already installed. `ZSDK_TOOLCHAINS` in
 [`.devcontainer/devcontainer.json`](../../.devcontainer/devcontainer.json) lists both
 `xtensa-espressif_esp32_zephyr-elf` and `xtensa-espressif_esp32s3_zephyr-elf`, and
-`setup-sdks.sh` installs them on first container start. `zephyr-stores` shows what you have.
+`setup-sdks.sh` installs them on first container start. `west sdk list` prints what you
+have.
 
-One thing still needed per workspace - the Espressif binary blobs are not in the git tree:
+One thing is still needed per workspace, because the Espressif binary blobs are not in
+the git tree:
 
 ```bash
 west blobs fetch hal_espressif
 ```
 
-To add a toolchain for a different chip (ESP32-S2, a RISC-V ESP32-C3, …), append the triple
-to `ZSDK_TOOLCHAINS` in `containerEnv` and restart the container. `setup-sdks.sh` tops up the
-shared SDK incrementally, so nothing is re-downloaded. `west sdk list` shows the available
-triples. To install one immediately without restarting:
+Then build, flash and monitor:
 
 ```bash
-/opt/devcontainer/fetch-zephyr.sh    # re-runs setup.sh -t for the configured toolchains
+west build -b esp32s3_devkitc/esp32s3/procpu -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
 ```
 
 ```bash
-export BOARD="esp32s3_devkitc/esp32s3/procpu"
-
-# Build
-west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -d build_hello_world -p always
-
-# Flash (west handles esptool underneath)
-west flash --runner esp32 --esp-device /dev/ttyACM0 -d build_hello_world
-
-# Monitor (press Ctrl+] to exit)
-python3 -m serial.tools.miniterm /dev/ttyACM0 115200 --raw
-```
-
-Error: Espressif toolchain not yet installed
-
-```bash
-Make Error at /workdir/zephyr-sdks/v4.2.2/zephyr/cmake/compiler/gcc/target.cmake:11 (message):
-  C compiler
-  /workdir/zephyr-sdks/toolchains/zephyr-sdk-0.17.0/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gcc
-  not found - Please check your toolchain installation
-```
-
-Solution: you must install the correct sdk for your board using the `west sdk install` command
-
-### Additional Resources:
-- https://docs.zephyrproject.org/latest/boards/espressif/esp32s3_devkitc/doc/index.html
-
-### ST Microelectronics
-
-Additional setup to be able to compile to board
-
-```bash
-pyocd list # find the target for your board
-pyocd list --targets # or, list all available targets to install
-
-pyocd pack install stm32g474retx # change based on your board
+west flash -d build_hello_world --runner esp32 --esp-device /dev/ttyACM0
 ```
 
 ```bash
-export BOARD="nucleo_g474re"
-
-west build -b $BOARD -s $ZEPHYR_BASE/samples/hello_world -d build_hello_world -p always
-
-west flash --runner pyocd -d build_hello_world/
-# or, to be specific
-west flash --runner pyocd -d build_hello_world/ -- --dev-id 0046002E3234510A37333934
-
-# Monitor (press Ctrl+] to exit)
-python3 -m serial.tools.miniterm /dev/ttyACM0 115200 --raw
+python3 -m serial.tools.miniterm --raw /dev/ttyACM0 115200
 ```
 
-Error: STM32 G4 not yet installed
+The `esp32` runner covers every Espressif part, not only the original ESP32. On the
+ESP32-S3, `ttyACM0` and `ttyUSB0` are different endpoints rather than two names for one
+thing: `ttyACM0` is the native USB-Serial-JTAG peripheral and `ttyUSB0` is the onboard
+UART bridge. Use the same one for flashing and monitoring.
+
+### Adding a toolchain for a different chip
+
+For an ESP32-S2, a RISC-V ESP32-C3 or anything else, append the triple to
+`ZSDK_TOOLCHAINS` in `containerEnv` and restart the container. `setup-sdks.sh` tops up
+the shared SDK volume incrementally, so nothing already there is downloaded again. To
+install it without restarting:
 
 ```bash
--- west flash: rebuilding
-ninja: no work to do.
--- west flash: using runner pyocd
--- runners.pyocd: Flashing file: build_nucleog4_test_gpio_toggle/zephyr/zephyr.hex
-Waiting for a debug probe to be connected...
-0026001 C Target type stm32g474retx not recognized. Use 'pyocd list --targets' to see currently available target types. See <https://pyocd.io/docs/target_support.html> for how to install additional target support. [__main__]
-FATAL ERROR: command exited with status 1: pyocd flash -e sector -a 0x8000000 -t stm32g474retx build_nucleog4_test_gpio_toggle/zephyr/zephyr.hex
+/opt/devcontainer/fetch-zephyr.sh
+```
+
+That re-runs the SDK setup for whichever toolchains `ZSDK_TOOLCHAINS` currently names.
+
+### `C compiler ... xtensa-espressif_esp32s3_zephyr-elf-gcc not found`
+
+CMake prints this from `cmake/compiler/gcc/target.cmake` with the full path it looked
+at, under `$ZEPHYR_SDK_INSTALL_DIR`. The toolchain for that chip is not in the SDK
+volume.
+
+```bash
+west sdk list
+```
+
+If the triple is missing from that output, add it to `ZSDK_TOOLCHAINS` and run
+`/opt/devcontainer/fetch-zephyr.sh` as above. On a bare host with no container,
+`west sdk install -t <triple>` does the same job.
+
+[ESP32-S3 DevKitC board page](https://docs.zephyrproject.org/latest/boards/espressif/esp32s3_devkitc/doc/index.html)
+
+## ST Microelectronics
+
+pyocd needs a target support pack per chip family, and it does not ship with any. Find
+the target name for your board:
+
+```bash
+pyocd list
 ```
 
 ```bash
-root@d9bcb3911f2d:/workspaces/zephyr-testing-workshop# pyocd list
-  #   Probe/Board     Unique ID                  Target           
+pyocd pack install stm32g474retx
+```
+
+`pyocd list --targets` prints every target it could install, which is useful when
+`pyocd list` shows the probe but not a usable target name.
+
+```bash
+west build -b nucleo_g474re -s $ZEPHYR_BASE/samples/hello_world -p always -d build_hello_world
+```
+
+```bash
+west flash -d build_hello_world --runner pyocd
+```
+
+With more than one ST-LINK attached, name the one you mean. The id is the Unique ID
+column from `pyocd list`:
+
+```bash
+west flash -d build_hello_world --runner pyocd --dev-id 0046002E3234510A37333934
+```
+
+```bash
+python3 -m serial.tools.miniterm --raw /dev/ttyACM0 115200
+```
+
+### `Target type stm32g474retx not recognized`
+
+The pack is not installed. `pyocd list` shows this as a cross next to the target name:
+
+```
+  #   Probe/Board     Unique ID                  Target
 ------------------------------------------------------------------
-  0   STLINK-V3       0046002E3234510A37333934   ✖︎ stm32g474retx  
-      NUCLEO-G474RE                                              
+  0   STLINK-V3       0046002E3234510A37333934   ✖︎ stm32g474retx
+      NUCLEO-G474RE
 ```
 
-Solution: you do not have the correct board sdk installed, use `pyocd pack install [target]` command with the appropriate board
+```bash
+pyocd pack install stm32g474retx
+```
 
-### Additional Resources:
-- https://docs.zephyrproject.org/latest/boards/st/nucleo_g474re/doc/index.html
+The same failure through west reads
+`FATAL ERROR: command exited with status 1: pyocd flash ...`, with the pyocd message a
+few lines above it.
+
+[Nucleo G474RE board page](https://docs.zephyrproject.org/latest/boards/st/nucleo_g474re/doc/index.html)
+
+## References
+
+| | |
+|---|---|
+| [`../reference/boards.md`](../reference/boards.md) | the per-board commands for the suites in this repo, and what each flag does |
+| [`../reference/native-sim.md`](../reference/native-sim.md) | the two native_sim board targets and where console output goes |
+| [`devcontainer.md`](devcontainer.md) | where the SDK volume lives and what `setup-sdks.sh` does |
+| [`../troubleshooting.md`](../troubleshooting.md) | build, flash and Twister failures keyed by the error you see |
+| [Supported boards](https://docs.zephyrproject.org/latest/boards/index.html#supported-boards-and-shields) | every board Zephyr supports, with a page each |

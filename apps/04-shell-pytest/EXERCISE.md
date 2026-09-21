@@ -40,7 +40,7 @@
    holds the raw device output, and say which you would open first. Put it back when
    you are done.
 
-4. **Add a sixth press.** `EXPECTED_STATES` has five entries. Add one, run the suite,
+4. **Add a third press.** `EXPECTED_STATES` has two entries. Add one, run the suite,
    then confirm you touched no firmware:
 
    ```bash

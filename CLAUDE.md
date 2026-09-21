@@ -83,7 +83,7 @@ are a second group about what you write once you have found the seam.
 |---|---|
 | [`docs/README.md`](docs/README.md) | the index. Start here to find the right page. |
 | [`docs/reference/boards.md`](docs/reference/boards.md) | the authoritative per-board command reference. Read it before inventing a flash command. |
-| [`docs/reference/native-sim.md`](docs/reference/native-sim.md) | PTY versus stdin/stdout console modes |
+| [`docs/reference/native-sim.md`](docs/reference/native-sim.md) | PTY versus stdin/stdout console modes, and when the setting does nothing |
 | [`docs/reference/pytest-harness.md`](docs/reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, `harness_config` |
 | [`docs/troubleshooting.md`](docs/troubleshooting.md) | failures keyed by symptom |
 | [`docs/guides/self-hosted-runner.md`](docs/guides/self-hosted-runner.md) | registering a runner so CI can flash hardware |

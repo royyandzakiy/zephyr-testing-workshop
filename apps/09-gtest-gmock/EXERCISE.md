@@ -41,17 +41,17 @@
    *Check:* you never reach a test run, and you can say which tool reported the failure
    and at what point in the build. Put the 2 back when you are done.
 
-4. **Add a row to the table.** Add `{500, 2, "AMediumPortion"}` to `kCases` in
-   `test_portion.cpp` and run the suite:
+4. **Watch twister name every test.** Run the suite and read the case list rather than
+   the summary line:
 
    ```bash
    west twister -T apps/09-gtest-gmock -p native_sim -O /tmp/tw --clobber-output -v
    ```
 
-   *Check:* the new row appears as its own `[ OK ]` line with the name you gave it, and
-   the total went from 8 to 9. Compare that against how
-   `apps/07-unit-conventions/tests/ztest/src/main.c` reports its table. You can leave
-   the row in, it is a correct case.
+   *Check:* all six tests appear by name, the same way
+   `apps/07-unit-conventions` reports its ztest cases, and you can say which line
+   `testcase.yaml` needs for that to happen. Then look at
+   `/tmp/tw/twister.json` and find the same six.
 
 ## ★★ go deeper
 
@@ -99,14 +99,29 @@
 
 ## ★★★ off the map
 
-1. **Get one result per test out of twister.** `harness: console` gives one pass or
-   fail for the whole binary, so a suite of eight shows up as one. GoogleTest can emit
-   JUnit XML with `--gtest_output=xml:`, and twister writes its own `twister.xml`.
+1. **Make the harness miss a failing test.** Add a parameterized test back to
+   `test_portion.cpp`, with one row that is deliberately wrong:
 
-   *Why it is interesting:* there is no supported way to merge them, so you have to
-   decide whether per-test reporting is worth a post-processing step in CI, or whether
-   one result per binary is enough. Both answers are defensible and the reasoning is
-   the useful part.
+   ```c
+   class Turns : public testing::TestWithParam<int> {};
+   TEST_P(Turns, IsWrongOnPurpose) { EXPECT_EQ(feeder::turnsFor(GetParam()), 99); }
+   INSTANTIATE_TEST_SUITE_P(Portion, Turns, testing::Values(1, 250));
+   ```
+
+   ```bash
+   west twister -T apps/09-gtest-gmock -p native_sim -O /tmp/tw --clobber-output -v
+   ```
+
+   Then read `handler.log` under the output directory and compare what GoogleTest
+   printed against what twister reported.
+
+   *Why it is interesting:* GoogleTest says `[  FAILED  ]`, and twister says the
+   scenario passed. The harness only accepts names matching `[a-zA-Z_][a-zA-Z0-9_]*`,
+   and a parameterized case is called `Portion/Turns.IsWrongOnPurpose/0`, so neither the
+   pass nor the failure is ever matched. Work out what you would do about it on a real
+   project: print your own summary line the harness can parse, go back to
+   `harness: console`, or avoid `TEST_P`. This app took the third option. Take the test
+   back out when you are done.
 
 2. **Try to run this on a real board.** Pick one you own and build the test directory
    for it:

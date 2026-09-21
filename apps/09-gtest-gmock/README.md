@@ -2,7 +2,7 @@
 
 This project is the same pond feeder dispenser as `08-fff-mocks`, written in C++23, with GoogleTest and GoogleMock instead of ztest and FFF. You will build it
 for native_sim and run the suite through twister, the same as every other app here. It
-does not use ztest, so twister decides whether the run passed by reading the console.
+does not use ztest, so twister reads the suite with its GoogleTest harness instead.
 
 **What changed since `08-fff-mocks`:** the auger became an abstract base class and
 arrives through the constructor instead of through the linker. The behaviour under test
@@ -20,12 +20,10 @@ is the same, so you can open the two test files side by side.
   `auger_run`.
 - `EXPECT_CALL` declaring the expectation before the call, with the mock failing the
   test at destruction if it was not met. FFF records, and you assert afterwards.
-- `TEST_P` with a name generator, which gives one result per row of a table. ztest has
-  no parametrization, so a table there is one test with a loop inside it.
 - `static_assert` over a `constexpr` function, checked while the file compiles and never
   run.
-- `harness: console` in `testcase.yaml`, which is how twister runs a suite that is not
-  ztest.
+- `harness: gtest` in `testcase.yaml`, which is how twister runs a suite that is not
+  ztest and still reports one result per test.
 
 ## Layout
 
@@ -45,10 +43,10 @@ is the same, so you can open the two test files side by side.
     └── gtest/
         ├── CMakeLists.txt    fetches googletest, compiles it into the image
         ├── prj.conf          exceptions, RTTI, a full libstdc++, a big heap
-        ├── testcase.yaml     harness: console, matching the [ PASSED ] line
+        ├── testcase.yaml     harness: gtest, and nothing else to configure
         └── src/
             ├── main.cpp            InitGoogleMock, RUN_ALL_TESTS, nsi_exit
-            ├── test_portion.cpp    TEST_P over a table, plus static_assert
+            ├── test_portion.cpp    plain TESTs, plus static_assert
             └── test_dispenser.cpp  MOCK_METHOD and EXPECT_CALL
 ```
 
@@ -103,16 +101,16 @@ The suite, which twister reads off the console:
 [       OK ] Dispenser.SplitsAPortionIntoWholeTurns (0 ms)
 [       OK ] Dispenser.ZeroGramsNeverReachesTheMotor (0 ms)
 [       OK ] Dispenser.AJamStopsTheRemainingTurns (0 ms)
-[       OK ] Portion/TurnsFor.MatchesTheTable/NothingAsked (0 ms)
-[       OK ] Portion/TurnsFor.MatchesTheTable/OnePelletStillCostsAWholeTurn (0 ms)
-[       OK ] Portion/TurnsFor.MatchesTheTable/ExactlyOneTurn (0 ms)
-[       OK ] Portion/TurnsFor.MatchesTheTable/OneOverRoundsUp (0 ms)
-[       OK ] Portion/TurnsFor.MatchesTheTable/ALargePortion (0 ms)
-[  PASSED  ] 8 tests.
+[       OK ] TurnsFor.NothingAskedIsNoTurns (0 ms)
+[       OK ] TurnsFor.ExactMultiplesAreWholeTurns (0 ms)
+[       OK ] TurnsFor.AnyRemainderCostsAnotherTurn (0 ms)
+[  PASSED  ] 6 tests.
 ```
 
-Twister reports `1 of 1 executed test configurations passed`, and **one** test case, not
-eight. `harness: console` gives one result for the whole binary.
+Twister reports `1 of 1 executed test configurations passed`, and lists the tests by
+name rather than giving one result for the whole binary. `harness: gtest` reads the
+`[ RUN      ]` and `[       OK ]` lines and turns each one into its own result, which is
+what the ztest harness does for every other app here.
 
 ## Trivia
 
@@ -151,7 +149,7 @@ flowchart TD
     app --> img
 
     img --> out["GoogleTest console output"]
-    out --> tw["twister, harness: console"]
+    out --> tw["twister, harness: gtest"]
 ```
 
 Two things in `tests/gtest/CMakeLists.txt` are there because the obvious version does
@@ -182,7 +180,7 @@ native_sim uses neither libc, so Kconfig drops the symbol without a word and lea
 Kconfig:
 
 ```
-tests/gtest/src/test_portion.cpp:11:10: fatal error: string: No such file or directory
+tests/gtest/src/test_dispenser.cpp:14:10: fatal error: cerrno: No such file or directory
 ```
 
 The second sign is in the compiler command line, `-nostdinc++ -isystem
@@ -235,14 +233,43 @@ passes the GoogleTest failure count out as the process exit code.
 ztest does this for you. It is one of several small things you give up by bringing your
 own framework.
 
-### Two harnesses, one twister
+### The harness, and the one thing it cannot parse
 
-Every other test folder in this repo sets `CONFIG_ZTEST=y`, and twister then uses its
-ztest harness: it knows the protocol, counts the suites and reports each test
-separately. This folder has no ztest in it, so that route is closed.
+Every other test folder in this repo sets `CONFIG_ZTEST=y`, and twister uses its ztest
+harness: it knows the protocol, counts the suites and reports each test separately. This
+folder has no ztest in it, so that route is closed.
 
-`harness: console` is the general-purpose alternative. Twister runs the binary, reads
-what comes out, and matches a regex:
+Twister ships a GoogleTest harness for exactly this case, and switching to it is one
+line with nothing to configure:
+
+```yaml
+harness: gtest
+```
+
+It reads the console like `harness: console` does, but it knows what the output means.
+It matches `[ RUN      ]` to open a test, `[       OK ]` and `[  FAILED  ]` to close one,
+and `[----------] Global test environment tear-down` to end the run, so each test arrives
+as its own result.
+
+There is a limit worth knowing before you lean on it. The names it will accept are:
+
+```python
+_NAME_PATTERN = "[a-zA-Z_][a-zA-Z0-9_]*"
+```
+
+That is `Suite.Test` and nothing else. GoogleTest formats a parameterized case as
+`Instantiation/Suite.Test/case`, and the slashes do not match, so a `TEST_P` row is
+skipped. Skipped in both directions: it is not reported when it passes, and
+`[  FAILED  ]` does not register when it fails, because the harness only sets its
+internal failure flag on a line that matched. A suite of `TEST_P` cases can go green
+with a broken row in it.
+
+This app uses plain `TEST` for that reason. If you want parameterized cases and per-test
+reporting at the same time, you have to print something the harness can parse yourself,
+or go back to `harness: console` and accept one result for the binary.
+
+`harness: console` is still the general-purpose fallback for any program that prints
+something predictable:
 
 ```yaml
 harness: console
@@ -252,12 +279,8 @@ harness_config:
     - '\[  PASSED  \] \d+ tests?\.'
 ```
 
-One pass or fail for the whole binary rather than per test, which is the cost.
-GoogleTest prints `[  FAILED  ]` and a non-zero count when anything breaks, so the line
-never appears and twister reports the scenario as failed.
-
-Note the single quotes. In a double-quoted YAML scalar a backslash starts an escape, so
-`\[` is a parse error and you would have to write `\\[` instead.
+Note the single quotes there. In a double-quoted YAML scalar a backslash starts an
+escape, so `\[` is a parse error and you would have to write `\\[` instead.
 
 ## References
 
@@ -266,7 +289,6 @@ Note the single quotes. In a double-quoted YAML scalar a backslash starts an esc
 | [GoogleTest primer](https://google.github.io/googletest/primer.html) | `TEST`, `TEST_F`, the assertion macros, and the difference between `ASSERT_` and `EXPECT_` |
 | [gMock for dummies](https://google.github.io/googletest/gmock_for_dummies.html) | `MOCK_METHOD`, `EXPECT_CALL`, and how a mock verifies itself |
 | [gMock cheat sheet](https://google.github.io/googletest/gmock_cheat_sheet.html) | the one-page summary of matchers, actions and cardinalities |
-| [Value-parameterized tests](https://google.github.io/googletest/advanced.html#value-parameterized-tests) | `TEST_P`, `INSTANTIATE_TEST_SUITE_P` and the name generator used in `test_portion.cpp` |
+| [Twister harnesses](https://docs.zephyrproject.org/latest/develop/test/twister.html#harnesses) | `gtest`, `console`, `ztest`, `pytest` and the rest, and what each `harness_config` takes |
 | [Zephyr C++ support](https://docs.zephyrproject.org/latest/develop/languages/cpp/index.html) | which parts of the standard library exist on which libc, and what `CONFIG_MINIMAL_LIBCPP` leaves out |
-| [Twister harnesses](https://docs.zephyrproject.org/latest/develop/test/twister.html#harnesses) | `console`, `ztest`, `pytest` and the rest, and what `harness_config` takes |
 | [`apps/08-fff-mocks/README.md`](../08-fff-mocks/README.md) | the same dispenser with FFF, in C |

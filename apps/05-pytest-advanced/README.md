@@ -2,7 +2,7 @@
 
 This project takes the backdoor from `04-shell-pytest` and builds a real pytest suite
 on top of it: fixtures, parametrization, markers and expected failures. You will run
-four twister scenarios over one directory, and then run the same assertions again with
+three twister scenarios over one directory, and then run the same assertions again with
 no twister at all, so you can see what the harness was doing for you.
 
 **What changed since `04-shell-pytest`:**
@@ -11,7 +11,7 @@ no twister at all, so you can see what the harness was doing for you.
   commands of its own.
 - `tests/shell_pytest/test_harness.c` grew a subcommand set, and prints
   machine-readable `key=value` lines alongside the human ones.
-- `tests/shell_pytest/testcase.yaml` has four scenarios over one directory.
+- `tests/shell_pytest/testcase.yaml` has three scenarios over one directory.
 - `tests/pytest_raw/` is new. Plain pytest against the native_sim binary.
 
 ## What to learn here
@@ -40,7 +40,7 @@ no twister at all, so you can see what the harness was doing for you.
 └── tests/
     ├── shell_pytest/
     │   ├── test_harness.c  app btn|led|stats|reset, key=value output
-    │   ├── testcase.yaml   FOUR scenarios: smoke, full, one-file, shell-only
+    │   ├── testcase.yaml   THREE scenarios: smoke, full, shell-only
     │   └── pytest/
     │       ├── conftest.py         markers, parse_kv(), the app fixture
     │       ├── test_smoke.py       the three assertions worth having
@@ -78,14 +78,17 @@ cd apps/05-pytest-advanced/tests/pytest_raw && pytest
 
 ## Expected outcome
 
-Four scenarios from `tests/shell_pytest/testcase.yaml`:
+Three scenarios from `tests/shell_pytest/testcase.yaml`:
 
 | Scenario | What it runs |
 |---|---|
 | `app05.shell.pytest.smoke` | the whole pytest directory, slow cases deselected |
 | `app05.shell.pytest.full` | the whole directory, slow cases included |
-| `app05.shell.pytest.parametrize` | `pytest/test_parametrize.py` only |
 | `app05.shell.builtin_harness` | `harness: shell`, no Python |
+
+`smoke` and `full` build the same image and differ only in `pytest_args`, which is what
+the `slow` marker is for. To narrow a scenario to one file instead, `pytest_root` is in
+[`docs/reference/pytest-harness.md`](../../docs/reference/pytest-harness.md).
 
 One test fails and reports as **xfail**:
 `test_reset_also_turns_the_led_off`. It is `strict=True`, so if somebody makes
@@ -95,8 +98,8 @@ The raw suite will give a message naming the missing binary if you have not buil
 image yet.
 
 ```
-INFO    - 4 of 4 executed test configurations passed (100.00%)
-INFO    - 83 of 83 executed test cases passed (100.00%)
+INFO    - 3 of 3 executed test configurations passed (100.00%)
+INFO    - 47 of 47 executed test cases passed (100.00%)
 ```
 
 ## Trivia
@@ -127,7 +130,7 @@ flowchart TD
 
 `conftest.py` is found by directory, not by import. Any test file in that folder or
 below can use a fixture defined there without importing anything, which is why none of
-the four test files has an import for `app`.
+the test files has an import for `app`.
 
 The `app` fixture is the one worth copying into your own suites. It wraps `shell` so
 tests say `app.press(3)` instead of `shell.exec_command('app btn 3')`. When the

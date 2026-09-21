@@ -47,7 +47,7 @@ west twister -T apps/06-sensor -p native_sim
 
 | Suite | Scenario | What it links | What it proves |
 |---|---|---|---|
-| `tests/unit` | `app06.climate.logic` | `climate_logic.c` only | fixed-point rounding, alarm hysteresis. No driver, no bus, no board. |
+| `tests/unit` | `app06.climate.logic` | `climate_logic.c` only | fixed-point rounding. No driver, no bus, no board. |
 | `tests/emul` | `app06.climate.emul` | `bme280.c` + `bme280_emul.c` + the real Bosch driver | the app talks to a fake chip over a fake bus and cannot tell |
 
 `src/sensors/bme280_emul.c` is an emulated BME280. Zephyr ships emulators for
@@ -71,7 +71,7 @@ zephyr/drivers/sensor/bosch/bme280/bme280.c:103:35:
     runtime error: left shift of negative value -4509070
 ```
 
-This is **upstream Zephyr code, not ours** — line 103 is
+This is **upstream Zephyr code, not ours**. Line 103 is
 `((var1 * (int64_t)data->dig_p2) << 12)`, part of the compensation formula
 copied verbatim from the BME280 datasheet (see the comment at `bme280.c:88`).
 `dig_p2` is negative in the datasheet reference calibration and on most real

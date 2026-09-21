@@ -1,7 +1,9 @@
 # docs
 
-Written for someone working through this repo on their own. When a page could be
-aimed at either a learner or a maintainer, it is aimed at the learner.
+Everything in this repository that is not one of the examples: setup, commands,
+concepts, and the failures you are likely to run into. Where a page could be aimed at
+either a learner or a maintainer it is aimed at the learner, and the maintainer version
+goes in [`notes/`](notes/).
 
 The examples themselves are in [`../apps/`](../apps/). Each one has its own `README.md`
 explaining what it is and how to run it, and an `EXERCISE.md` with more to try. These
@@ -33,7 +35,7 @@ If you are not sure which level a test of yours belongs at, read
 | | |
 |---|---|
 | [`reference/boards.md`](reference/boards.md) | build, flash and Twister commands, per board, and what each flag does |
-| [`reference/native-sim.md`](reference/native-sim.md) | the console modes, and running the binary directly |
+| [`reference/native-sim.md`](reference/native-sim.md) | the two board targets, where the console output goes, and the binary's command line options |
 | [`reference/pytest-harness.md`](reference/pytest-harness.md) | `twister_harness`, the `dut` and `shell` fixtures, `harness_config` |
 | [`troubleshooting.md`](troubleshooting.md) | failures keyed by what you are looking at |
 | [`glossary.md`](glossary.md) | the vocabulary these docs assume |
@@ -48,7 +50,8 @@ If you are not sure which level a test of yours belongs at, read
 The app READMEs carry their own version of these ideas in their Trivia sections, told
 through the app in front of you. The pages here are the standalone version.
 
-## Not for learners
+## Working material
 
-[`notes/`](notes/) is working material: planning, a task list, an outline. It is kept
-because it is useful to whoever maintains this, and it is not finished writing.
+[`notes/`](notes/) holds planning, a task list and an outline. It is kept because it is
+useful to whoever maintains this repository. Nothing in it is finished and some of it
+is out of date, which its own `README.md` and each file say at the top.

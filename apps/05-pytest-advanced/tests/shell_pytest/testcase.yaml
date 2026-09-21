@@ -1,8 +1,12 @@
 # tests/shell_pytest/testcase.yaml
 #
-# One directory, four scenarios. Twister builds the image once per scenario,
-# so this is also a demonstration of the cheapest knob you have: splitting a
-# slow suite from a fast one costs nothing but a second entry here.
+# One directory, three scenarios. Twister builds the image once per scenario,
+# so splitting a slow suite from a fast one costs nothing but a second entry
+# here.
+#
+# `pytest_root`, which narrows a scenario to one file, is in
+# docs/reference/pytest-harness.md. A scenario for it here would only re-run
+# tests that app05.shell.pytest.full already runs.
 
 common:
   build_only: false
@@ -31,18 +35,9 @@ tests:
     tags:
       - slow
 
-  # One file, nothing else. Handy when you are iterating on a single test and
-  # do not want to wait for the other three files.
-  app05.shell.pytest.parametrize:
-    harness: pytest
-    harness_config:
-      pytest_root:
-        - "pytest/test_parametrize.py"
-
   # No Python at all. The built-in shell harness does string matching and
-  # nothing more, which is often enough -- and is worth seeing next to the
-  # pytest scenarios so the extra machinery has something to justify itself
-  # against.
+  # nothing more, which is often enough. It sits next to the pytest scenarios
+  # so you can compare the two.
   app05.shell.builtin_harness:
     harness: shell
     harness_config:

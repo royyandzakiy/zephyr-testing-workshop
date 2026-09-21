@@ -1,7 +1,7 @@
 # tests/shell_pytest/CMakeLists.txt
 #
 # The application's own main.c, unmodified, plus the backdoor. Exactly the
-# shape apps/04-shell-pytest uses -- the difference in this app is all on the
+# shape apps/04-shell-pytest uses. The difference in this app is all on the
 # Python side.
 
 cmake_minimum_required(VERSION 3.20.0)

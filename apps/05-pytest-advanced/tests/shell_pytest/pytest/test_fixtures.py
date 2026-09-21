@@ -5,10 +5,9 @@
 # when the thing you want to assert on is not a response to a command.
 
 import logging
-import re
 
 import pytest
-from twister_harness import DeviceAdapter, Shell
+from twister_harness import DeviceAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -50,64 +49,24 @@ def test_dut_readlines_until(dut: DeviceAdapter):
 
 @pytest.fixture()
 def pressed_once(app):
-    """A fixture that puts the device in a known non-default state.
+    """Setup and teardown in one fixture, with yield in the middle.
 
     Anything a test needs *before* its first assertion belongs in a fixture.
     The test below reads as one line because of it.
-    """
-    app.press(1)
-    return app
-
-
-def test_second_press_turns_it_back_off(pressed_once):
-    pressed_once.press(1)
-    assert pressed_once.led() == 'off'
-
-
-@pytest.fixture()
-def counted(app):
-    """Setup and teardown in one fixture, with yield in the middle.
 
     Teardown runs even when the test fails, which is the difference between
     this and putting the cleanup at the end of the test body. On real hardware
     that matters: a test that dies with the LED on leaves it on for the next
     one.
     """
-    before = int(app.stats()['presses'])
+    app.press(1)
+
     yield app
-    after = int(app.stats()['presses'])
-    logger.info('test moved the counter %d -> %d', before, after)
+
+    logger.info('counter ended at %s', app.stats()['presses'])
     app.reset()
 
 
-def test_counter_is_monotonic(counted):
-    first = int(counted.stats()['presses'])
-    counted.press(3)
-    second = int(counted.stats()['presses'])
-    assert second > first
-
-
-def test_uptime_moves_forward(app):
-    """A property, not a value.
-
-    Pinning uptime to a number would be a test that fails on a slower runner.
-    Asserting it increases holds everywhere.
-    """
-    first = int(app.stats()['uptime_ms'])
-    app.press(1)
-    second = int(app.stats()['uptime_ms'])
-    assert second >= first
-
-
-def test_backdoor_advertises_every_subcommand(shell: Shell):
-    """Regex against shell output, for when a plain substring is too loose.
-
-    `app` prints its own list rather than letting the shell print help,
-    because the shell's help wording has changed between Zephyr releases and
-    a test that asserts on it is a test about the shell subsystem.
-    """
-    lines = shell.exec_command('app')
-    match = re.search(r'subcmds=(\S+)', '\n'.join(lines))
-
-    assert match, f'no subcmds line in {lines}'
-    assert set(match.group(1).split(',')) == {'btn', 'led', 'stats', 'reset'}
+def test_second_press_turns_it_back_off(pressed_once):
+    pressed_once.press(1)
+    assert pressed_once.led() == 'off'

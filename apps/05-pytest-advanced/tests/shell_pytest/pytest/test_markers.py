@@ -36,13 +36,18 @@ def test_reset_also_turns_the_led_off(app):
 def test_emulated_button_only_exists_off_target(app, board_name):
     """Skipping on a condition you only know at runtime.
 
-    testcase.yaml already narrows the platform list, so this is belt and
-    braces. It still earns its place: platform_allow is checked by twister
-    before the build, and this is checked against the device that actually
-    answered, which are not always the same board.
+    `platform_allow` is checked by twister before the build. This is checked
+    against the device that actually answered, which is not always the same
+    board.
+
+    The condition is real: app.overlay reroutes sw0 to gpio_emul for every
+    platform in the list, so this suite has only ever been run on native_sim.
+    Pointing it at a board would need that reroute moved into a
+    boards/native_sim_native.overlay first, and until someone does that, this
+    skip is what stops the run reporting a false pass.
     """
     if not board_name.startswith('native_sim'):
-        pytest.skip(f'{board_name} drives a real pin; nothing to emulate')
+        pytest.skip(f'{board_name}: the emulated button reroute is native_sim only')
 
     app.press(1)
     assert app.led() == 'on'

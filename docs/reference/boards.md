@@ -1,14 +1,12 @@
 # Build, flash and Twister commands
 
-For someone with the repo running who has reached for a board, or who needs to know
-what a flag does. Commands verified against Zephyr v4.4.2 in the devcontainer, except
-where marked as needing hardware.
+The `west build`, `west flash` and `west twister` flags used in this repo, and the
+per-board commands for every board with an overlay in the tree. Commands verified
+against Zephyr v4.4.2 in the devcontainer, except where marked as needing hardware.
 
-Every command below belongs to one of three phases. Most flag confusion is a flag in
-the wrong phase.
-
-`-p` means **pristine** in `west build` and **platform** in `west twister`. They are
-unrelated, and this is the most common mix-up.
+Every command below belongs to one of three phases, and a flag belongs to exactly one
+of them. `-p` means **pristine** in `west build` and **platform** in `west twister`.
+They are unrelated flags that share a letter.
 
 ## The three phases
 
@@ -49,7 +47,7 @@ west build -b <board> -s <source_dir> -d <build_dir> -p always -- -D<VAR>=<value
 CMake args, all after `--` and prefixed with `-D`:
 
 - `-DEXTRA_DTC_OVERLAY_FILE=<abs_path>`: **appends** an overlay on top of the
-  auto-discovered set. This is what you want in almost every case.
+  auto-discovered set, so `app.overlay` and the `boards/` files still apply.
 - `-DDTC_OVERLAY_FILE=<abs_path>`: **replaces** the whole auto-discovered set.
   `app.overlay` is silently dropped.
 - `-DEXTRA_CONF_FILE=<abs_path>`: appends a Kconfig fragment on top of `prj.conf`.
@@ -74,10 +72,9 @@ apps/04-shell-pytest/tests/drivers/gpio_button_toggle/
 Board filenames use the **normalized** board name, with slashes becoming underscores.
 
 Discovery is relative to `-s`, so a `boards/` directory anywhere else is not found. In
-this repo every suite carries whatever it needs, which is why none of the commands
-below pass an overlay explicitly. That was not always true, so older notes elsewhere
-may still show `--extra-args=DTC_OVERLAY_FILE=...` pointing at a workspace-root
-`boards/`. There is no such directory now.
+this repo every suite carries its own `app.overlay` and `boards/`, so none of the
+commands below pass an overlay explicitly. There is no `boards/` directory at the
+workspace root, and a command that points `DTC_OVERLAY_FILE` at one will not resolve.
 
 ## `west flash`
 
@@ -121,7 +118,8 @@ escapes render wrong.
 The port must be free. Close the monitor before flashing or running Twister.
 
 **Port numbers depend on enumeration order and on what else is plugged in.** The
-numbers in this file are what one particular desk saw. Check yours:
+numbers in this file are from one particular setup and will not match yours. Check
+which ports you have:
 
 ```bash
 ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
@@ -181,9 +179,10 @@ mount with `OSError: [Errno 39] Directory not empty`.
 
 On the ESP32-S3 the same port is named twice for two different consumers:
 `--west-flash="--esp-device=/dev/ttyACM0"` for esptool writing, and
-`--device-serial /dev/ttyACM0` for the harness reading. Nothing links them. On the
-nRF5340DK they legitimately differ, because flashing goes through the J-Link by
-`--dev-id` while the console is a separate CDC port.
+`--device-serial /dev/ttyACM0` for the harness reading. Twister does not derive one
+from the other, so both have to be given. On the nRF5340DK the two are different
+ports, because flashing goes through the J-Link by `--dev-id` while the console is a
+separate CDC port.
 
 ### Reading a failed run
 
@@ -203,8 +202,9 @@ See [`../troubleshooting.md`](../troubleshooting.md) for failures keyed by sympt
 
 ## Hardware map
 
-Replaces the per-invocation device flags, and is the better option for CI and for more
-than one board.
+A YAML file describing the attached boards, which replaces the per-invocation
+`--device-serial` and `--west-flash` flags. One entry per board, so a single Twister
+invocation can cover several.
 
 ```bash
 west twister --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml \
@@ -350,3 +350,13 @@ Quit with `Ctrl-A` then `x`.
 - `--snr` is accepted but obsolete. Use `--dev-id`.
 - `-p` in `west twister` is platform, not pristine. Twister always builds pristine.
 - An overlay passed to `west flash` is rejected. Overlays are a build-time input.
+
+## References
+
+| | |
+|---|---|
+| [`west build`](https://docs.zephyrproject.org/latest/develop/west/build-flash-debug.html#building-west-build) | the full flag list, and how `-p auto` decides whether to wipe |
+| [Twister](https://docs.zephyrproject.org/latest/develop/test/twister.html) | every Twister flag, the harnesses, and the hardware map schema |
+| [Board porting](https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html) | board targets, qualifiers and what `board.yml` declares |
+| [`native-sim.md`](native-sim.md) | the two native_sim board targets and where the console output goes |
+| [`../troubleshooting.md`](../troubleshooting.md) | build, flash and Twister failures keyed by the error you see |

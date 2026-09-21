@@ -1,10 +1,10 @@
-# Zephyr & NCS
+# Installing Zephyr and NCS on a bare host
 
-**What this file is:** the manual, step-by-step version of how a Zephyr and nRF Connect SDK
-environment gets built - useful for setting one up on a bare host, and for understanding what
-the devcontainer scripts do underneath.
+The manual, step by step version of how a Zephyr and nRF Connect SDK environment gets
+built. It covers setting one up on a host with no Docker, and it doubles as a
+description of what the devcontainer scripts do underneath.
 
-**You do not need to run any of it inside the devcontainer.** There it is automated:
+None of it needs running inside the devcontainer, where each step is automated:
 
 | Manual step below | Automated by |
 |---|---|
@@ -14,8 +14,8 @@ the devcontainer scripts do underneath.
 | Installing nrfutil, J-Link, NCLT | the published devel image (see [zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer)) |
 | Installing an NCS toolchain | `use-ncs` / `ncs.py` |
 
-For Docker and devcontainer specifics - mounts, USB passthrough, SDK switching, the CMake
-package registry - see [`devcontainer.md`](devcontainer.md).
+Docker and devcontainer specifics (mounts, USB passthrough, SDK switching, the CMake
+package registry) are in [`devcontainer.md`](devcontainer.md).
 
 ## Cloning latest Zephyr Vanilla
 

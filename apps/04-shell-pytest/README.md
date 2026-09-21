@@ -35,7 +35,7 @@ seam, and the test moved out of the device entirely. The suite sits in
     ├── prj.conf                    CONFIG_SHELL=y, CONFIG_GPIO_EMUL=y
     ├── test_harness.c              THE BACKDOOR. test_btn shell command.
     ├── testcase.yaml               harness: pytest
-    └── pytest/test_gpio_toggle.py  five presses, asserted from outside
+    └── pytest/test_gpio_toggle.py  two presses, asserted from outside
 ```
 
 ## Run it

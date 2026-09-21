@@ -2,23 +2,23 @@
 
 The vocabulary the rest of these docs assumes. Zephyr-specific unless noted.
 
-**app.overlay** A devicetree overlay that applies to whatever is being built, found
-automatically next to `CMakeLists.txt`. A test suite has its own, which is how it
-reroutes an alias without the application knowing.
-
 **alias** A devicetree name that points at a node, so code asks for `sw0` rather than
 for a controller and a pin number. Changing what an alias points at is a build-time
 decision that needs no change in C.
+
+**app.overlay** A devicetree overlay that applies to whatever is being built, found
+automatically next to `CMakeLists.txt`. A test suite has its own, which is how it
+reroutes an alias without the application knowing.
 
 **board qualifier** The part after the board name: `native_sim/native`,
 `nrf5340dk/nrf5340/cpuapp`. Names the SoC and core, and is required on multi-core
 parts.
 
-**DUT** Device under test. Also the name of the pytest fixture that hands you one.
-
 **devicetree** A description of the hardware the build should assume: which
 peripherals exist, on which pins, at which addresses. Compiled at build time into
 macros. It does not exist at run time.
+
+**DUT** Device under test. Also the name of the pytest fixture that hands you one.
 
 **emul, emulated driver** An ordinary Zephyr driver that fakes a peripheral instead of
 driving one, gated on a devicetree node such as `zephyr,gpio-emul`. Not a `native_sim`
@@ -40,16 +40,17 @@ a CI runner.
 
 **Kconfig** The configuration system that decides which parts of Zephyr get compiled
 in. You write `prj.conf`; the build merges it with Zephyr's defaults into
-`build/zephyr/.config`, which is the file that actually decided.
+`build/zephyr/.config`, which is the file the build actually reads.
 
 **native_sim** A Zephyr board that compiles the kernel and your application into an
-ordinary program for your own machine. Not an emulator: there is no simulated CPU.
+ordinary program for your own machine. There is no simulated CPU, so the code is built
+for your host architecture.
 
 **overlay** A devicetree fragment merged on top of a board's `.dts`. Adds or changes
 nodes without editing the board.
 
-**prj.conf** The application's Kconfig fragment. One input among several, not the
-final answer.
+**prj.conf** The application's Kconfig fragment. One input among several that the
+build merges into `build/zephyr/.config`.
 
 **runner** The tool `west flash` drives to get an image onto a board: `nrfutil`,
 `esp32`, `pyocd`, `jlink`, `openocd`.

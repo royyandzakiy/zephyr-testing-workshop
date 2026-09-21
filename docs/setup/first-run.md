@@ -1,8 +1,8 @@
 # When the first build fails
 
-For someone who followed the steps in the root `README.md` and did not get the output
-it promised. Work down the list; the checks are ordered by how often they are the
-cause.
+The checks below are ordered by how often they turn out to be the cause, so work down
+the list. They all assume the Preparation steps in the root
+[`README.md`](../../README.md) have been done.
 
 The command that should work is:
 
@@ -68,9 +68,12 @@ is the usual cause. See
 
 ## 5. It builds but prints nothing
 
-`native_sim` can put its console on your terminal or on a pseudo-terminal, and the two
-behave differently. The apps here set the first. See
-[`../reference/native-sim.md`](../reference/native-sim.md).
+`native_sim` can put its console on your terminal or on a pseudo-terminal. Every app
+here is configured for the first. A binary that prints
+`uart connected to pseudotty: /dev/pts/3` and then nothing else got the second, and is
+waiting for you to attach a terminal to that path.
+[`../reference/native-sim.md`](../reference/native-sim.md) covers both modes and how to
+check which one a build got.
 
 ## 6. Stale build directory
 

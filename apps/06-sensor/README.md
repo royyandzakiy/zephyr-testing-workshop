@@ -5,10 +5,8 @@ runs two test suites against it. You will build it and get live readings on your
 laptop, with no sensor plugged in anywhere, because this repo ships an emulated BME280
 that the real Bosch driver talks to over an emulated I2C bus.
 
-**What changed since `03-emul-gpio`:** a real peripheral, a real vendor driver, and a
-second seam. `climate_logic.c` is pure arithmetic with no Zephyr dependencies at all,
-and `bme280.c` is the part that binds a devicetree node. The two get separate suites
-for that reason.
+**What changed since `03-emul-gpio`:** a real peripheral and a real vendor driver, with
+a fake chip underneath instead of a fake pin. There is no button or LED in this app.
 
 ## What to learn here
 
@@ -32,12 +30,10 @@ for that reason.
 ```
 06-sensor/
 ├── NOTES.md                board build/flash commands and a known UBSAN finding
-├── src/
-│   ├── hardware/           button.c, led.c
-│   └── sensors/
-│       ├── climate_logic.{c,h}  THE SEAM. Fixed-point and hysteresis, no Zephyr.
-│       ├── bme280.{c,h}         binds DT_NODELABEL(bme280), runs a sensor thread
-│       └── bme280_emul.{c,h}    THE FAKE CHIP. Built only when CONFIG_EMUL.
+├── src/sensors/
+│   ├── climate_logic.{c,h}  THE SEAM. One conversion function, no Zephyr.
+│   ├── bme280.{c,h}         binds DT_NODELABEL(bme280), runs a sensor thread
+│   └── bme280_emul.{c,h}    THE FAKE CHIP. Built only when CONFIG_EMUL.
 ├── boards/                 native_sim adds a child node to the existing i2c0
 └── tests/
     ├── unit/               app06.climate.logic  - links climate_logic.c only
@@ -70,10 +66,9 @@ Running the app on `native_sim`:
 ```
 *** Booting Zephyr OS build v4.4.2 ***
 System Started
-System ready. Press button to toggle LED.
 Initializing BME280 sensor...
 BME280 sensor bme280@77 is ready!
-T: 25080 mC | P: 100653 Pa | H: 65104 m%RH | ALARM OFF
+T: 25080 mC | P: 100653 Pa | H: 65104 m%RH
 ```
 
 Those numbers are not arbitrary. 25.08 degC and 100653 Pa are the published results of
@@ -89,6 +84,7 @@ Both suites:
 
 ```
 INFO    - 2 of 2 executed test configurations passed (100.00%)
+INFO    - 6 of 6 executed test cases passed (100.00%)
 ```
 
 ## Trivia
@@ -128,12 +124,14 @@ and others, but not for the BME280. Writing one is the exercise.
 
 | Suite | Links | Answers |
 |---|---|---|
-| `tests/unit` | `climate_logic.c` only | is the fixed-point rounding right, does the hysteresis latch correctly |
+| `tests/unit` | `climate_logic.c` only | is the fixed-point rounding right |
 | `tests/emul` | `bme280.c` + the emulator + the Bosch driver | does the app talk to this chip correctly |
 
 They are separate because they fail for different reasons and run at different speeds.
 `tests/unit` has no driver, no bus and no devicetree in it at all, so a failure there
-is arithmetic and nothing else.
+is arithmetic and nothing else. It is two tests, because that is all the arithmetic
+there is here. How to write a larger ztest suite well is
+[`apps/07-unit-conventions`](../07-unit-conventions).
 
 `tests/emul` deliberately asserts properties rather than values: readings in range,
 temperature monotonic in the raw code, one channel not bleeding into another. There is

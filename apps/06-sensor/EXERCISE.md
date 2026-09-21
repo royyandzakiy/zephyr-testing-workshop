@@ -2,7 +2,7 @@
 
 ## ★ warm-up
 
-1. **Trip the alarm.** Change `BME280_EMUL_ADC_TEMP_DEFAULT` in
+1. **Move the temperature.** Change `BME280_EMUL_ADC_TEMP_DEFAULT` in
    `src/sensors/bme280_emul.h` so the app reports above 30 degC. Write down the
    temperature you expect first, then run it:
 
@@ -10,19 +10,22 @@
    west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
    ```
 
-   *Check:* `ALARM` flips, and your prediction was within a degree. Put the value back
-   when you are done.
+   *Check:* the `T:` field moved and your prediction was within a degree. The raw ADC
+   code is not degrees, so getting close means you followed what the Bosch
+   compensation does to it. Put the value back when you are done.
 
-2. **Find the hysteresis band.** Humidity sits at 65.104 %RH, which is 0.1 above the
-   release point. Nudge `BME280_EMUL_ADC_HUM_DEFAULT` up until the alarm latches, then
-   bring it back down. The two points that decide it are here:
+2. **Truncate instead of rounding.** In `src/sensors/climate_logic.c`, replace the
+   whole body of `climate_milli()` with `return val1 * 1000 + val2 / 1000;`, then run
+   both suites:
 
    ```bash
-   grep CLIMATE_ src/sensors/climate_logic.h
+   west twister -T apps/06-sensor -p native_sim -O /tmp/tw --clobber-output -v
    ```
 
-   *Check:* the alarm does not clear at the same value it tripped at, and you can name
-   which of those four constants each edge used. Put the value back when you are done.
+   *Check:* exactly one test fails, and it is in `tests/unit`. Every test in
+   `tests/emul` still passes, including the datasheet one, because the numbers it
+   pins happen to have no sub-milli remainder to lose. Say what that tells you about
+   what an end-to-end test can and cannot catch. Put the body back when you are done.
 
 3. **Corrupt the chip ID.** Change `CHIP_ID` in `src/sensors/bme280_emul.c` from
    `0x60` to `0x58`, then run the emulated suite:

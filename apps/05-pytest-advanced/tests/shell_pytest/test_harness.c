@@ -47,7 +47,7 @@ void trigger_emulated_button_press(void)
     gpio_emul_input_set(button.port, button.pin, inactive);
 }
 
-/* app btn [n] -- press the emulated button n times, default 1. */
+/* app btn [n], press the emulated button n times, default 1. */
 static int cmd_btn(const struct shell *sh, size_t argc, char **argv)
 {
     long n = 1;
@@ -72,7 +72,7 @@ static int cmd_btn(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/* app led -- report LED state without touching it. */
+/* app led, report LED state without touching it. */
 static int cmd_led(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
@@ -82,20 +82,19 @@ static int cmd_led(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/* app stats -- everything a test might want, in one round trip. */
+/* app stats, everything a test might want in one round trip. */
 static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
 
-    shell_print(sh, "presses=%u led=%s uptime_ms=%lld",
+    shell_print(sh, "presses=%u led=%s",
                 app_press_count(),
-                app_led_state() ? "on" : "off",
-                k_uptime_get());
+                app_led_state() ? "on" : "off");
     return 0;
 }
 
-/* app reset -- zero the counter. The LED is deliberately left alone, so a
+/* app reset, zero the counter. The LED is deliberately left alone, so a
  * test that assumes reset also turns the LED off will fail. It is the kind of
  * assumption worth making someone discover rather than warning them about. */
 static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
@@ -108,7 +107,7 @@ static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/* app -- list what the backdoor offers.
+/* app, list what the backdoor offers.
  *
  * A root command with a subcommand set and a NULL handler makes the shell
  * print its own help, which is fine for a human and a poor thing to assert
@@ -127,7 +126,7 @@ static int cmd_app(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(app_cmds,
     SHELL_CMD_ARG(btn,   NULL, "Press the emulated button [n] times", cmd_btn,   1, 1),
     SHELL_CMD_ARG(led,   NULL, "Print LED state",                     cmd_led,   1, 0),
-    SHELL_CMD_ARG(stats, NULL, "Print press count, LED and uptime",   cmd_stats, 1, 0),
+    SHELL_CMD_ARG(stats, NULL, "Print press count and LED state",     cmd_stats, 1, 0),
     SHELL_CMD_ARG(reset, NULL, "Reset the press counter",             cmd_reset, 1, 0),
     SHELL_SUBCMD_SET_END
 );

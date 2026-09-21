@@ -1,15 +1,16 @@
-# twister_harness reference
+# twister_harness
 
-For someone writing a pytest suite that Twister runs against a device. Verified
-against Zephyr v4.4.2, source under
-`$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/src/twister_harness/`.
+`twister_harness` is the pytest plugin Twister loads when a scenario declares
+`harness: pytest`. It builds the image, starts the device, and hands your test
+functions a connection to it through fixtures. Verified against Zephyr v4.4.2, source
+under `$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/src/twister_harness/`.
 
-`apps/04-shell-pytest` and `apps/05-pytest-advanced` are the worked examples.
+`apps/04-shell-pytest` and `apps/05-pytest-advanced` are the worked examples in this
+repo.
 
 ## Turning it on
 
-`harness: pytest` in `testcase.yaml` is the whole opt-in. Twister builds the image,
-starts the device, and runs pytest with its plugin loaded.
+`harness: pytest` in `testcase.yaml` is the whole opt-in.
 
 ```yaml
 tests:
@@ -38,7 +39,7 @@ from twister_harness import DeviceAdapter, Shell, MCUmgr
 | Fixture | Scope | Is |
 |---|---|---|
 | `dut` | function by default | a launched `DeviceAdapter`. The device is running. |
-| `unlaunched_dut` | function by default | the same object with logs attached but not started, for tests that want to control `launch()` |
+| `unlaunched_dut` | function by default | the same object with logs attached but not started, for tests that control `launch()` themselves |
 | `shell` | function by default | a `Shell` wrapping `dut`, with the prompt already waited for |
 | `mcumgr`, `mcumgr_ble` | function | MCUmgr helpers |
 | `device_object` | session | the underlying adapter. `dut` wraps this. |
@@ -48,12 +49,12 @@ from twister_harness import DeviceAdapter, Shell, MCUmgr
 `fixtures.py`. It returns `'function'` unless `--dut-scope` was passed, which is what
 `pytest_dut_scope` sets.
 
-**A session-scoped fixture cannot depend on `dut`.** pytest raises `ScopeMismatch` at
-setup rather than at collection, so it surfaces when you run, not when you write.
+A session-scoped fixture cannot depend on `dut`. pytest raises `ScopeMismatch` at setup
+rather than at collection, so it will show up when you run, not when you write.
 
 ## `Shell`
 
-`shell.py`. Constructed by the fixture as `Shell(dut, timeout=20.0)`, with the prompt
+`shell.py`. The fixture constructs it as `Shell(dut, timeout=20.0)`, with the prompt
 taken from `CONFIG_SHELL_PROMPT_UART` in the build's `.config` if it is set, and
 `uart:~$` otherwise.
 
@@ -63,12 +64,12 @@ wait_for_prompt(timeout: float | None = None) -> bool
 get_filtered_output(command_lines: list[str]) -> list[str]
 ```
 
-`exec_command` appends two newlines: one to run the command, one to get the next
+`exec_command` appends two newlines, one to run the command and one to get the next
 prompt back, which is how it knows execution finished. It reads until the prompt regex
 matches and returns everything it read.
 
-`get_filtered_output` strips prompts and log lines out of that, which is worth using
-when `CONFIG_LOG` is on and log output interleaves with your command's.
+`get_filtered_output` strips prompts and log lines out of that. With `CONFIG_LOG` on,
+log output interleaves with your command's output, and this is what separates them.
 
 ## `DeviceAdapter`
 
@@ -84,14 +85,14 @@ launch() / close() / connect(retry_s=0) / disconnect()
 ```
 
 `readlines_until` takes `regex`, `timeout` and `print_output` as keyword arguments, and
-raises `AssertionError` if the timeout expires before the pattern matches. It is the
-replacement for `time.sleep()`, which is too short on a loaded runner and wasted
-everywhere else.
+raises `AssertionError` if the timeout expires before the pattern matches. It waits on
+the line you care about, so a test does not need `time.sleep()` to guess how long the
+device will take.
 
-## The thing that catches people
+## `shell` and `dut` are one buffer
 
-**`shell` and `dut` are one buffer, not two.** `Shell` wraps the same adapter the `dut`
-fixture returns. Two consequences, and both look like timeouts:
+`Shell` wraps the same adapter the `dut` fixture returns, so anything one of them reads
+is gone for the other. Two things follow from that, and both present as timeouts.
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -111,13 +112,12 @@ def test_dut_readlines_until(dut: DeviceAdapter):
     assert lines
 ```
 
-Both of those were wrong in this repo until they were run. See
-`apps/05-pytest-advanced/tests/shell_pytest/pytest/test_fixtures.py`.
+Both are in `apps/05-pytest-advanced/tests/shell_pytest/pytest/test_fixtures.py`.
 
-## Device output that is easy to assert on
+## Device output a test can parse
 
-Free-text `printk` lines work for one test and break twenty the first time someone
-rewords a log line. The harness in `apps/05-pytest-advanced` prints both:
+A test that matches on free-text `printk` lines breaks whenever someone rewords the
+log. The harness in `apps/05-pytest-advanced` prints two lines for that reason:
 
 ```
 Test: triggering 3 emulated button press(es)
@@ -127,13 +127,13 @@ btn=done count=3
 The first is for a human on a serial console, the second is what the suite parses.
 `parse_kv()` in that app's `conftest.py` turns every `key=value` on a line into a dict.
 
-Also set `CONFIG_SHELL_VT100_COLORS=n`. Colour escapes are invisible to you and very
-visible to `str.find()`.
+Set `CONFIG_SHELL_VT100_COLORS=n` as well. Colour escapes do not show up in a terminal
+but they are still in the bytes `str.find()` is searching.
 
-## The cheaper option
+## `harness: shell`
 
-`harness: shell` sends commands and checks the output contains a string, with no
-Python at all:
+`harness: shell` sends commands and checks the output contains a string, with no Python
+involved:
 
 ```yaml
 harness: shell
@@ -143,8 +143,8 @@ harness_config:
       expected: "led=off"
 ```
 
-Reach for pytest when you need to compute an expected value, parametrize, keep state
-across commands, or talk to something outside the device.
+pytest is the option that adds computing an expected value, parametrizing, keeping
+state across commands, and talking to something outside the device.
 
 ## Running and debugging
 
@@ -157,6 +157,16 @@ west twister -T apps/05-pytest-advanced -p native_sim --pytest-args=-v --pytest-
 ```
 
 The pytest traceback lands in `<outdir>/<platform>/.../<scenario>/twister_harness.log`.
-`handler.log` beside it holds what the device actually printed. When an assertion is
-about a line the device should have sent, read `handler.log` first and find out whether
-it sent it at all.
+`handler.log` beside it holds what the device printed. When an assertion is about a line
+the device should have sent, `handler.log` is where you find out whether it sent it at
+all.
+
+## References
+
+| | |
+|---|---|
+| [Twister pytest harness](https://docs.zephyrproject.org/latest/develop/test/pytest.html) | the upstream page on `harness: pytest` and every `harness_config` key |
+| [Twister harnesses](https://docs.zephyrproject.org/latest/develop/test/twister.html#harnesses) | the other harnesses, including `shell`, `console` and `gtest` |
+| `$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/` | the plugin itself. `fixtures.py`, `shell.py` and `device/device_adapter.py` are the three files behind this page. |
+| [pytest fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html) | you can find about `conftest.py`, scopes and parametrized fixtures in more detail |
+| [`boards.md`](boards.md) | the Twister flags for running any of this on hardware |
