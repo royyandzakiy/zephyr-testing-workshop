@@ -1,5 +1,5 @@
 tests:
-  app11.button.robot:
+  app12.button.robot:
     # The target is picked without naming it. Twister checks every name in
     # platform_allow against the platforms it knows, and nrf52840dk/nrf52840/renode is
     # only known when --board-root points at this app, so a repo-wide

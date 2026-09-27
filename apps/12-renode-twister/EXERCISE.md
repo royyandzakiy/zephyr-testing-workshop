@@ -1,4 +1,4 @@
-# 11-renode-twister - exercises
+# 12-renode-twister - exercises
 
 ## ★ warm-up
 
@@ -6,7 +6,7 @@
    `handler.log`:
 
    ```bash
-   grep "Finished test" $(find /tmp/tw11 -name handler.log)
+   grep "Finished test" $(find /tmp/tw12 -name handler.log)
    ```
 
    *Check:* you can name the three cases, and say which one took the longest and why it
@@ -17,7 +17,7 @@
    the suite again with the command from the README. Find the failure log:
 
    ```bash
-   find /tmp/tw11 -name "*.fail0.log"
+   find /tmp/tw12 -name "*.fail0.log"
    ```
 
    *Check:* you can say what Robot reported for that case, and that the other two
@@ -31,7 +31,7 @@
 
 ## ★★ go deeper
 
-1. **Compare the variant with the stock board.** From `apps/11-renode-twister`, build
+1. **Compare the variant with the stock board.** From `apps/12-renode-twister`, build
    both:
 
    ```bash
@@ -61,11 +61,11 @@
    button count as one press.
 
 3. **Give `--board-root` as a relative path.** Run the suite with
-   `--board-root apps/11-renode-twister/boards` in place of the `$PWD` version, then
+   `--board-root apps/12-renode-twister/boards` in place of the `$PWD` version, then
    read the log:
 
    ```bash
-   grep "File does not exist" $(find /tmp/tw11 -name handler.log)
+   grep "File does not exist" $(find /tmp/tw12 -name handler.log)
    ```
 
    *Check:* you can say which process looked for the `.resc`, which directory it was

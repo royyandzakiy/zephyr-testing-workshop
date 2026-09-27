@@ -1,14 +1,15 @@
-# 11-renode-twister
+# 12-renode-twister
 
-This project is the button and LED from app 01, built for the nRF52840 DK and tested in
-Renode by a Robot Framework suite that Twister runs. You will run the suite with
-`west twister`, and Renode presses the button and reads the LED pin for it. It does not
-use native_sim or any emulated driver, and nothing in the firmware exists only for the
-test.
+This project is the button and LED test from app 11, run by Twister. You will run the
+suite with `west twister`, which builds the image and hands it to `renode-test`. It does
+not use native_sim or any emulated driver, and nothing in the firmware exists only for
+the test.
 
-**What changed since `10-renode`:** the app reacts to `sw0` now, and it has a test.
-Renode still runs the nRF52840 DK image, and `boards/nrf52840dk.resc` adds the button
-and the LED to the machine so the test can press one and read the other.
+**What changed since `11-renode-test`:** `src/main.c` is the same. Twister only runs a
+Robot suite on a board that declares Renode, so `boards/nordic/nrf52840dk/` adds a board
+variant that does, and `testcase.yaml` is new. The Robot file loads the machine through
+Twister's `Prepare Machine` keyword, and works around the first-press bug by rewriting
+the GPIOTE registers.
 
 ## What to learn here
 
@@ -17,17 +18,16 @@ and the LED to the machine so the test can press one and read the other.
 - Why the target is `nrf52840dk/nrf52840/renode` and not the stock board. Twister only
   runs Robot on a board that declares Renode in its yaml, so `boards/nordic/nrf52840dk/`
   extends the stock board with a variant that does. The firmware is the same.
-- Pressing the button from the test. `sysbus.gpio0.sw0 Press` changes the pin that the
-  real nRF GPIO driver reads, so the firmware takes a real GPIOTE interrupt. Compare it
-  with app 04, where a test-only shell command drives `gpio_emul`.
-- Asserting on the LED pin with `Assert LED State`, next to asserting on a UART line.
-- The `Resample The Button Pin` keyword, which works around a bug in Renode's GPIOTE
-  model that the second test case runs into.
+- What Twister adds over running `renode-test` by hand as app 11 does: it builds the
+  image, passes `ELF`, `RESC` and `UART` to the Robot file, and reports the result next
+  to every other suite.
+- The `Resample The Button Pin` keyword, a second way around the first-press bug in
+  Renode's GPIOTE model that app 11 describes.
 
 ## Layout
 
 ```
-11-renode-twister/
+12-renode-twister/
 ├── CMakeLists.txt          adds this folder as a board root, before find_package(Zephyr)
 ├── prj.conf
 ├── src/main.c              sw0 toggles led0, the same logic as app 01
@@ -52,17 +52,17 @@ test is the app itself. There is no separate test build.
 From the repository root:
 
 ```bash
-west twister -T apps/11-renode-twister -p nrf52840dk/nrf52840/renode --board-root $PWD/apps/11-renode-twister/boards -O /tmp/tw11 --clobber-output
+west twister -T apps/12-renode-twister -p nrf52840dk/nrf52840/renode --board-root $PWD/apps/12-renode-twister/boards -O /tmp/tw12 --clobber-output
 ```
 
 `--board-root` has to be an absolute path. With a relative one Twister finds the board,
 but `renode-test` runs from the build directory and fails with
-`File does not exist: apps/11-renode-twister/boards/nrf52840dk.resc`.
+`File does not exist: apps/12-renode-twister/boards/nrf52840dk.resc`.
 
 To watch the image boot without the test:
 
 ```bash
-cd apps/11-renode-twister
+cd apps/12-renode-twister
 ```
 
 ```bash
@@ -93,7 +93,7 @@ INFO    - 1 of 1 executed test cases passed (100.00%) on 1 out of total 1474 pla
 
 Twister counts the whole Robot file as one test case. The result of each Robot case is
 in `handler.log`, under
-`/tmp/tw11/nrf52840dk_nrf52840_renode/zephyr_gnu/.../app11.button.robot/`, trimmed:
+`/tmp/tw12/nrf52840dk_nrf52840_renode/zephyr_gnu/.../app12.button.robot/`, trimmed:
 
 ```
 +++++ Finished test 'button_toggle.Should Boot With The LED Off' in 1.08 seconds with status OK
@@ -178,5 +178,6 @@ the `renode-infrastructure` repository.
 | [Board extensions](https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html) | the `extend:` form of `board.yml`, in the section of the same name |
 | [Renode testing with Robot](https://renode.readthedocs.io/en/latest/introduction/testing.html) | `renode-test`, the terminal tester and the other keywords Renode adds to Robot |
 | [Robot Framework User Guide](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html) | test case and keyword syntax, `FOR` and `IF` |
+| [`apps/11-renode-test`](../11-renode-test) | the same test run with `renode-test` alone, with no board variant |
 | [`apps/10-renode`](../10-renode) | the same board in Renode with no test, and `renode-nrf-run` |
 | [`apps/04-shell-pytest`](../04-shell-pytest) | the same button and LED on native_sim, driven through a test-only shell command |
