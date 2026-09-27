@@ -7,6 +7,8 @@ build that never worked at all, start with [`setup/first-run.md`](setup/first-ru
 
 ### `renode: command not found`, or another tool a README uses is missing
 
+The same cause shows up as `renode-test` stopping with `No module named 'robot'`.
+
 The container is running an older copy of the image. The tag in
 `.devcontainer/devcontainer.json` was republished with the tool added, and Docker kept
 the copy it had already pulled, since it does not check the registry for a tag it

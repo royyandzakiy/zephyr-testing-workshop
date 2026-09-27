@@ -8,6 +8,9 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  # Not a Zephyr feature. testcase.yaml selects this board with `depends_on: renode`,
+  # since naming the board in platform_allow breaks runs that do not load this board root.
+  - renode
 # The two blocks Twister needs before it will run `harness: robot`. `resc` is relative to
 # the folder above the --board-root passed to Twister, which is this app's folder.
 simulation:
