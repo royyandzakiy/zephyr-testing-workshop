@@ -1,0 +1,7 @@
+tests:
+  app11.button.robot:
+    platform_allow:
+      - nrf52840dk/nrf52840/renode
+    harness: robot
+    harness_config:
+      robot_testsuite: tests/robot/button_toggle.robot

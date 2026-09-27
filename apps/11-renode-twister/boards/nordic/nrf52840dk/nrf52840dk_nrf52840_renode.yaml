@@ -1,0 +1,20 @@
+identifier: nrf52840dk/nrf52840/renode
+name: nRF52840-DK-NRF52840 in Renode
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - gpio
+# The two blocks Twister needs before it will run `harness: robot`. `resc` is relative to
+# the folder above the --board-root passed to Twister, which is this app's folder.
+simulation:
+  - name: renode
+    exec: renode
+testing:
+  renode:
+    uart: sysbus.uart0
+    resc: boards/nrf52840dk.resc
+vendor: nordic
