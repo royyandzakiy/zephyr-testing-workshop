@@ -136,11 +136,14 @@ before you need it.
 3. **Clone your repository** and open it in VS Code. Accept the *"Reopen in Container"*
    prompt.
 
-   There are two one-time waits. The first builds the container image, which is built
-   from Ubuntu rather than pulled, so you see package installs scroll past instead of a
-   download bar. The second downloads Zephyr and the Zephyr SDK into a shared Docker
-   volume, and prints a `FIRST RUN ON THIS MACHINE` banner. That one happens once per
-   machine, not once per project. Later starts take seconds and need no network.
+   There are two one-time waits. The first pulls the container image from GHCR. The
+   second downloads Zephyr and the Zephyr SDK into a shared Docker volume, and prints a
+   `FIRST RUN ON THIS MACHINE` banner. That one happens once per machine, not once per
+   project. Later starts take seconds and need no network.
+
+   If you pulled the image before, a README can mention a tool your container does not
+   have yet, for example `renode`. Pulling the image again fixes it, see
+   [`docs/troubleshooting.md`](docs/troubleshooting.md#renode-command-not-found-or-another-tool-a-readme-uses-is-missing).
 
 4. **Check the toolchain** inside the container:
 
@@ -175,6 +178,7 @@ Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
 | [`07-unit-conventions`](apps/07-unit-conventions) | ztest conventions: naming, AAA, fixtures, suite hooks, table-driven cases. |
 | [`08-fff-mocks`](apps/08-fff-mocks) | FFF over the feeder's auger motor. Replacing the function your module calls, rather than the chip underneath. |
 | [`09-gtest-gmock`](apps/09-gtest-gmock) | The same auger in C++, with GoogleTest and GoogleMock compiled into a Zephyr image. |
+| [`10-renode`](apps/10-renode) | The nRF52840 DK image, unchanged, run in the Renode emulator with no board. No tests. |
 
 Each folder is a complete application and can be opened on its own.
 

@@ -101,6 +101,21 @@ repo publishes a *new* tag rather than moving this one, so an existing container
 building against the same Zephyr until the tag here is changed. The two files above
 have to name the same tag.
 
+A tag can also be republished with new contents, for example when a tool is added to
+the image without a version bump. Docker does not check the registry for a tag it
+already has, so a machine that pulled the tag before keeps the old copy, and *Rebuild
+Container* reuses it. Pull the tag again on the host, then rebuild:
+
+```bash
+docker pull ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1
+```
+
+To see which copy you have, check when it was built:
+
+```bash
+docker image inspect ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1 --format "{{.Created}}"
+```
+
 ### Identity and privileges
 
 - `containerUser`: user the container process runs as. Root here, because flashing needs
@@ -207,7 +222,8 @@ inside the container.
 Rebuild paths (Command Palette):
 
 - **Dev Containers: Rebuild Container** - recreate container, keep image cache, keep
-  volumes
+  volumes. It does not pull a newer copy of a tag you already have, see the tag notes
+  under [Two devcontainer configs](#two-devcontainer-configs).
 - **Dev Containers: Rebuild Without Cache** - full Dockerfile re-run, keep volumes
 - Volumes are only removed by `docker volume rm`, never by a rebuild.
 

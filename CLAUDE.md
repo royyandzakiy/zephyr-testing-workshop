@@ -62,7 +62,8 @@ Scenario names follow `appNN.<domain>.<kind>`, for example `app07.feeder.ztest`.
 ## Apps
 
 Apps 00 to 06 are one sequence about the seam between test and hardware. Apps 07 to 09
-are a second group about what you write once you have found the seam.
+are a second group about what you write once you have found the seam. App 10 runs a real
+board's image in the Renode emulator.
 
 | | |
 |---|---|
@@ -76,6 +77,7 @@ are a second group about what you write once you have found the seam.
 | `07-unit-conventions` | ztest conventions over a pond feeder schedule |
 | `08-fff-mocks` | FFF over the feeder's auger. Fake your own port function, not the chip. |
 | `09-gtest-gmock` | the same auger in C++, with GoogleTest and GoogleMock in a Zephyr image |
+| `10-renode` | the nRF52840 DK image in Renode, via `renode-nrf-run` or `run_nrf52.resc`. No tests. |
 
 ## Reference docs
 

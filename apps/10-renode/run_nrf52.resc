@@ -1,0 +1,19 @@
+:name: nRF52840
+:description: Runs a Zephyr ELF on Renode's nRF52840 model, with UART0 in the log.
+:
+: $elf has to be set before this script is included, as an absolute path, so
+: the same script works from any directory. From apps/10-renode:
+:
+:   renode --console --disable-xwt -e "\$elf=@$PWD/build/zephyr/zephyr.elf; include @run_nrf52.resc"
+:
+: With --disable-xwt there is no window to open, so showAnalyzer writes each
+: UART line into Renode's log instead, tagged "uart0:".
+
+mach create "nrf52840"
+machine LoadPlatformDescription @platforms/cpus/nrf52840.repl
+
+showAnalyzer uart0
+
+sysbus LoadELF $elf
+
+start
