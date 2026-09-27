@@ -34,7 +34,7 @@ The two that run automatically need no hardware and no setup. The two manual one
 ```mermaid
 flowchart TD
     push["git push"]
-    push --> ns["Tests (native_sim)<br/>west twister -T apps/ -p native_sim"]
+    push --> ns["Tests (native_sim)<br/>west twister -T apps/ -p native_sim --exclude-tag exercise"]
     push --> san["Sanitizers<br/>ASan + UBSan on one app"]
 
     man["you press Run workflow"]
@@ -118,12 +118,18 @@ For the two native_sim workflows, the faster move is to reproduce it locally, be
 the command is the same one you run by hand:
 
 ```bash
-west twister -T apps/ -p native_sim
+west twister -T apps/ -p native_sim --exclude-tag exercise
 ```
 
+`test-native-sim.yml` also uploads a `twister-reports` artifact on every run, passing
+or failing. It holds `twister.json`, `twister_report.xml`, and the `build.log`,
+`handler.log` and `twister_harness.log` of every scenario, but not the build
+directories. Download it from the run summary page. The `twister-triage` skill in
+`.claude/skills/` reads it and names the cause of each failure.
+
 `test-hardware.yml` cannot be reproduced without the board, so it uploads
-`twister-out/` as an artifact when it fails. Download it from the run summary page.
-`handler.log` inside it holds everything the device printed.
+`twister-out/` as an artifact when it fails. `handler.log` inside it holds everything
+the device printed.
 [`../troubleshooting.md`](../troubleshooting.md) keys the common failures by what you
 are looking at.
 

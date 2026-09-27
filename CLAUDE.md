@@ -18,7 +18,7 @@ docker ps --format '{{.ID}}\t{{.Image}}' | grep zephyr-devcontainer
 ```
 
 ```bash
-docker exec <id> bash -lc 'cd /workspaces/zephyr-testing-workshop && west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output'
+docker exec <id> bash -lc 'cd /workspaces/zephyr-testing-workshop && west twister -T apps/ -p native_sim --exclude-tag exercise -O /tmp/tw --clobber-output'
 ```
 
 Always pass `-O /tmp/<name> --clobber-output`. Twister rotates `twister-out/` into

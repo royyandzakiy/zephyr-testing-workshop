@@ -22,23 +22,26 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 static struct gpio_callback button_cb_data;
 
-static bool led_state;
-static uint32_t press_count;
+/* Packed into one byte, so the whole app state can be saved and restored in
+ * a single write. */
+static struct {
+    uint8_t led_on : 1;
+    uint8_t presses : 4;
+} state;
 
 bool app_led_state(void)
 {
-    return led_state;
+    return state.led_on;
 }
 
 uint32_t app_press_count(void)
 {
-    return press_count;
+    return state.presses;
 }
 
 void app_press_count_reset(void)
 {
-    press_count = 0;
-    led_state = false;
+    state.presses = 0;
 }
 
 void button_pressed_cb(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -48,10 +51,10 @@ void button_pressed_cb(const struct device *dev, struct gpio_callback *cb, uint3
     ARG_UNUSED(pins);
 
     gpio_pin_toggle_dt(&led);
-    led_state = !led_state;
-    press_count++;
+    state.led_on = !state.led_on;
+    state.presses++;
 
-    printk("Button pressed! LED is now %s\n", led_state ? "ON" : "OFF");
+    printk("Button pressed! LED is now %s\n", state.led_on ? "ON" : "OFF");
 }
 
 int main(void)

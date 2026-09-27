@@ -20,7 +20,7 @@ does and what to do when it does not come up.
 One command runs every suite in the repo on `native_sim`:
 
 ```bash
-west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
+west twister -T apps/ -p native_sim --exclude-tag exercise -O /tmp/tw --clobber-output
 ```
 
 The `-O /tmp/tw --clobber-output` part matters on Windows. Twister rotates

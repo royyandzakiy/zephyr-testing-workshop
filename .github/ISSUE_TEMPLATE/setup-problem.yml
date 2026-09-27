@@ -52,7 +52,7 @@ body:
     attributes:
       label: The exact command you ran
       description: Leave blank if it failed before you got a shell.
-      placeholder: west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
+      placeholder: west twister -T apps/ -p native_sim --exclude-tag exercise -O /tmp/tw --clobber-output
     validations:
       required: false
 
