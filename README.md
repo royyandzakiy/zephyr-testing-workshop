@@ -179,6 +179,8 @@ Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
 | [`08-fff-mocks`](apps/08-fff-mocks) | FFF over the feeder's auger motor. Replacing the function your module calls, rather than the chip underneath. |
 | [`09-gtest-gmock`](apps/09-gtest-gmock) | The same auger in C++, with GoogleTest and GoogleMock compiled into a Zephyr image. |
 | [`10-renode`](apps/10-renode) | The nRF52840 DK image, unchanged, run in the Renode emulator with no board. No tests. |
+| [`11-renode-test`](apps/11-renode-test) | A button toggles an LED on the DK image in Renode, tested by a Robot file run with `renode-test`. No emulated drivers. |
+| [`12-renode-twister`](apps/12-renode-twister) | The same test, run by Twister, with the board variant Twister needs for it. |
 
 Each folder is a complete application and can be opened on its own.
 

@@ -62,8 +62,9 @@ Scenario names follow `appNN.<domain>.<kind>`, for example `app07.feeder.ztest`.
 ## Apps
 
 Apps 00 to 06 are one sequence about the seam between test and hardware. Apps 07 to 09
-are a second group about what you write once you have found the seam. App 10 runs a real
-board's image in the Renode emulator.
+are a second group about what you write once you have found the seam. Apps 10 to 12 run
+the real nRF52840 DK image in the Renode emulator: 10 with no test, 11 with a Robot suite
+run by `renode-test`, 12 with the same suite run by Twister.
 
 | | |
 |---|---|
@@ -78,6 +79,8 @@ board's image in the Renode emulator.
 | `08-fff-mocks` | FFF over the feeder's auger. Fake your own port function, not the chip. |
 | `09-gtest-gmock` | the same auger in C++, with GoogleTest and GoogleMock in a Zephyr image |
 | `10-renode` | the nRF52840 DK image in Renode, via `renode-nrf-run` or `run_nrf52.resc`. No tests. |
+| `11-renode-test` | sw0 toggles led0 on the DK image in Renode, `button_led.robot` run with `cd build && renode-test ../button_led.robot` |
+| `12-renode-twister` | the same test under Twister. Needs `-p nrf52840dk/nrf52840/renode --board-root $PWD/apps/12-renode-twister/boards` (absolute). |
 
 ## Reference docs
 

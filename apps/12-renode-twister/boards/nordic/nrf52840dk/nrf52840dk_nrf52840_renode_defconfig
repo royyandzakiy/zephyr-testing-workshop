@@ -1,0 +1,15 @@
+# A copy of Zephyr's nrf52840dk_nrf52840_defconfig (v4.4.0). A defconfig cannot include
+# another one, so if the stock file changes in a later Zephyr, this copy has to follow.
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

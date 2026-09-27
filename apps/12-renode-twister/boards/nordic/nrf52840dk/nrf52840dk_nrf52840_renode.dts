@@ -1,0 +1,5 @@
+/* The stock board, unchanged. <..> is resolved from $ZEPHYR_BASE/dts, which is on the
+ * devicetree include path. The stock board's own folder is not, so a plain
+ * "nrf52840dk_nrf52840.dts" include fails with "No such file or directory".
+ */
+#include <../boards/nordic/nrf52840dk/nrf52840dk_nrf52840.dts>

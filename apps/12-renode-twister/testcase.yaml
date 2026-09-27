@@ -1,0 +1,12 @@
+tests:
+  app12.button.robot:
+    # The target is picked without naming it. Twister checks every name in
+    # platform_allow against the platforms it knows, and nrf52840dk/nrf52840/renode is
+    # only known when --board-root points at this app, so a repo-wide
+    # `west twister -T apps/ -p native_sim` would stop at that check before building
+    # anything. `renode` is a feature listed only in the variant's yaml, and depends_on
+    # is checked before any build, so every other platform is dropped up front.
+    depends_on: renode
+    harness: robot
+    harness_config:
+      robot_testsuite: tests/robot/button_toggle.robot
