@@ -81,7 +81,7 @@ The app feeds a large portion once a second. A 750 g portion is three turns of a
 auger, and the simulated auger jams every seventh turn:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 Pond feeder dispenser starting
 auger: 250 g
 auger: 250 g

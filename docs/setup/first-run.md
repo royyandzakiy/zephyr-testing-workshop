@@ -13,7 +13,7 @@ cd apps/00-hello && west build -b native_sim/native -p && ./build/zephyr/zephyr.
 and it should print:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 Hello from the Zephyr testing workshop!
 Board: native_sim/native
 ```

@@ -84,7 +84,7 @@ warm-up 4 in [`EXERCISE.md`](EXERCISE.md).
 The app prints a clock walking through the day in half-hour steps:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 Pond feeder, 3 slots configured
 00:00  next feed in  360 min
 00:30  next feed in  330 min

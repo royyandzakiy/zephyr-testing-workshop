@@ -63,10 +63,10 @@ Missing device, path or version, change `devcontainer.json`.
 ```json
 {
   "name": "Zephyr Development",
-  "image": "ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.2-sdk1.0.1",
+  "image": "ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1",
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
-    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr",
+    "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.0/zephyr",
     "ZEPHYR_SDK_INSTALL_DIR": "/workdir/zephyr-sdks/toolchains/zephyr-sdk-1.0.1",
     "ZEPHYR_TOOLCHAIN_VARIANT": "zephyr",
     "ZSDK_TOOLCHAINS": "arm-zephyr-eabi x86_64-zephyr-elf ...",
@@ -96,7 +96,7 @@ There is no build-from-source variant here any more. To change the image, work i
 [zephyr-devcontainer](https://github.com/royyandzakiy/zephyr-devcontainer), which has
 its own devcontainer for that.
 
-The tag is the Zephyr/SDK pair (`z4.4.2-sdk1.0.1`). Bumping the version in the image
+The tag is the Zephyr/SDK pair (`z4.4.0-sdk1.0.1`). Bumping the version in the image
 repo publishes a *new* tag rather than moving this one, so an existing container keeps
 building against the same Zephyr until the tag here is changed. The two files above
 have to name the same tag.
@@ -254,7 +254,7 @@ What `setup-sdks.sh` does, in order:
 `containerEnv` in `devcontainer.json` is the only place this is configured:
 
 ```bash
-ZEPHYR_VERSION=v4.4.2
+ZEPHYR_VERSION=v4.4.0
 ZSDK_VERSION=1.0.1
 ZSDK_TOOLCHAINS="arm-zephyr-eabi x86_64-zephyr-elf xtensa-espressif_esp32_zephyr-elf xtensa-espressif_esp32s3_zephyr-elf"
 ```
@@ -411,7 +411,7 @@ Fixes, in order of preference:
 export BASH_ENV=/root/.bashrc
 
 # 2. Or set the variable at container level in devcontainer.json
-"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.2/zephyr" }
+"containerEnv": { "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.0/zephyr" }
 
 # 3. Or source explicitly in the CI step
 bash -c 'source /root/.bashrc && west build ...'

@@ -50,7 +50,7 @@ west build -b nrf5340dk/nrf5340/cpuapp -p && west flash
 ## Expected outcome
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 Hello from the Zephyr testing workshop!
 Board: native_sim/native
 ```

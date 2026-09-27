@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml)
 [![Sanitizers](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml)
-![Zephyr](https://img.shields.io/badge/Zephyr-v4.4.2-blue)
+![Zephyr](https://img.shields.io/badge/Zephyr-v4.4.0-blue)
 ![Zephyr SDK](https://img.shields.io/badge/Zephyr%20SDK-1.0.1-blue)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3A%2F%2Fms-vscode-remote.remote-containers%2FcloneInVolume%3Furl%3Dhttps%3A%2F%2Fgithub.com%2Froyyandzakiy%2Fzephyr-testing-workshop)
@@ -31,7 +31,7 @@ for the machine you are sitting at. Several also carry overlays for common targe
 nRF5340DK, ESP32-S3, Nucleo G474RE and QEMU. Each app has its own tests, its own
 `README.md` and its own `EXERCISE.md`.
 
-Zephyr **v4.4.2**, SDK **1.0.1**
+Zephyr **v4.4.0**, SDK **1.0.1**
 
 ## Repository structure
 

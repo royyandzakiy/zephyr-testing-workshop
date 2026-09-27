@@ -2,7 +2,7 @@
 
 `twister_harness` is the pytest plugin Twister loads when a scenario declares
 `harness: pytest`. It builds the image, starts the device, and hands your test
-functions a connection to it through fixtures. Verified against Zephyr v4.4.2, source
+functions a connection to it through fixtures. Verified against Zephyr v4.4.0, source
 under `$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/src/twister_harness/`.
 
 `apps/04-shell-pytest` and `apps/05-pytest-advanced` are the worked examples in this

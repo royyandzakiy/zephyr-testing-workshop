@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Workshop repository for *Practical Embedded Automated Testing for Zephyr*. Zephyr
-**v4.4.2**, SDK **1.0.1**. Each folder under `apps/` is a complete, standalone Zephyr
+**v4.4.0**, SDK **1.0.1**. Each folder under `apps/` is a complete, standalone Zephyr
 application plus its own tests.
 
 ## The one rule that matters

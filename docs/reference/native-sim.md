@@ -2,7 +2,7 @@
 
 `native_sim` compiles Zephyr as an ordinary program for the machine you are sitting on.
 The build produces `build/zephyr/zephyr.exe`, and you run that like any other
-executable. Verified against Zephyr v4.4.2.
+executable. Verified against Zephyr v4.4.0.
 
 ## The two board targets
 
