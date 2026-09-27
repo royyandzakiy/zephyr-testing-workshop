@@ -1,6 +1,39 @@
 > Working notes. Not written for a reader, and parts of it are out of date.
 > See [`../README.md`](../README.md) if you are looking for the documentation.
 
+## workshop flow
+- what industries are you on?
+- if allowed, what products are u creating?
+
+- anyone wants to share their experience in testing? or not testing?
+- why do you do testing?
+- why do we need tests?
+- what do u want to learn mainly today?
+
+- pre workshop check
+
+- zephyr, dts, native sim
+- e2e testing, crude python
+
+- why simulation
+- sim ready app
+- native sim, qemu, renode, procons limits
+
+- types of tests
+- unit testing, ztest, fff; gtest, gmock
+- unit test best practices
+- exercise, debug failed unit tests
+
+- e2e tests, pytest
+- testing dos donts
+- exercise, debug failed e2e tests
+
+- ci, build, sanitizer, sim pytest in ci
+- ci, actions runner, flash, on board pytest in pc
+- exercise, debug ci fails
+
+---
+
 - preworkshop setup
     - use template for project
     - docker installed & running
