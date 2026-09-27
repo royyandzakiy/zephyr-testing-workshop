@@ -1,0 +1,10 @@
+tests:
+  app02.blink.ex1:
+    # Ships with one test skipped on purpose. Tagged `exercise` so CI leaves
+    # it out with --exclude-tag exercise.
+    platform_allow:
+      - native_sim
+    tags:
+      - blink
+      - unit
+      - exercise
