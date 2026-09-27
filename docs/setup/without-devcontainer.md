@@ -20,7 +20,7 @@ package registry) are in [`devcontainer.md`](devcontainer.md).
 ## Cloning latest Zephyr Vanilla
 
 ```bash
-export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_VAN_VER="v4.4.0"
 export ZEPHYR_SDK_VER="1.0.1"
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
 
@@ -39,7 +39,7 @@ wget -qO- "https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEP
 
 ```bash
 # Select version, define paths
-export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_VAN_VER="v4.4.0"
 export ZEPHYR_SDK_VER="1.0.1"
 
 export ZEPHYR_BASE="/workdir/zephyr-sdks/$ZEPHYR_VAN_VER/zephyr"
@@ -54,7 +54,7 @@ source "$ZEPHYR_BASE/zephyr-env.sh"
 
 ```bash
 # Select versions
-export ZEPHYR_VAN_VER="v4.4.2"
+export ZEPHYR_VAN_VER="v4.4.0"
 export ZEPHYR_SDK_VER="1.0.1"
 
 # Define base path
@@ -101,7 +101,7 @@ echo "Successfully cloned Vanilla Zephyr $ZEPHYR_VAN_VER with SDK $ZEPHYR_SDK_VE
 ### Permanently adding it to `.bashrc`
 
 ```bash
-export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.4.2/zephyr"
+export ZEPHYR_BASE="/workdir/zephyr-sdks/v4.4.0/zephyr"
 if [ -f "$ZEPHYR_BASE/zephyr-env.sh" ]; then
     source "$ZEPHYR_BASE/zephyr-env.sh" > /dev/null
 fi

@@ -3,6 +3,24 @@
 Keyed by what you are looking at, since that is what you can search for. For a first
 build that never worked at all, start with [`setup/first-run.md`](setup/first-run.md).
 
+## Container
+
+### `renode: command not found`, or another tool a README uses is missing
+
+The container is running an older copy of the image. The tag in
+`.devcontainer/devcontainer.json` was republished with the tool added, and Docker kept
+the copy it had already pulled, since it does not check the registry for a tag it
+already has. *Rebuild Container* reuses that copy.
+
+On the host, pull the tag again:
+
+```bash
+docker pull ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1
+```
+
+Then run *Dev Containers: Rebuild Container*. The details are in
+[`setup/devcontainer.md`](setup/devcontainer.md#two-devcontainer-configs).
+
 ## Build
 
 ### `fatal error: <header>: No such file or directory`, on a `CONFIG_` you did set

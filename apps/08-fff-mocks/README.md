@@ -66,7 +66,7 @@ The `-O /tmp/tw --clobber-output` part is only needed on a Windows bind mount. S
 The app, with the simulated auger jamming every third call:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 Pond feeder dispenser starting
 auger: 250 g
 feed -> 0 | total 250 g | jams 0

@@ -62,7 +62,7 @@ west build -b nrf5340dk/nrf5340/cpuapp -p && west flash
 On `native_sim`:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 GPIO Button + LED Toggle started
 Ready. Press the button to toggle LED.
 ```

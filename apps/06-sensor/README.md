@@ -64,7 +64,7 @@ Board commands, including the ESP32 and nRF5340 variants, are in
 Running the app on `native_sim`:
 
 ```
-*** Booting Zephyr OS build v4.4.2 ***
+*** Booting Zephyr OS build v4.4.0 ***
 System Started
 Initializing BME280 sensor...
 BME280 sensor bme280@77 is ready!

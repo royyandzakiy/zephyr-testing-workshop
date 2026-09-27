@@ -146,7 +146,7 @@ The container image tag is pinned in each file:
 
 ```yaml
 container:
-  image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.2-sdk1.0.1
+  image: ghcr.io/royyandzakiy/zephyr-devcontainer-ci:z4.4.0-sdk1.0.1
 ```
 
 It sets `ZEPHYR_BASE`, which is how `west` finds its workspace from a plain

@@ -2,7 +2,7 @@
 
 The `west build`, `west flash` and `west twister` flags used in this repo, and the
 per-board commands for every board with an overlay in the tree. Commands verified
-against Zephyr v4.4.2 in the devcontainer, except where marked as needing hardware.
+against Zephyr v4.4.0 in the devcontainer, except where marked as needing hardware.
 
 Every command below belongs to one of three phases, and a flag belongs to exactly one
 of them. `-p` means **pristine** in `west build` and **platform** in `west twister`.
@@ -95,7 +95,7 @@ Runner-specific:
 - `--runner pyocd`, ST and ARM CMSIS-DAP: `--dev-id` is the ST-LINK serial number.
 
 On Nordic, `nrfutil` is the current runner. The `nrfjprog` runner still ships with
-Zephyr v4.4.2, but it drives Nordic's older command line tools. `--snr` is still
+Zephyr v4.4.0, but it drives Nordic's older command line tools. `--snr` is still
 accepted and is registered as an obsolete synonym for `--dev-id`
 (`scripts/west_commands/runners/nrf_common.py:107`), so old commands keep working.
 Write `--dev-id` in anything new.

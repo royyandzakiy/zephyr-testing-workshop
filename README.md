@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/test-native-sim.yml)
 [![Sanitizers](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml/badge.svg?branch=main)](https://github.com/royyandzakiy/zephyr-testing-workshop/actions/workflows/sanitizers.yml)
-![Zephyr](https://img.shields.io/badge/Zephyr-v4.4.2-blue)
+![Zephyr](https://img.shields.io/badge/Zephyr-v4.4.0-blue)
 ![Zephyr SDK](https://img.shields.io/badge/Zephyr%20SDK-1.0.1-blue)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode%3A%2F%2Fms-vscode-remote.remote-containers%2FcloneInVolume%3Furl%3Dhttps%3A%2F%2Fgithub.com%2Froyyandzakiy%2Fzephyr-testing-workshop)
@@ -31,7 +31,7 @@ for the machine you are sitting at. Several also carry overlays for common targe
 nRF5340DK, ESP32-S3, Nucleo G474RE and QEMU. Each app has its own tests, its own
 `README.md` and its own `EXERCISE.md`.
 
-Zephyr **v4.4.2**, SDK **1.0.1**
+Zephyr **v4.4.0**, SDK **1.0.1**
 
 ## Repository structure
 
@@ -136,11 +136,14 @@ before you need it.
 3. **Clone your repository** and open it in VS Code. Accept the *"Reopen in Container"*
    prompt.
 
-   There are two one-time waits. The first builds the container image, which is built
-   from Ubuntu rather than pulled, so you see package installs scroll past instead of a
-   download bar. The second downloads Zephyr and the Zephyr SDK into a shared Docker
-   volume, and prints a `FIRST RUN ON THIS MACHINE` banner. That one happens once per
-   machine, not once per project. Later starts take seconds and need no network.
+   There are two one-time waits. The first pulls the container image from GHCR. The
+   second downloads Zephyr and the Zephyr SDK into a shared Docker volume, and prints a
+   `FIRST RUN ON THIS MACHINE` banner. That one happens once per machine, not once per
+   project. Later starts take seconds and need no network.
+
+   If you pulled the image before, a README can mention a tool your container does not
+   have yet, for example `renode`. Pulling the image again fixes it, see
+   [`docs/troubleshooting.md`](docs/troubleshooting.md#renode-command-not-found-or-another-tool-a-readme-uses-is-missing).
 
 4. **Check the toolchain** inside the container:
 
@@ -175,6 +178,7 @@ Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
 | [`07-unit-conventions`](apps/07-unit-conventions) | ztest conventions: naming, AAA, fixtures, suite hooks, table-driven cases. |
 | [`08-fff-mocks`](apps/08-fff-mocks) | FFF over the feeder's auger motor. Replacing the function your module calls, rather than the chip underneath. |
 | [`09-gtest-gmock`](apps/09-gtest-gmock) | The same auger in C++, with GoogleTest and GoogleMock compiled into a Zephyr image. |
+| [`10-renode`](apps/10-renode) | The nRF52840 DK image, unchanged, run in the Renode emulator with no board. No tests. |
 
 Each folder is a complete application and can be opened on its own.
 
