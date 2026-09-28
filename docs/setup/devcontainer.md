@@ -140,6 +140,7 @@ docker image inspect ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.
 "mounts": [
   "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
   "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
+  "source=cmake-registry,target=/root/.cmake,type=volume",
   "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume",
   "source=/dev,target=/dev,type=bind,bind-propagation=rslave"
 ]
@@ -149,11 +150,14 @@ docker image inspect ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.
   rebuild. Use for anything expensive to re-download.
   - `zephyr-sdks` - vanilla Zephyr source + Zephyr SDK toolchain
   - `ncs-sdks` - NCS toolchains, managed by `nrfutil toolchain-manager`
+  - `cmake-registry` - the CMake user package registry in `/root/.cmake`, see
+    [`register-sdks.sh`](#register-sdkssh)
   - `${localWorkspaceFolderBasename}-actions-runner` - runner registration and
     credentials, so you do not re-register on every rebuild
 - **The naming asymmetry is deliberate.** The two SDK volumes have fixed names with no
   project prefix, so every project that copies this `.devcontainer/` mounts the *same*
-  volumes and shares one download per machine. The runner volume is the opposite: it
+  volumes and shares one download per machine. `cmake-registry` is shared for the same
+  reason: every entry in it is a path into those two volumes. The runner volume is the opposite: it
   holds a single runner registration, so a shared name would make two projects fight
   over it.
 - `type=bind`: maps a host path in. Changes are live in both directions.
@@ -313,9 +317,11 @@ path:
 | `ZephyrUnittest/<md5>` | `<topdir>/zephyr/share/zephyrunittest-package/cmake` | nothing directly - but `find_package(ZephyrUnittest)` needs it, which is what `unit_testing` ztest builds use |
 
 `west zephyr-export` writes the first and third; `zephyr-sdk-x.y.z/setup.sh -c` writes
-the second. Both run only at provisioning time - and `~/.cmake` is **not** on a
-volume, so it dies with the container while the SDKs themselves survive in
-`zephyr-sdks` / `ncs-sdks`. The result is SDKs on disk and an empty picker.
+the second. Both run only at provisioning time. Without a volume on `~/.cmake` the
+registry dies with the container while the SDKs themselves survive in `zephyr-sdks` /
+`ncs-sdks`, and the result is SDKs on disk and an empty picker. That is why `~/.cmake`
+is on the shared `cmake-registry` volume, which also lets the picker see the entries
+before `postStartCommand` has finished.
 
 `register-sdks.sh` closes it. It runs from `setup-sdks.sh` (i.e. `postStartCommand`)
 on every start, globs `/workdir/*/*/zephyr/share/zephyr-package/cmake` and

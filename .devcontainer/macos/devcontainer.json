@@ -27,9 +27,10 @@
     // Shared by name across every project on the machine.
     "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
-    // CMake package registry -- the nRF Connect SDK picker reads it, and
-    // setup-sdks.sh rewrites it too late for a fresh container to see it.
-    "source=${localWorkspaceFolderBasename}-cmake-registry,target=/root/.cmake,type=volume",
+    // CMake package registry. The nRF Connect SDK picker reads it, and
+    // setup-sdks.sh rewrites it too late for a fresh container to see it. Shared
+    // across projects like the SDK volumes, since every entry points into them.
+    "source=cmake-registry,target=/root/.cmake,type=volume",
     "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume"
   ],
 

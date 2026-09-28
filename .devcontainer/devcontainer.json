@@ -25,11 +25,10 @@
     "source=/dev,target=/dev,type=bind,bind-propagation=rslave",
 
     // Store SDKs in volumes with shared name. Designed to be used by any project that needs it
+    // CMake package registry: ensuers nrf SDK extension is able to find all zephyr SDKs
     "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
-
-    // CMake package registry: ensuers nrf SDK extension is able to find all zephyr SDKs
-    "source=${localWorkspaceFolderBasename}-cmake-registry,target=/root/.cmake,type=volume",
+    "source=cmake-registry,target=/root/.cmake,type=volume",
 
     // Setting actions runner as volume to not need to reconfig everytime rebuild container
     "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume"
