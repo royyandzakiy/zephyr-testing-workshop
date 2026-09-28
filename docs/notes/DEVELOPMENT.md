@@ -3,7 +3,7 @@
 
 ## To Do
 
-- add images to docs section & readmes
+- add images to give biz context of each app
 - claude: add kconfig helper & dts helper to create new boards & analyze broken builds
 
 ## Hold
