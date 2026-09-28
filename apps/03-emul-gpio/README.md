@@ -67,6 +67,8 @@ The app itself still runs:
 west build -b native_sim/native -p && ./build/zephyr/zephyr.exe
 ```
 
+`exercises/` holds two copies of the emul suite that fail to build until you fix them. [`EXERCISE.md`](EXERCISE.md) has the commands to run them.
+
 ## Expected outcome
 
 Two scenarios, both green:

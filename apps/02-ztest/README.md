@@ -65,6 +65,8 @@ twister is doing for you:
 west build -b native_sim/native -p -s apps/02-ztest/tests/unit -d build_unit && ./build_unit/zephyr/zephyr.exe
 ```
 
+`exercises/` holds a copy of the unit suite with one test left to write. [`EXERCISE.md`](EXERCISE.md) has the command to run it.
+
 ## Expected outcome
 
 Twister:

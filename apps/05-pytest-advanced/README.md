@@ -76,6 +76,8 @@ west build -b native_sim/native -p -s apps/05-pytest-advanced/tests/shell_pytest
 cd apps/05-pytest-advanced/tests/pytest_raw && pytest
 ```
 
+`exercises/` holds a copy of the pytest suite built against firmware with one bug in it. [`EXERCISE.md`](EXERCISE.md) has the command to run it.
+
 ## Expected outcome
 
 Three scenarios from `tests/shell_pytest/testcase.yaml`:

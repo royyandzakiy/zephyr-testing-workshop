@@ -24,5 +24,25 @@ jobs:
 
       # west finds its workspace through ZEPHYR_BASE, which the image sets, so
       # this runs from the checkout without any west init.
+      #
+      # --exclude-tag exercise leaves out apps/*/exercises/. Those ship broken
+      # on purpose, so without it this job would fail on every push.
       - name: Run every suite on native_sim
-        run: west twister -T apps/ -p native_sim
+        run: west twister -T apps/ -p native_sim --exclude-tag exercise
+
+      # Uploaded on every run, not only on failure, so a passing run can be
+      # compared against a failing one. Reports and per-test logs only, around
+      # 400 KB. The build directories under twister-out/ are around 240 MB on a
+      # full run and are left out.
+      - name: Upload twister reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twister-reports
+          path: |
+            twister-out/twister.json
+            twister-out/twister_report.xml
+            twister-out/**/handler.log
+            twister-out/**/build.log
+            twister-out/**/twister_harness.log
+          if-no-files-found: warn

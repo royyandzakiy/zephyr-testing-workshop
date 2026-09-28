@@ -90,7 +90,7 @@ look like something else.
 ## 7. The test suite fails but the app runs
 
 ```bash
-west twister -T apps/ -p native_sim
+west twister -T apps/ -p native_sim --exclude-tag exercise
 ```
 
 On Windows this can fail before anything builds, with
@@ -98,7 +98,7 @@ On Windows this can fail before anything builds, with
 the bind mount. Give it another output directory:
 
 ```bash
-west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
+west twister -T apps/ -p native_sim --exclude-tag exercise -O /tmp/tw --clobber-output
 ```
 
 For failures after the build, see [`../troubleshooting.md`](../troubleshooting.md).

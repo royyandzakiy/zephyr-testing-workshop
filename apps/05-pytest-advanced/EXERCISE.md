@@ -1,5 +1,30 @@
 # 05-pytest-advanced - exercises
 
+## Workshop exercise
+
+**Find the firmware bug from the pytest output.** `exercises/ex3-broken-e2e/src/main.c`
+is a copy of the app's `src/main.c` with one bug in it. The pytest files are unchanged
+copies of `tests/shell_pytest/pytest/`, so the fix goes in the firmware, not in the
+tests.
+
+```bash
+west twister -T apps/05-pytest-advanced/exercises/ex3-broken-e2e -p native_sim -O /tmp/ex3 --clobber-output
+```
+
+The pytest output, with the failing assertions, is in `twister_harness.log`. What the
+device printed is in `handler.log` in the same folder:
+
+```bash
+find /tmp/ex3 -name twister_harness.log
+```
+
+File to edit: `exercises/ex3-broken-e2e/src/main.c`.
+
+As shipped, twister reports `2/26 pytest scenario(s) failed`. You are done when the
+scenario passes and `twister_harness.log` ends with `25 passed, 1 xfailed`.
+
+Stuck? Compare with `exercises/ex3-broken-e2e/solution/main.c`, or copy it over yours.
+
 ## ★ warm-up
 
 1. **Watch a marker do its job.** Run the full scenario, then the smoke one, and

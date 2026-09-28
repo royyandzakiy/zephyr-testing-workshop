@@ -1,5 +1,46 @@
 # 03-emul-gpio - exercises
 
+## Workshop exercise
+
+**Fix the broken overlay.** The suite in `exercises/ex2-broken-overlay/` is a copy of
+`tests/emul/` with one mistake in its `app.overlay`, and it does not build. Read the
+build error and trace it back to the line in the overlay that caused it.
+
+```bash
+west twister -T apps/03-emul-gpio/exercises/ex2-broken-overlay -p native_sim -O /tmp/ex2 --clobber-output
+```
+
+The summary gives a one-line reason. The full compiler output is in `build.log`:
+
+```bash
+find /tmp/ex2 -name build.log
+```
+
+File to edit: `exercises/ex2-broken-overlay/app.overlay`.
+
+As shipped, twister reports `app03.blink.ex2` as a build error. You are done when it
+reports 1 of 1 executed test configurations passed.
+
+Stuck? Compare with `exercises/ex2-broken-overlay/solution/app.overlay`, or copy it over
+yours.
+
+**Bonus: fix the missing Kconfig symbol.** `exercises/ex2b-missing-kconfig/` is the same
+suite with a correct overlay, but its `prj.conf` leaves out a symbol the suite needs.
+This one fails at a later stage of the build. Read `build.log` from the top, not only
+the last error.
+
+```bash
+west twister -T apps/03-emul-gpio/exercises/ex2b-missing-kconfig -p native_sim -O /tmp/ex2b --clobber-output
+```
+
+File to edit: `exercises/ex2b-missing-kconfig/prj.conf`.
+
+As shipped, twister reports `app03.blink.ex2b` as a build error. You are done when it
+reports 1 of 1 executed test configurations passed.
+
+Stuck? Compare with `exercises/ex2b-missing-kconfig/solution/prj.conf`, or copy it over
+yours.
+
 ## ★ warm-up
 
 1. **Delete one alias and watch it crash.** Remove the `led0 = &emul_led_0;` line from

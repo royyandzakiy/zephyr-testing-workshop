@@ -155,8 +155,21 @@ before you need it.
    it:
 
    ```bash
-   west twister -T apps/ -p native_sim
+   west twister -T apps/ -p native_sim --exclude-tag exercise
    ```
+
+   `--exclude-tag exercise` leaves out the `exercises/` folders in apps 02, 03 and 05,
+   which fail on purpose until you fix them.
+
+6. **Check CI on your own repository.** Open the **Actions** tab of your repository on
+   GitHub. **Tests (native_sim)** and **Sanitizers** run on every push, and each takes
+   about five minutes. If the tab shows no runs yet, push an empty commit to start one:
+
+   ```bash
+   git commit --allow-empty -m "start CI" && git push
+   ```
+
+   Both should finish with a green tick.
 
 Hardware is optional. If you have a board, build and flash to it and register a local
 `actions-runner`. Nothing here requires one.
@@ -241,7 +254,7 @@ west twister -T apps/03-emul-gpio -p native_sim
 **Run everything**, which is what CI does
 
 ```bash
-west twister -T apps/ -p native_sim
+west twister -T apps/ -p native_sim --exclude-tag exercise
 ```
 
 **Run against a board**

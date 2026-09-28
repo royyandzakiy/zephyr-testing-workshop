@@ -1,0 +1,11 @@
+tests:
+  app03.blink.ex2b:
+    # Fails to build on purpose until prj.conf is fixed. Tagged `exercise` so
+    # CI leaves it out with --exclude-tag exercise.
+    platform_allow:
+      - native_sim
+    tags:
+      - blink
+      - emul
+      - gpio
+      - exercise

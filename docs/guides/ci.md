@@ -34,7 +34,7 @@ The two that run automatically need no hardware and no setup. The two manual one
 ```mermaid
 flowchart TD
     push["git push"]
-    push --> ns["Tests (native_sim)<br/>west twister -T apps/ -p native_sim"]
+    push --> ns["Tests (native_sim)<br/>west twister -T apps/ -p native_sim --exclude-tag exercise"]
     push --> san["Sanitizers<br/>ASan + UBSan on one app"]
 
     man["you press Run workflow"]
@@ -118,14 +118,73 @@ For the two native_sim workflows, the faster move is to reproduce it locally, be
 the command is the same one you run by hand:
 
 ```bash
-west twister -T apps/ -p native_sim
+west twister -T apps/ -p native_sim --exclude-tag exercise
 ```
 
+`test-native-sim.yml` also uploads a `twister-reports` artifact on every run, passing
+or failing. It holds `twister.json`, `twister_report.xml`, and the `build.log`,
+`handler.log` and `twister_harness.log` of every scenario, but not the build
+directories. Download it from the run summary page. The `twister-triage` skill in
+`.claude/skills/` reads it and names the cause of each failure.
+
 `test-hardware.yml` cannot be reproduced without the board, so it uploads
-`twister-out/` as an artifact when it fails. Download it from the run summary page.
-`handler.log` inside it holds everything the device printed.
+`twister-out/` as an artifact when it fails. `handler.log` inside it holds everything
+the device printed.
 [`../troubleshooting.md`](../troubleshooting.md) keys the common failures by what you
 are looking at.
+
+## Workshop exercise
+
+Make `Tests (native_sim)` pass, fail and pass again on your own fork, then find the
+failure in both the job log and the artifact. Everything happens in the GitHub web
+interface, so no local clone is needed. To edit a file in the browser, open it on
+GitHub, click the pencil icon, make the change, then click **Commit changes** and
+commit directly to the default branch.
+
+1. **Enable Actions on your fork.** Forks start with workflows turned off. Open the
+   **Actions** tab of your fork and click the button that enables them.
+
+2. **Start a run and watch it pass.** Make any small edit, for example add a line to
+   `README.md`, and commit it. `Tests (native_sim)` appears in the Actions tab within a
+   few seconds and takes about five minutes. It finishes with a green tick.
+
+3. **Break one assertion.** Open `apps/02-ztest/tests/unit/src/main.c` and find this
+   line:
+
+   ```c
+   static const char *const expected[] = {"ON", "OFF", "ON", "OFF", "ON"};
+   ```
+
+   Change the first `"ON"` to `"OFF"` and commit. This run fails.
+
+4. **Find the failure in the log, then in the artifact.** Open the failed run, click the
+   `twister` job and expand the **Run every suite on native_sim** step. Near the end of
+   it:
+
+   ```
+   INFO    - 1) app02.blink.logic on native_sim/native failed (rc=1)
+   ```
+
+   Then go back to the run summary page and download `twister-reports` from the
+   **Artifacts** section at the bottom. Unzip it, open the folder whose name ends in
+   `app02.blink.logic`, and open `handler.log`:
+
+   ```
+   press 1: LED is now ON
+       Assertion failed at CMAKE_SOURCE_DIR/src/main.c:34: blink_logic_test_five_presses_from_off: (blink_logic_str(led_on) not equal to expected[press])
+   press 1: expected OFF
+    FAIL - test_five_presses_from_off
+   ```
+
+   `twister.json`, at the top of the zip, lists the same case as
+   `app02.blink.logic.blink_logic.five_presses_from_off` with `"status":"failed"`.
+
+5. **Put it back.** Change `"OFF"` back to `"ON"` and commit. The next run finishes with
+   a green tick again.
+
+You are done when the latest `Tests (native_sim)` run on your fork is green, and you
+have found `app02.blink.logic` in the job log and `test_five_presses_from_off` in
+`handler.log`.
 
 ## Notes on the sanitizers job
 

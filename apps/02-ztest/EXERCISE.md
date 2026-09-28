@@ -1,5 +1,22 @@
 # 02-ztest - exercises
 
+## Workshop exercise
+
+**Write the five-press test.** `test_five_presses_from_off` is empty and skips itself.
+The comment inside it says what the test should check. Write the test, then delete the
+`ztest_test_skip()` line.
+
+```bash
+west twister -T apps/02-ztest/exercises/ex1-write-a-test -p native_sim -O /tmp/ex1 --clobber-output
+```
+
+File to edit: `exercises/ex1-write-a-test/src/main.c`.
+
+As shipped, twister reports 2 of 2 executed test cases passed and 1 skipped. You are
+done when it reports 3 of 3 executed test cases passed, with nothing skipped.
+
+Stuck? Compare with `exercises/ex1-write-a-test/solution/main.c`, or copy it over yours.
+
 ## ★ warm-up
 
 1. **Make a test fail on purpose.** Change one expected `"ON"` to `"OFF"` in

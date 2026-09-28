@@ -112,7 +112,7 @@ Twister rotating `twister-out/` into `twister-out.1` at startup, which fails on 
 Windows bind mount. Give it another output directory:
 
 ```bash
-west twister -T apps/ -p native_sim -O /tmp/tw --clobber-output
+west twister -T apps/ -p native_sim --exclude-tag exercise -O /tmp/tw --clobber-output
 ```
 
 ### A scenario failed and the summary does not say why
