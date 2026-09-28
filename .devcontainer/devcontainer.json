@@ -44,7 +44,9 @@
         "thecreativedodo.usbip-connect"
       ],
       "settings": {
-        "nrf-connect.toolchainManager.installDirectory": "/workdir/ncs-sdks"
+        "nrf-connect.toolchainManager.installDirectory": "/workdir/ncs-sdks",
+        "clangd.path": "/usr/bin/clangd",
+        "clangd.checkUpdates": false
       }
     }
   },
