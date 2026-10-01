@@ -72,8 +72,8 @@ run by `renode-test`, 12 with the same suite run by Twister.
 | `01-blinky` | button and LED through devicetree aliases. No tests. |
 | `02-ztest` | logic pulled behind a seam, first ztest suite |
 | `03-emul-gpio` | `gpio_emul` plus a test-only overlay that reroutes `sw0` and `led0` |
-| `04-shell-pytest` | shell command as a test backdoor, pytest asserts from outside |
-| `05-pytest-advanced` | fixtures, parametrize, markers, plus the same suite with no twister |
+| `04-pytest-basics` | plain pytest, no Zephyr: assert, fixtures, parametrize, `src/` layouts, markers |
+| `05-shell-pytest` | shell command as a test backdoor, pytest asserts from outside, `slow` marker via Twister. C++ app. |
 | `06-sensor` | I2C, the real Bosch BME280 driver, and an emulated chip written here |
 | `07-unit-conventions` | ztest conventions over a pond feeder schedule |
 | `08-fff-mocks` | FFF over the feeder's auger. Fake your own port function, not the chip. |

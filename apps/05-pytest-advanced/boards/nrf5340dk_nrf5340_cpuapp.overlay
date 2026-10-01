@@ -1,5 +1,0 @@
-/ {
-    aliases {
-        /* Empty: the board devicetree already sets led0 = &led0 and sw0 = &button0. */
-    };
-};

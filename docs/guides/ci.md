@@ -76,7 +76,7 @@ env:
 ```
 
 **The probe and the serial port**, in
-[`../../apps/04-shell-pytest/hardware-map.yaml`](../../apps/04-shell-pytest/hardware-map.yaml).
+[`../../apps/05-shell-pytest/hardware-map.yaml`](../../apps/05-shell-pytest/hardware-map.yaml).
 That file has commented-out blocks for ESP32-S3 and Nucleo G474RE already. To find
 your own values:
 

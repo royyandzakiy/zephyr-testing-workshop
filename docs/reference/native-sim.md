@@ -57,9 +57,9 @@ grep UART_NATIVE_PTY build/zephyr/.config
 ```
 
 No output means the image has no UART and the console is on stdout already. In this
-repo the only builds where the setting does anything are the shell suites,
-`apps/04-shell-pytest/tests/drivers/gpio_button_toggle` and
-`apps/05-pytest-advanced/tests/shell_pytest`.
+repo the only builds where the setting does anything are the shell suite,
+`apps/05-shell-pytest/tests/emul_button_toggle`, and its exercise copy in
+`apps/05-shell-pytest/exercises/ex3-broken-e2e`.
 
 ## Running with its own PTY
 

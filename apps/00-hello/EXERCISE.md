@@ -104,8 +104,8 @@
    [`docs/reference/native-sim.md`](../../docs/reference/native-sim.md) has the commands.
 
    *Why it is interesting:* this is the configuration that lets a test harness drive
-   the binary while you watch it, and it is how the pytest suite in app 04 talks to the
-   device.
+   the binary while you watch it. The pytest suite in app 05 uses the other mode,
+   stdin/stdout, which Twister drives directly.
 
 2. **Work out what `-p` does, and what happens when you leave it out.** Build once
    without `-p`, change the board, then build again without `-p`.

@@ -180,4 +180,4 @@ the `renode-infrastructure` repository.
 | [Robot Framework User Guide](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html) | test case and keyword syntax, `FOR` and `IF` |
 | [`apps/11-renode-test`](../11-renode-test) | the same test run with `renode-test` alone, with no board variant |
 | [`apps/10-renode`](../10-renode) | the same board in Renode with no test, and `renode-nrf-run` |
-| [`apps/04-shell-pytest`](../04-shell-pytest) | the same button and LED on native_sim, driven through a test-only shell command |
+| [`apps/05-shell-pytest`](../05-shell-pytest) | the same button and LED on native_sim, driven through a test-only shell command |

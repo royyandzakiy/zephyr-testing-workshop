@@ -1,0 +1,11 @@
+tests:
+  app05.shell.ex3:
+    # Every pytest case fails until src/main.cpp is fixed. Tagged `exercise`
+    # so CI leaves it out with --exclude-tag exercise.
+    harness: pytest
+    platform_allow:
+      - native_sim
+    tags:
+      - shell
+      - pytest
+      - exercise

@@ -30,7 +30,7 @@
 
 - add new apps
     - add exercise.md for all apps
-    - 05: advanced and variative pytest usage
+    - 04/05: plain pytest basics, then the shell pytest suite (replaced the old 04-shell-pytest and 05-pytest-advanced)
     - XX about unit test conventions
     - XX* using fff to mock functions
     - XX* using gtest gmock with a cpp project

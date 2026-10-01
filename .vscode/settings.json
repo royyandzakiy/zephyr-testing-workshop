@@ -4,7 +4,7 @@
         "${workspaceFolder}/apps/01-blinky",
         "${workspaceFolder}/apps/02-ztest",
         "${workspaceFolder}/apps/03-emul-gpio",
-        "${workspaceFolder}/apps/04-shell-pytest",
+        "${workspaceFolder}/apps/05-shell-pytest",
         "${workspaceFolder}/apps/06-sensor",
         "${workspaceFolder}/apps/09-gtest-gmock",
         "${workspaceFolder}/apps/10-renode"

@@ -1,6 +1,6 @@
 # Proves this repo's firmware builds, flashes and passes its tests on a real board.
 # Manual, since it needs a self-hosted runner with the board attached.
-# For your own hardware, change BOARD below and apps/04-shell-pytest/hardware-map.yaml.
+# For your own hardware, change BOARD below and apps/05-shell-pytest/hardware-map.yaml.
 
 name: Tests (hardware)
 
@@ -40,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           west twister --device-testing \
-            --hardware-map apps/04-shell-pytest/hardware-map.yaml \
-            -T apps/04-shell-pytest
+            --hardware-map apps/05-shell-pytest/hardware-map.yaml \
+            -T apps/05-shell-pytest
 
       # Keeps all of twister-out/, since a hardware failure cannot be rerun without the board.
       - name: Upload twister output on failure

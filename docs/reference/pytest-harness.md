@@ -5,8 +5,8 @@
 functions a connection to it through fixtures. Verified against Zephyr v4.4.0, source
 under `$ZEPHYR_BASE/scripts/pylib/pytest-twister-harness/src/twister_harness/`.
 
-`apps/04-shell-pytest` and `apps/05-pytest-advanced` are the worked examples in this
-repo.
+`apps/05-shell-pytest` is the worked example in this repo. `apps/04-pytest-basics`
+covers the plain pytest it builds on, with no device.
 
 ## Turning it on
 
@@ -14,15 +14,23 @@ repo.
 
 ```yaml
 tests:
-  app05.shell.pytest.smoke:
+  app05.shell.pytest:
     harness: pytest
+```
+
+`harness_config` narrows it down. For example, to collect one file and leave out the
+tests marked `slow`:
+
+```yaml
     harness_config:
       pytest_root:
-        - "pytest/test_smoke.py"
+        - "pytest/test_gpio_toggle.py"
       pytest_args:
         - "-m"
         - "not slow"
 ```
+
+The same selection works from the command line, for example `--pytest-args="-m slow"`.
 
 | Key | Effect |
 |---|---|
@@ -99,36 +107,26 @@ is gone for the other. Two things follow from that, and both present as timeouts
 | the boot banner is gone, `readlines()` returns `[]` | the `shell` fixture calls `wait_for_prompt()` at setup, which reads the buffer dry | ask for `dut` only, do not request `shell` in that test |
 | `readlines_until()` times out on a line the device definitely printed | `exec_command()` read to the prompt and consumed it | send the command with `dut.write(b'cmd\n')` instead |
 
+The second row has a mirror image. With deferred logging on a real board, a line can
+arrive after the prompt, so `exec_command()` returns without it. The shell tests in
+`apps/05-shell-pytest/tests/emul_button_toggle/pytest/test_gpio_toggle.py` only wait for
+the line when it is not there yet:
+
 ```python
-def test_dut_sees_boot_output(dut: DeviceAdapter):
-    lines = dut.readlines_until(regex='GPIO Button .* Toggle started', timeout=5.0)
-    assert lines
-
-
-def test_dut_readlines_until(dut: DeviceAdapter):
-    dut.readlines_until(regex='Ready. Press the button', timeout=5.0)
-    dut.write(b'app btn 1\n')
-    lines = dut.readlines_until(regex='Button pressed!', timeout=5.0)
-    assert lines
+lines = shell.exec_command('test_btn')
+if f'LED is now {expected}' not in '\n'.join(lines):
+    lines += shell._device.readlines_until(regex=f'LED is now {expected}', timeout=2)
 ```
 
-Both are in `apps/05-pytest-advanced/tests/shell_pytest/pytest/test_fixtures.py`.
+`test_button_toggle_dut` in the same file uses `dut` alone:
 
-## Device output a test can parse
-
-A test that matches on free-text `printk` lines breaks whenever someone rewords the
-log. The harness in `apps/05-pytest-advanced` prints two lines for that reason:
-
-```
-Test: triggering 3 emulated button press(es)
-btn=done count=3
+```python
+dut.write(b'test_btn\n')
+lines = dut.readlines_until(regex=f'LED is now {expected}', timeout=2)
 ```
 
-The first is for a human on a serial console, the second is what the suite parses.
-`parse_kv()` in that app's `conftest.py` turns every `key=value` on a line into a dict.
-
-Set `CONFIG_SHELL_VT100_COLORS=n` as well. Colour escapes do not show up in a terminal
-but they are still in the bytes `str.find()` is searching.
+Set `CONFIG_SHELL_VT100_COLORS=n` in the test image. Colour escapes do not show up in a
+terminal but they are still in the bytes `str.find()` is searching.
 
 ## `harness: shell`
 
@@ -139,8 +137,8 @@ involved:
 harness: shell
 harness_config:
   shell_commands:
-    - command: "app led"
-      expected: "led=off"
+    - command: "test_btn"
+      expected: "Test: Triggering emulated button press"
 ```
 
 pytest is the option that adds computing an expected value, parametrizing, keeping
@@ -149,11 +147,11 @@ state across commands, and talking to something outside the device.
 ## Running and debugging
 
 ```bash
-west twister -T apps/05-pytest-advanced -p native_sim -O /tmp/tw --clobber-output
+west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim -O /tmp/tw --clobber-output
 ```
 
 ```bash
-west twister -T apps/05-pytest-advanced -p native_sim --pytest-args=-v --pytest-args=--log-cli-level=DEBUG
+west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim --pytest-args=-v --pytest-args=--log-cli-level=DEBUG
 ```
 
 The pytest traceback lands in `<outdir>/<platform>/.../<scenario>/twister_harness.log`.

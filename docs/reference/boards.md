@@ -61,12 +61,12 @@ your cwd, so use `$PWD/...`.
 Relative to the source dir given by `-s`:
 
 ```
-apps/04-shell-pytest/tests/drivers/gpio_button_toggle/
+apps/05-shell-pytest/tests/emul_button_toggle/
   app.overlay                                 # all boards, automatic
   prj.conf                                    # all boards, automatic
   boards/
     native_sim_native.conf                    # this board only, automatic
-    esp32s3_devkitc_esp32s3_procpu.overlay    # this board only, automatic
+    nrf5340dk_nrf5340_cpuapp.overlay          # this board only, replaces app.overlay
 ```
 
 Board filenames use the **normalized** board name, with slashes becoming underscores.
@@ -207,8 +207,8 @@ A YAML file describing the attached boards, which replaces the per-invocation
 invocation can cover several.
 
 ```bash
-west twister --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml \
-  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
+west twister --device-testing --hardware-map apps/05-shell-pytest/hardware-map.yaml \
+  -T apps/05-shell-pytest/tests/emul_button_toggle
 ```
 
 ```yaml
@@ -251,14 +251,14 @@ them in one invocation.
 ## Per-platform
 
 The suite used in these examples is
-`apps/04-shell-pytest/tests/drivers/gpio_button_toggle`. It carries its own
+`apps/05-shell-pytest/tests/emul_button_toggle`. It carries its own
 `app.overlay`, which supplies `sw0` and `led0` on a `gpio_emul` controller, so no
 overlay argument is needed on any board.
 
 ### native_sim, `native_sim/native`
 
 ```bash
-west build -b native_sim/native -p -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -d build_ns
+west build -b native_sim/native -p -s apps/05-shell-pytest/tests/emul_button_toggle -d build_ns
 ```
 
 ```bash
@@ -266,7 +266,7 @@ west build -b native_sim/native -p -s apps/04-shell-pytest/tests/drivers/gpio_bu
 ```
 
 ```bash
-west twister -p native_sim -T apps/04-shell-pytest
+west twister -p native_sim -T apps/05-shell-pytest/tests/emul_button_toggle
 ```
 
 32-bit by default. `native_sim/native/64` is the 64-bit variant, and it is the
@@ -276,7 +276,7 @@ fallback when host library linking fails on a multilib problem. Console mode is 
 ### nRF5340DK, `nrf5340dk/nrf5340/cpuapp`
 
 ```bash
-west build -b nrf5340dk/nrf5340/cpuapp -p -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -d build_nrf53
+west build -b nrf5340dk/nrf5340/cpuapp -p -s apps/05-shell-pytest/tests/emul_button_toggle -d build_nrf53
 ```
 
 ```bash
@@ -287,7 +287,7 @@ west flash -d build_nrf53 --runner nrfutil --dev-id 1050073602
 west twister -p nrf5340dk/nrf5340/cpuapp --device-testing \
   --device-serial /dev/ttyACM1 --device-serial-baud 115200 \
   --west-flash="--dev-id=1050073602" --west-runner nrfutil \
-  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
+  -T apps/05-shell-pytest/tests/emul_button_toggle
 ```
 
 `sw0` and `led0` already exist in the board DTS, so the app builds here without an
@@ -296,7 +296,7 @@ overlay too. Flashing goes through the J-Link, the console is a separate CDC por
 ### ESP32-S3, `esp32s3_devkitc/esp32s3/procpu`
 
 ```bash
-west build -b esp32s3_devkitc/esp32s3/procpu -p -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -d build_esp32s3
+west build -b esp32s3_devkitc/esp32s3/procpu -p -s apps/05-shell-pytest/tests/emul_button_toggle -d build_esp32s3
 ```
 
 ```bash
@@ -307,18 +307,18 @@ west flash -d build_esp32s3 --runner esp32 --esp-device /dev/ttyACM0
 west twister -p esp32s3_devkitc/esp32s3/procpu --device-testing \
   --device-serial /dev/ttyACM0 --device-serial-baud 115200 --flash-before \
   --west-flash="--esp-device=/dev/ttyACM0" --west-runner esp32 \
-  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
+  -T apps/05-shell-pytest/tests/emul_button_toggle
 ```
 
 `--flash-before` is required here. The `esp32` runner covers all Espressif parts, not
 only the original ESP32. The board's default DTS has no `sw0` or `led0`, so the
-application build needs `apps/04-shell-pytest/boards/esp32s3_devkitc_esp32s3_procpu.overlay`;
+application build needs `apps/05-shell-pytest/boards/esp32s3_devkitc_esp32s3_procpu.overlay`;
 the test build does not, because `app.overlay` already supplies both.
 
 ### Nucleo G474RE, `nucleo_g474re`
 
 ```bash
-west build -b nucleo_g474re -p -s apps/04-shell-pytest/tests/drivers/gpio_button_toggle -d build_nucleo
+west build -b nucleo_g474re -p -s apps/05-shell-pytest/tests/emul_button_toggle -d build_nucleo
 ```
 
 ```bash
@@ -329,7 +329,7 @@ west flash -d build_nucleo --runner pyocd --dev-id 0046002E3234510A37333934
 west twister -p nucleo_g474re --device-testing \
   --device-serial /dev/ttyACM0 --device-serial-baud 115200 \
   --west-flash --west-runner pyocd \
-  -T apps/04-shell-pytest/tests/drivers/gpio_button_toggle
+  -T apps/05-shell-pytest/tests/emul_button_toggle
 ```
 
 `--west-flash` with no value is fine when a single ST-LINK is attached. The target

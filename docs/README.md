@@ -24,7 +24,7 @@ Each of these is one app you can read and run on its own.
 | tests that run on the device, in C | [`apps/02-ztest`](../apps/02-ztest), then [`apps/07-unit-conventions`](../apps/07-unit-conventions) for how to write them well |
 | faking a pin or a chip | [`apps/03-emul-gpio`](../apps/03-emul-gpio), then [`apps/06-sensor`](../apps/06-sensor) for a real driver over a fake bus |
 | faking the functions your code calls | [`apps/08-fff-mocks`](../apps/08-fff-mocks), and [`apps/09-gtest-gmock`](../apps/09-gtest-gmock) for the C++ version |
-| driving the device from outside | [`apps/04-shell-pytest`](../apps/04-shell-pytest), then [`apps/05-pytest-advanced`](../apps/05-pytest-advanced) |
+| driving the device from outside | [`apps/04-pytest-basics`](../apps/04-pytest-basics), then [`apps/05-shell-pytest`](../apps/05-shell-pytest) |
 | running any of it in CI | [`guides/ci.md`](guides/ci.md) for what each workflow does, [`guides/self-hosted-runner.md`](guides/self-hosted-runner.md) to register a runner |
 
 If you are not sure which level a test of yours belongs at, read

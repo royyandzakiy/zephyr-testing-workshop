@@ -40,8 +40,8 @@ Start with `harness: shell`. It is three lines and it fails honestly:
 harness: shell
 harness_config:
   shell_commands:
-    - command: "app led"
-      expected: "led=off"
+    - command: "test_btn"
+      expected: "Test: Triggering emulated button press"
 ```
 
 Move to pytest when you hit its limit, and be able to name the limit you hit.
@@ -52,20 +52,13 @@ The test is only as good as what the device will tell it.
 
 **Keep the backdoor out of the application.** `test_harness.c` is listed in the test's
 `CMakeLists.txt` and nowhere else, so the shell command exists in the test image and no
-other build. `src/main.c` stays byte-identical between them. A shell that drives your
+other build. `src/main.cpp` stays byte-identical between them. A shell that drives your
 hardware is a real attack surface, and the only version of "it is only in the test
 build" that holds up is the one the build system enforces.
 
-**Print machine-readable output alongside the human line.**
-
-```
-Test: triggering 3 emulated button press(es)
-btn=done count=3
-```
-
-Asserting on free-text `printk` lines works for one test and breaks twenty the first
-time someone rewords a log line. A `key=value` line and a `parse_kv()` helper in
-`conftest.py` means assertions talk about `stats['presses']` instead of about wording.
+**Keep the lines you assert on stable.** A test that matches free-text `printk` output
+breaks when someone rewords it. Once a suite grows past a few tests, a machine-readable
+line such as `btn=done count=3` next to the human one is easier to assert on.
 
 **Add commands that report state without changing it.** A test that can only act and
 then read the log is much weaker than one that can ask.
@@ -91,17 +84,23 @@ timeouts:
 | the boot banner is gone, `readlines()` returns `[]` | `shell` drained the buffer waiting for its first prompt | ask for `dut` **only**, do not request `shell` in that test |
 | `readlines_until()` times out on a line the device definitely printed | `exec_command()` read until the prompt and consumed it | write the command with `dut.write(b'cmd\n')` instead |
 
+`apps/05-shell-pytest/tests/emul_button_toggle/pytest/test_gpio_toggle.py` has both
+sides. `test_button_toggle_dut` uses `dut` alone:
+
 ```python
-def test_dut_sees_boot_output(dut: DeviceAdapter):
-    lines = dut.readlines_until(regex='GPIO Button .* Toggle started', timeout=5.0)
-    assert lines, 'no boot banner before the timeout'
+dut.write(b'test_btn\n')
+lines = dut.readlines_until(regex=f'LED is now {expected}', timeout=2)
+```
 
+The opposite case also happens. With deferred logging on a real board, a line can
+arrive after the prompt, so `exec_command()` returns without it. The shell tests only
+wait when the line is not there yet, because an unconditional `readlines_until` times
+out on native_sim, where the line was already read:
 
-def test_dut_readlines_until(dut: DeviceAdapter):
-    dut.readlines_until(regex='Ready. Press the button', timeout=5.0)
-    dut.write(b'app btn 1\n')
-    lines = dut.readlines_until(regex='Button pressed!', timeout=5.0)
-    assert lines, 'device never reported the press'
+```python
+lines = shell.exec_command('test_btn')
+if f'LED is now {expected}' not in '\n'.join(lines):
+    lines += shell._device.readlines_until(regex=f'LED is now {expected}', timeout=2)
 ```
 
 **`dut` is function-scoped.** A session-scoped fixture that depends on it raises
@@ -121,24 +120,22 @@ class instead of twenty tests.
 
 ```python
 @pytest.fixture()
-def app(shell: Shell):
-    class App:
-        def __init__(self, sh): self._sh = sh
-        def press(self, n=1): return parse_kv(self._sh.exec_command(f'app btn {n}'))
-        def led(self): return parse_kv(self._sh.exec_command('app led'))['led']
-    a = App(shell)
-    a.reset()          # every test starts from a known state
-    return a
+def press(shell: Shell):
+    def _press() -> list[str]:
+        return shell.exec_command('test_btn')
+    return _press
 ```
 
 `conftest.py` is found by directory, not by import, so no test file imports anything
 from it.
 
-Register markers, or `--strict-markers` cannot help you and a typo is silent:
+Register markers, or `--strict-markers` cannot help you and a typo is silent. App 05
+does it in `pytest/pytest.ini`:
 
-```python
-def pytest_configure(config):
-    config.addinivalue_line('markers', 'slow: takes more than a couple of seconds')
+```ini
+[pytest]
+markers =
+    slow: long-running tests
 ```
 
 ## Writing the tests
@@ -148,31 +145,29 @@ a red run says which input broke. A `for` loop stops at the first failure and te
 nothing about the rest.
 
 ```python
-@pytest.mark.parametrize('presses', [1, 2, 5, 20],
-                         ids=['single', 'double', 'handful', 'max'])
-def test_press_counter_matches(app, presses):
+@pytest.mark.parametrize('presses', [1, 2, 3], ids=['one', 'two', 'three'])
+def test_led_after_presses(shell, presses):
     ...
 ```
 
-Always pass `ids=`. Without it the cases are named `[20]` and a CI log tells you
+Always pass `ids=`. Without it the cases are named `[3]` and a CI log tells you
 nothing.
 
 **Test rejection as well as acceptance.** A device that silently accepts nonsense is a
 bug you find in the field.
 
-**Use markers to split fast from slow**, then select on them from `testcase.yaml`, so
-the quick half can run in a pre-commit hook:
+**Use markers to split fast from slow.** Select them from the command line, as app 05
+does:
 
-```yaml
-app05.shell.pytest.smoke:
-  harness: pytest
-  harness_config:
-    pytest_args: ["-m", "not slow"]
+```bash
+west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim --pytest-args="-m slow"
 ```
 
-**`xfail(strict=True)` writes an assumption down.** An unexpected pass becomes a
-failure, so the day the behaviour changes, something tells you. Without `strict` it
-passes either way and nothing does.
+Or fix the selection in a scenario with `harness_config: pytest_args: ["-m", "not slow"]`,
+so the quick half can run in a pre-commit hook.
+
+**`xfail(strict=True)` records a known behaviour.** An unexpected pass then fails the
+run, where a plain `xfail` passes either way.
 
 **Teardown goes after a `yield`**, so it still runs when the test body fails. On real
 hardware that is the difference between a failed test and a failed test plus a device
@@ -197,15 +192,6 @@ printed it at all.
 
 On hardware, see the `zephyr-build-run` skill. The ESP32-S3 needs `--flash-before` or
 the harness reads a stale port and every test times out.
-
-## Running pytest without twister
-
-`apps/05-pytest-advanced/tests/pytest_raw/` does this against the native_sim binary
-with `subprocess`. It is worth reading once, because it shows what the harness is
-doing for you: spawning the process, a reader thread, a prompt parser and a timeout, in
-about sixty lines, and it still only works against native_sim.
-
-Do not write new suites this way. Use it to explain the harness.
 
 ## Before you call it done
 

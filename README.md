@@ -109,7 +109,7 @@ and whether a given peripheral is the real driver or an emulated one.
 
 They are independent of each other. `gpio_emul`, `i2c_emul` and the rest are ordinary
 drivers gated on a devicetree node, not a `native_sim` feature, so an emulated button
-works just as well on an nRF5340DK. The suite in `apps/04-shell-pytest` runs both ways,
+works just as well on an nRF5340DK. The suite in `apps/05-shell-pytest` runs both ways,
 and [`.github/workflows/test-hardware.yml`](.github/workflows/test-hardware.yml)
 runs it on the board.
 
@@ -185,8 +185,8 @@ Setup notes: [`docs/setup/first-run.md`](docs/setup/first-run.md) and
 | [`01-blinky`](apps/01-blinky) | A button toggles an LED, through devicetree aliases. No tests. |
 | [`02-ztest`](apps/02-ztest) | The decision logic moved into its own file, with a `ztest` suite over it. |
 | [`03-emul-gpio`](apps/03-emul-gpio) | `gpio_emul` driving a fake button, with a test-only overlay that reroutes the aliases. |
-| [`04-shell-pytest`](apps/04-shell-pytest) | A shell command as a test backdoor, with `pytest` asserting from outside the device. |
-| [`05-pytest-advanced`](apps/05-pytest-advanced) | pytest fixtures, parametrization and markers. Also the same assertions with no Twister. |
+| [`04-pytest-basics`](apps/04-pytest-basics) | Plain pytest with no Zephyr: assert, fixtures, parametrize, a `src/` layout, and markers with `-m`. |
+| [`05-shell-pytest`](apps/05-shell-pytest) | A shell command as a test backdoor, with `pytest` asserting from outside the device, and a `slow` marker passed through Twister. |
 | [`06-sensor`](apps/06-sensor) | I2C, the real Bosch BME280 driver, and an emulated chip written here because Zephyr ships none. |
 | [`07-unit-conventions`](apps/07-unit-conventions) | ztest conventions: naming, AAA, fixtures, suite hooks, table-driven cases. |
 | [`08-fff-mocks`](apps/08-fff-mocks) | FFF over the feeder's auger motor. Replacing the function your module calls, rather than the chip underneath. |
@@ -260,12 +260,13 @@ west twister -T apps/ -p native_sim --exclude-tag exercise
 **Run against a board**
 
 ```bash
-west twister -T apps/04-shell-pytest --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml
+west twister -T apps/05-shell-pytest/tests/emul_button_toggle --device-testing --flash-before --hardware-map apps/05-shell-pytest/hardware-map.yaml
 ```
 
-Edit [`apps/04-shell-pytest/hardware-map.yaml`](apps/04-shell-pytest/hardware-map.yaml)
-with your own probe serial and serial port first. On ESP32-S3 add `--flash-before`, or
-the harness holds a stale descriptor after the USB peripheral re-enumerates.
+Edit [`apps/05-shell-pytest/hardware-map.yaml`](apps/05-shell-pytest/hardware-map.yaml)
+with your own probe serial and serial port first. `--flash-before` flashes the board
+before the harness opens the serial port, which the ESP32-S3 needs because flashing and
+the console share one USB port.
 
 **Compare two apps**
 

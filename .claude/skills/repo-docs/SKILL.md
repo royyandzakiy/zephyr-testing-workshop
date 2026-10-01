@@ -421,7 +421,7 @@ column that only lists which app uses it.
 
 | Concept | What it provides | App | What it does not cover |
 |---|---|---|---|
-| `gpio_emul` | pin levels, interrupt edges, pull-ups | `03-emul-gpio`, `04-shell-pytest` | drive strength, bounce, current limits, anything analog |
+| `gpio_emul` | pin levels, interrupt edges, pull-ups | `03-emul-gpio`, `05-shell-pytest` | drive strength, bounce, current limits, anything analog |
 
 The reader should be able to read one row and know what the thing gives them and what
 it costs them.

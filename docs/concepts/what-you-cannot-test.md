@@ -123,7 +123,7 @@ correctly.
 
 | Concept | What it provides | App | What it does not cover |
 |---|---|---|---|
-| `gpio_emul` | pin levels, interrupt edges, pull-ups | `03-emul-gpio`, `04-shell-pytest` | drive strength, bounce, current limits, anything analog |
+| `gpio_emul` | pin levels, interrupt edges, pull-ups | `03-emul-gpio`, `05-shell-pytest` | drive strength, bounce, current limits, anything analog |
 | `i2c_emul` and siblings | bytes delivered to your function | `06-sensor` | clock stretching, NAKs, bus capacitance, whether the part is on the board |
 | FFF and gmock | the module under test, with its dependencies replaced | `08-fff-mocks`, `09-gtest-gmock` | whether the real implementation behind the fake works |
 | `native_sim` | the application logic, on the host | every `native_sim` run | real timing, real memory limits, real faults |

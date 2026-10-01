@@ -121,7 +121,7 @@ could plausibly break.
 | unit | `02-ztest`, `07-unit-conventions` |
 | emulated driver | `03-emul-gpio`, `06-sensor` |
 | faked dependency | `08-fff-mocks`, `09-gtest-gmock` |
-| end to end | `04-shell-pytest`, `05-pytest-advanced` |
+| end to end | `05-shell-pytest`, with the plain pytest in `04-pytest-basics` first |
 | on target | the same suites, plus the self-hosted workflows |
 
 When an app changes, this table is what to check.

@@ -18,14 +18,14 @@ mount breaks `twister-out/` rotation).
 | 20:00 | 15 | Setup rescue | ALL | pre-work | 00 runs, 02 green, Actions green |
 | 20:15 | 15 | Networking, intro questions | talk | | |
 | **20:30** | | **Part 1** | | | |
-| 20:30 | 20 | The demo | DEMO, board | `04-shell-pytest` | |
+| 20:30 | 20 | The demo | DEMO, board | `05-shell-pytest` | |
 | 20:50 | 15 | Why firmware resists testing | talk | | |
 | 21:05 | 30 | Host sim and ztest | ALL | `02-ztest`, ex1 | ✅ ex1 green |
 | 21:35 | 35 | GPIO emulation | ALL | `03-emul-gpio/tests/emul` | ✅ emul suite green |
 | 22:10 | 20 | Test-only overlays | ALL | ex2 | ✅ ex2 green |
 | 22:30 | 30 | **Break** | | | |
 | **23:00** | | **Part 2** | | | |
-| 23:00 | 25 | Twister | DEMO, follow along | testcase.yaml in 02, 04, 05 | |
+| 23:00 | 25 | Twister | DEMO, follow along | testcase.yaml in 02, 05 | |
 | 23:25 | 10 | Designing tests | talk | `07` main.c | |
 | 23:35 | 35 | pytest e2e | ALL | `04`, `05`, ex3 | ✅ ex3 green |
 | 00:10 | 20 | CI | ALL | their template repo | ✅ red run seen, artifact downloaded |
@@ -85,17 +85,17 @@ Camera on the DK. Terminal font big.
 
 1. App image on the board, physical button, LED1 toggles, log on the console.
    ```
-   west build -b nrf5340dk/nrf5340/cpuapp apps/04-shell-pytest -d /tmp/demo-app -p
+   west build -b nrf5340dk/nrf5340/cpuapp apps/05-shell-pytest -d /tmp/demo-app -p
    west flash -d /tmp/demo-app
    ```
 2. Test image on the board through Twister and the hardware map. LED1 blinks twice on
    camera while pytest asserts.
    ```
-   west twister -T apps/04-shell-pytest --device-testing --hardware-map apps/04-shell-pytest/hardware-map.yaml -O /tmp/demo-hw --clobber-output
+   west twister -T apps/05-shell-pytest/tests/emul_button_toggle --device-testing --flash-before --hardware-map apps/05-shell-pytest/hardware-map.yaml -O /tmp/demo-hw --clobber-output
    ```
 3. Same test file on native_sim.
    ```
-   west twister -T apps/04-shell-pytest -p native_sim -O /tmp/demo-ns --clobber-output
+   west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim -O /tmp/demo-ns --clobber-output
    ```
 
 Say:
@@ -179,17 +179,18 @@ Goal: one runner for every suite and every board.
 
 - `testcase.yaml` side by side:
   - `apps/02-ztest/tests/unit`: `platform_allow`, tags
-  - `apps/04-shell-pytest/tests/.../testcase.yaml`: four platforms, `harness: pytest`
-  - `apps/05-pytest-advanced/tests/shell_pytest`: three scenarios in one directory,
-    `pytest_args -m "not slow"`, `harness: shell` with no Python
+  - `apps/05-shell-pytest/tests/emul_button_toggle/testcase.yaml`: four platforms,
+    `harness: pytest`, and the commented-out `harness: shell` with no Python
+  - the `slow` marker in that suite's `pytest.ini`, selected with `--pytest-args="-m slow"`
 - Filtering:
   ```
-  west twister -T apps/ -p native_sim --test app05.shell.pytest.smoke -O /tmp/tws --clobber-output
+  west twister -T apps/ -p native_sim --test app05.shell.pytest -O /tmp/tws --clobber-output
+  west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim --pytest-args="-m slow" -O /tmp/twslow --clobber-output
   west twister -T apps/ -p native_sim -t unit --exclude-tag exercise -O /tmp/twt --clobber-output
   ```
 - Platform matrix, build only:
   ```
-  west twister -T apps/04-shell-pytest -p native_sim -p nrf5340dk/nrf5340/cpuapp --build-only -O /tmp/twm --clobber-output
+  west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim -p nrf5340dk/nrf5340/cpuapp --build-only -O /tmp/twm --clobber-output
   ```
 - Artifacts: `twister-out/twister.json`, and per scenario `build.log`, `handler.log`,
   `twister_harness.log`. The same files CI uploads at 00:10.
@@ -214,30 +215,33 @@ west twister -T apps/12-renode-twister -p nrf52840dk/nrf52840/renode --board-roo
 
 Goal: drive a running device from outside over the shell.
 
-1. (5, ALL) Run 04, open `test_harness.c` and `pytest/test_gpio_toggle.py`.
+1. (5, ALL) `04-pytest-basics`, plain pytest, no device. `2_fixture`: 3 functions,
+   7 tests. `4_marking`: run it with and without `-m "not custom_slow"`.
    ```
-   west twister -T apps/04-shell-pytest -p native_sim -O /tmp/tw04 --clobber-output
+   cd apps/04-pytest-basics/4_marking && pytest -v -m "not custom_slow"
    ```
-   The backdoor is compiled into the test image only. `CONFIG_SHELL_VT100_COLORS=n`,
-   or the escape codes break `str.find()`.
-2. (10, DEMO) `05`: `conftest.py` `app` fixture, markers (`slow`, `xfail`), parametrize.
-3. (15, ALL) Exercise **ex3**: `apps/05-pytest-advanced/exercises/ex3-broken-e2e`. One
-   bug in `src/main.c`.
+2. (10, DEMO) `05`: `test_harness.c`, the `test_btn` backdoor compiled into the test
+   image only, then `pytest/test_gpio_toggle.py` and the `slow` marker in `pytest.ini`.
    ```
-   west twister -T apps/05-pytest-advanced/exercises -p native_sim -O /tmp/ex3 --clobber-output
+   west twister -T apps/05-shell-pytest/tests/emul_button_toggle -p native_sim -O /tmp/tw05 --clobber-output
    ```
-   Failure: 2 of 25 fail, `test_twenty_presses_leave_the_led_off` and
-   `test_press_counter_matches[max]`. The answer: `presses` is a 4-bit bitfield, so it
-   wraps at 16. Back to a plain `uint32_t` counter and `bool` LED state
-   (`solution/main.c`).
-4. (5) Debrief. Finish line: ✅ suite green, pytest says `25 passed, 1 xfailed`.
-   - Only the tests that press past 15 catch it. The parametrize `max` case exists for
-     exactly this: a boundary case written once, run with every other value.
-   - The comment on the struct gives a plausible reason for packing it. A review would
-     pass it, a boundary test does not.
+   `CONFIG_SHELL_VT100_COLORS=n`, or the escape codes break `str.find()`. The `if` before
+   `readlines_until`: on native_sim the LED line is already in `exec_command`'s output,
+   on the DK deferred logging can print it after the prompt.
+3. (15, ALL) Exercise **ex3**: `apps/05-shell-pytest/exercises/ex3-broken-e2e`. One bug
+   in `src/main.cpp`.
+   ```
+   west twister -T apps/05-shell-pytest/exercises -p native_sim -O /tmp/ex3 --clobber-output
+   ```
+   Failure: 3 of 3 fail, each with `Did not find line "LED is now ON" within 2 seconds`.
+   The answer: `led_state` starts `true` while the pin is configured inactive, so the
+   first press prints OFF. Back to `false` (`solution/main.cpp`).
+4. (5) Debrief. Finish line: ✅ suite green, Twister says `3 of 3 executed test cases passed`.
+   - The assertion names the line it expected. `handler.log` shows what the device
+     printed instead, `LED is now OFF`.
+   - The comment above `led_state` gives a plausible reason for starting it lit. A
+     review would pass it, the test does not.
    - The failing test's log is `twister_harness.log`, short summary at the end.
-   - The 1 xfailed is `test_reset_also_turns_the_led_off`, a strict xfail that records
-     `app reset` leaving the LED alone on purpose. Point at it, it is not part of the bug.
 
 ## 00:10 CI (20, ALL)
 
@@ -259,7 +263,7 @@ Goal: their own repo runs Twister on every push and uploads the reports.
 ## 00:30 On-target CI (5, DEMO, board)
 
 - `test-hardware.yml`: manual, `[self-hosted, linux]`, `concurrency: hardware`.
-- Build and flash `01-blinky`, then Twister `--device-testing` on 04 with the hardware
+- Build and flash `01-blinky`, then Twister `--device-testing` on 05 with the hardware
   map. This is what ran the opening demo.
 - The hardware map is the only place the probe serial and port are written down.
 - Trigger it live if the runner is up, otherwise the screenshots in `docs/imgs/`.
@@ -358,10 +362,10 @@ What the PI promises and where it stands in the repo. For me, before the day.
 
 | PI promise | Status |
 |---|---|
-| Same test on board and native_sim, difference is the overlay | 04, with the nRF5340 DK test overlay. Only the DK has one. |
+| Same test on board and native_sim, difference is the overlay | 05, with the nRF5340 DK test overlay. Only the DK has one. |
 | Devicetree seam, emulation, test-only overlays | 03, ex2 |
 | AAA, test sizing, what to test first | 07, `testing-levels.md`, talk |
-| Twister: filtering, matrices, artifacts | 02, 04, 05 testcase.yaml. No config matrix example. |
+| Twister: filtering, matrices, artifacts | 02, 05 testcase.yaml. No config matrix example. |
 | Twister coverage | dropped |
 | pytest e2e with fixtures and markers | 04, 05, ex3 |
 | CI on push with artifacts uploaded | `test-native-sim.yml`, `twister-reports` on every run |
