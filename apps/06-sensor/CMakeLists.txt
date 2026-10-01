@@ -8,8 +8,6 @@ target_sources(app PRIVATE
     src/sensors/climate_logic.c
 )
 
-# The emulated BME280 is only buildable where the emulation framework exists,
-# which in practice means native_sim. On a real board CONFIG_EMUL is unset and
-# this file is simply not compiled: the same source tree, talking to a real
-# chip over a real bus.
+# The emulated BME280 needs the emulation framework (CONFIG_EMUL, native_sim only).
+# On a real board it is not compiled and the same code talks to a real chip.
 target_sources_ifdef(CONFIG_EMUL app PRIVATE src/sensors/bme280_emul.c)

@@ -1,6 +1,6 @@
 tests:
   app06.climate.emul:
-    # The emulated I2C controller only exists in a build with no real bus.
+    # The emulated I2C controller exists only on native_sim.
     platform_allow:
       - native_sim
     tags:

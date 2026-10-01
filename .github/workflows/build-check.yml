@@ -1,8 +1,5 @@
-# Proves: the toolchain works. Builds an upstream Zephyr sample, not this repo,
-# so a failure here is the environment rather than anything under apps/.
-#
-# Run it when setting up a self-hosted runner, or when something else fails and
-# you want to know whether the problem is yours.
+# Proves the toolchain works by building an upstream sample, not this repo, so a
+# failure here is the environment. Run it to check a new self-hosted runner.
 
 name: Build check
 
@@ -26,8 +23,7 @@ jobs:
         run: |
           set -euo pipefail
           west build -b native_sim/native "$ZEPHYR_BASE/samples/hello_world" -d build -p
-          # -stop_at makes native_sim exit cleanly, so this asserts on real output
-          # instead of timing out and swallowing the exit code.
+          # -stop_at makes native_sim exit on its own, so the exit code and output are real.
           ./build/zephyr/zephyr.exe -stop_at=1 > run.log 2>&1
           cat run.log
           grep -q "Hello World" run.log
@@ -41,9 +37,8 @@ jobs:
         shell: bash
 
     steps:
-      # The runner is expected to be running inside the devcontainer, which is
-      # where the SDK lives. Without this the build fails much later and much
-      # less clearly.
+      # The runner must run inside the devcontainer, where the SDK lives.
+      # Without this check the build fails later with a less clear error.
       - name: Check the runner can see the SDK
         run: |
           set -euo pipefail

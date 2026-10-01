@@ -1,14 +1,11 @@
 :name: nRF52840 DK
 :description: The nRF52840 DK's sw0 and led0, for Twister and renode-nrf-run.
 :
-: Both runners set $elf before including this file and start the emulation themselves,
-: so there is no `start` here. renode-nrf-run finds it as boards/<board>.resc, Twister
-: through `resc:` in the variant's yaml.
+: Both runners set $elf and start the emulation, so there is no `start` here.
+: renode-nrf-run finds it as boards/<board>.resc, Twister through `resc:` in the variant's yaml.
 :
-: Renode also ships platforms/boards/nrf52840dk_nrf52840.repl, and it is not used here.
-: Its buttons have no `invert: true`, so pin 11 reads low at rest. The DK's buttons are
-: active low, which makes the firmware see sw0 as held down from boot, and a press is
-: only noticed when it is released. The button and LED below are wired the way the DK is.
+: Renode's own nrf52840dk_nrf52840.repl is not used: its buttons lack `invert: true`, so
+: the active-low sw0 reads as held from boot. The button and LED below match the DK.
 
 set platform
 """

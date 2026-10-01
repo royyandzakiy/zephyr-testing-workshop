@@ -6,11 +6,10 @@ tests:
       - nucleo_g474re
       - esp32s3_devkitc/esp32s3/procpu
       - native_sim
-    # TEST SELECTION
-    # 1. Test using pytest/test_shell.py
+    # Runs the suite in pytest/test_gpio_toggle.py.
     harness: pytest
 
-    # 2. Test using simple shell check
+    # Alternative: the built-in shell harness, plain string matching, no Python.
     # harness: shell
     # harness_config:
     #   shell_commands:

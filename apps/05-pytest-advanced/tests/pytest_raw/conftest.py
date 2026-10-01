@@ -1,11 +1,5 @@
-# tests/pytest_raw/conftest.py
-#
-# pytest against the native_sim binary, with no twister and no
-# twister_harness. About sixty lines, and every one of them is something
-# twister was doing for you in tests/shell_pytest/.
-#
-# Worth doing once. It is the difference between "the harness is magic" and
-# "the harness spawns a process and reads lines off a pipe".
+# pytest against the native_sim binary with no twister or twister_harness.
+# Everything here is what twister does for you in tests/shell_pytest/.
 #
 # Run it with:
 #   cd apps/05-pytest-advanced/tests/shell_pytest
@@ -32,10 +26,10 @@ def _binary() -> Path:
 
 
 class RawShell:
-    """The smallest thing that can be called a device adapter.
+    """Minimal device adapter: one process and one pipe.
 
-    twister_harness.Shell does all of this and handles serial ports, resets,
-    flashing and timeouts on top. Here there is one process and one pipe.
+    twister_harness.Shell does the same, plus serial ports, resets, flashing
+    and timeouts.
     """
 
     def __init__(self, exe: Path):
@@ -48,8 +42,8 @@ class RawShell:
             bufsize=1,
         )
         self._lines: queue.Queue = queue.Queue()
-        # A reader thread, because reading a pipe blocks and a test that hangs
-        # forever is worse than a test that fails.
+        # Reads on a thread because a pipe read blocks, and a hung test is
+        # worse than a failed one.
         self._reader = threading.Thread(target=self._pump, daemon=True)
         self._reader.start()
         self.read_until(PROMPT, timeout=10.0)

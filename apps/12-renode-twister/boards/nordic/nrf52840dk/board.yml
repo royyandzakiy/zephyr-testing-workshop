@@ -1,6 +1,5 @@
-# Adds a variant to Zephyr's own nrf52840dk: nrf52840dk/nrf52840/renode. It builds the
-# same firmware as nrf52840dk/nrf52840. What differs is nrf52840dk_nrf52840_renode.yaml,
-# which tells Twister the target runs in Renode.
+# Adds nrf52840dk/nrf52840/renode to Zephyr's nrf52840dk. Same firmware as nrf52840dk/nrf52840;
+# only nrf52840dk_nrf52840_renode.yaml differs, telling Twister the target runs in Renode.
 board:
   extend: nrf52840dk
   variants:

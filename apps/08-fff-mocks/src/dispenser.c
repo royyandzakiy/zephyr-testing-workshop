@@ -1,5 +1,3 @@
-// src/dispenser.c
-
 #include <errno.h>
 #include <string.h>
 
@@ -15,10 +13,8 @@ int dispenser_feed(struct dispenser *d, uint16_t grams)
 {
 	int ret = -EIO;
 
-	/* Asking for nothing is not an error worth logging a jam over, but it
-	 * must not reach the motor either. A zero gram run still spins the
-	 * auger up and back down, and on a solar feeder that is battery spent
-	 * on nothing. There is a test named after this paragraph. */
+	/* Zero grams never reaches the motor: a zero-length run still spins the
+	 * auger up and down, which spends battery on a solar feeder. */
 	if (grams == 0) {
 		return -EINVAL;
 	}
@@ -31,8 +27,7 @@ int dispenser_feed(struct dispenser *d, uint16_t grams)
 		}
 	}
 
-	/* Count it and report it. A feeder that quietly skips a meal looks
-	 * exactly like one that fed, right up until the fish are thin. */
+	/* Count and report the jam, or a skipped meal looks exactly like a fed one. */
 	d->jams++;
 	return ret;
 }

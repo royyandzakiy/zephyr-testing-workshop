@@ -1,11 +1,6 @@
-// src/dispenser.h
-//
-// apps/07-unit-conventions decides *when* to feed. This decides what happens
-// when that moment arrives, which means calling out to a motor that can fail.
-//
-// No Zephyr headers, no devicetree, no driver. That is what makes the fakes in
-// tests/fff possible at all: if dispenser.c called gpio_pin_set_dt() directly
-// there would be nothing to substitute.
+// Dispenses one portion through the auger seam in auger_port.h, retrying a jam.
+// No Zephyr headers or drivers, so tests/fff can substitute auger_run(); a
+// direct gpio_pin_set_dt() call would leave nothing to fake.
 
 #ifndef DISPENSER_H_
 #define DISPENSER_H_

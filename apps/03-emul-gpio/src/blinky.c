@@ -1,5 +1,3 @@
-// src/blinky.c
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -8,8 +6,7 @@
 #include "blinky.h"
 #include "blink_logic.h"
 
-/* Works for BOTH physical and emulated pins -- whatever the devicetree
- * points these two aliases at is what this code drives. */
+/* Bound by alias, so the devicetree decides whether the pins are real or emulated. */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
 

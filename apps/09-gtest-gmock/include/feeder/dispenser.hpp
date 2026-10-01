@@ -1,8 +1,5 @@
-// include/feeder/dispenser.hpp
-//
-// The same job as apps/08-fff-mocks/src/dispenser.c. Read them side by side.
-// The interesting difference is that the auger arrives through the constructor
-// instead of through the linker.
+// The C++ counterpart of apps/08-fff-mocks/src/dispenser.c: the auger arrives
+// through the constructor instead of through the linker.
 
 #pragma once
 
@@ -14,8 +11,7 @@ namespace feeder {
 
 class Dispenser {
 public:
-    /// Constructor injection. A reference, not a pointer, because a Dispenser
-    /// with no auger is not a thing that should be constructible.
+    /// Takes the auger by reference, so a Dispenser cannot be built without one.
     explicit Dispenser(IAuger& auger) : auger_(auger) {}
 
     /// Put one portion in the water, in as many turns as it takes.

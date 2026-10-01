@@ -1,5 +1,5 @@
-# Proves: every test suite under apps/ still passes, off target.
-# This is the same command the README tells you to run locally. No hardware.
+# Proves every test suite under apps/ passes on native_sim, with the same command
+# the README gives for local runs. No hardware.
 
 name: Tests (native_sim)
 
@@ -22,18 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # west finds its workspace through ZEPHYR_BASE, which the image sets, so
-      # this runs from the checkout without any west init.
-      #
-      # --exclude-tag exercise leaves out apps/*/exercises/. Those ship broken
-      # on purpose, so without it this job would fail on every push.
+      # No west init needed: west finds its workspace through ZEPHYR_BASE, set by the image.
+      # --exclude-tag exercise skips apps/*/exercises/, which ship broken for students to fix.
       - name: Run every suite on native_sim
         run: west twister -T apps/ -p native_sim --exclude-tag exercise
 
-      # Uploaded on every run, not only on failure, so a passing run can be
-      # compared against a failing one. Reports and per-test logs only, around
-      # 400 KB. The build directories under twister-out/ are around 240 MB on a
-      # full run and are left out.
+      # Uploaded on every run so a pass can be compared with a failure. Reports and logs
+      # only (about 400 KB); the build directories (about 240 MB) are left out.
       - name: Upload twister reports and logs
         if: always()
         uses: actions/upload-artifact@v4

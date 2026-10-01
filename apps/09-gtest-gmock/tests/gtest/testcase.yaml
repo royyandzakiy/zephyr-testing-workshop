@@ -1,8 +1,7 @@
 tests:
   app09.feeder.gtest:
-    # native_sim only. On a real target you would have to find a standard
-    # library, a heap and 32 kB of stack for the test runner, which is the
-    # conversation the README's Trivia section is about.
+    # native_sim only: a real target would need a full standard library, a large
+    # heap and 32 kB of stack for the runner (see the README's Trivia section).
     platform_allow:
       - native_sim
     tags:
@@ -11,7 +10,5 @@ tests:
       - gtest
       - cpp
 
-    # Twister has a harness for GoogleTest. It reads the console the way
-    # `harness: console` does, but it knows what GoogleTest output means, so it
-    # reports one result per test instead of one for the whole binary.
+    # Parses GoogleTest's console output and reports one result per test.
     harness: gtest

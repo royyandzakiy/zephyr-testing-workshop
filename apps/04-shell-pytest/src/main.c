@@ -1,11 +1,9 @@
-// src/main.c
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
-/* Button definition - works for BOTH physical and emulated */
+/* sw0 is a real button on boards and an emulated one on native_sim. */
 #define BUTTON_NODE DT_ALIAS(sw0)
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
 
@@ -29,7 +27,6 @@ int main(void)
 
     printk("GPIO Button + LED Toggle started\n");
 
-    /* Check button device */
     if (!device_is_ready(button.port)) {
         printk("Error: button device %s is not ready\n", button.port->name);
         return 0;
@@ -40,14 +37,12 @@ int main(void)
         return 0;
     }
 
-    /* Configure LED as output */
     ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE);
     if (ret != 0) {
         printk("Error %d: failed to configure LED\n", ret);
         return 0;
     }
 
-    /* Configure button as input with interrupt */
     ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
     if (ret != 0) {
         printk("Error %d: failed to configure button\n", ret);
@@ -60,7 +55,6 @@ int main(void)
         return 0;
     }
 
-    /* Set up callback */
     gpio_init_callback(&button_cb_data, button_pressed_cb, BIT(button.pin));
     ret = gpio_add_callback(button.port, &button_cb_data);
     if (ret != 0) {

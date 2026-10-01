@@ -1,14 +1,7 @@
-# hardware-map.yaml
-#
-# This is the one file to edit for your own hardware. Twister reads `id` and
-# turns it into whatever the runner wants: --dev-id for nrfutil, --board-id for
-# pyocd, --esp-device for esp32. That is why nothing else in this repo, and no
-# workflow, needs to know your probe serial.
-#
-# Find yours with:   west twister --generate-hardware-map map.yaml
-#
-# Uncomment the block for your board and comment out the others, or set
-# `connected: false` on the ones that are not plugged in.
+# Boards Twister can flash and test. Twister passes `id` to the runner as its
+# device argument (--dev-id for nrfutil, --board-id for pyocd, --esp-device for esp32).
+# Generate entries with: west twister --generate-hardware-map map.yaml
+# Uncomment the block for the board that is plugged in.
 
 # ======= nRF5340dk =======
 - connected: true

@@ -1,4 +1,7 @@
-# hardware-map.yaml
+# Boards Twister can flash and test. Twister passes `id` to the runner as its
+# device argument (--dev-id for nrfutil, --board-id for pyocd, --esp-device for esp32).
+# Generate entries with: west twister --generate-hardware-map map.yaml
+# Uncomment the block for the board that is plugged in.
 
 # ======= nRF5340dk ======= 
 # - connected: true

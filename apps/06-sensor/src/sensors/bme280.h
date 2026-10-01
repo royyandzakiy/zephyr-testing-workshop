@@ -13,9 +13,7 @@ struct climate_reading {
 /**
  * Fetch one sample and convert it. 0 on success, negative errno otherwise.
  *
- * Split out from the printing thread on purpose: tests/emul calls this
- * directly. If the only way to read the sensor were to start the thread that
- * prints forever, there would be nothing a test could call.
+ * Separate from the printing thread so tests/emul can call it directly.
  */
 int bme280_read_once(struct climate_reading *out);
 

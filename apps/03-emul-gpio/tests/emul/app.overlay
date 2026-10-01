@@ -1,10 +1,5 @@
-/* tests/emul/app.overlay
- *
- * THE TEST-ONLY OVERLAY.
- *
- * A fake GPIO controller, a fake LED, a fake button -- and then led0/sw0
- * are pointed at them. src/blinky.c binds those two aliases and neither
- * knows nor cares that nothing here is real.
+/* Test-only overlay: an emulated GPIO controller, LED and button, with led0
+ * and sw0 pointed at them. src/blinky.c binds the aliases unchanged.
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -40,6 +35,8 @@
         };
     };
 
+    /* Both aliases move. Rerouting only one leaves its partner on native_sim's own
+     * &gpio0, a controller never initialised, and the first access crashes with SIGSEGV. */
     aliases {
         led0 = &emul_led_0;
         sw0 = &emul_button_0;

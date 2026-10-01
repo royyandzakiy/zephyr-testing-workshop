@@ -1,7 +1,6 @@
 *** Settings ***
-# ${KEYWORDS} is $ZEPHYR_BASE/tests/robot/common.robot, passed in by Twister. It gives
-# `Prepare Machine`, which sets $elf, includes the board's .resc and attaches a terminal
-# tester to UART0.
+# ${KEYWORDS} is $ZEPHYR_BASE/tests/robot/common.robot, passed in by Twister. Its
+# `Prepare Machine` sets $elf, includes the board's .resc and attaches a UART0 tester.
 Resource                      ${KEYWORDS}
 
 *** Keywords ***
@@ -12,12 +11,9 @@ Boot The DK
     Resample The Button Pin
 
 Resample The Button Pin
-    # Works around a bug in Renode 1.17's GPIOTE model. When the driver writes a
-    # channel's CONFIG register, the model samples the pin, then the OUTINIT field of
-    # the same write overwrites that sample with 0. sw0 rests high, so the model thinks
-    # it is low, and the first press (high to low) is not seen as an edge. Real hardware
-    # ignores OUTINIT in event mode. Writing it as 1 on every event channel puts the
-    # stored level back to high without changing anything the firmware can see.
+    # Renode 1.17's GPIOTE model lets CONFIG.OUTINIT=0 overwrite the sampled level of the
+    # high-resting sw0, so the first press is not an edge. Setting OUTINIT on each event
+    # channel restores it; hardware ignores OUTINIT in event mode. See the app's README.md.
     FOR    ${ch}    IN RANGE    8
         ${addr}=    Evaluate    0x40006510 + 4 * ${ch}
         ${cfg}=     Execute Command    sysbus ReadDoubleWord ${addr}

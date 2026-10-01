@@ -1,14 +1,5 @@
-// tests/shell_pytest/test_harness.c
-//
-// The backdoor. Built into the test image only, never into the app.
-//
-// app 04 had one command, test_btn, and the pytest suite asserted on the
-// free-text line the app printed. That is fine for one assertion and awful
-// for twenty: the moment someone rewords a printk, every test breaks.
-//
-// So the commands here print machine-readable key=value lines as well. The
-// human line stays, because it is what you want when you are on a serial
-// console at 2 AM, but pytest parses the key=value one.
+// Test-only backdoor into the app, as `app` shell subcommands. Each prints a
+// key=value line for pytest to parse, so rewording a printk breaks no tests.
 
 #include <stdlib.h>
 
@@ -24,8 +15,8 @@
 #define BUTTON_NODE DT_ALIAS(sw0)
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
 
-/* Presses above this are rejected. Not a real limit, just something for a
- * negative test to hit that is not "pass a garbage string". */
+/* Presses above this are rejected. An arbitrary limit for the over-max
+ * negative test to hit. */
 #define MAX_PRESSES 20
 
 static inline int button_active_raw(void)
@@ -94,9 +85,8 @@ static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/* app reset, zero the counter. The LED is deliberately left alone, so a
- * test that assumes reset also turns the LED off will fail. It is the kind of
- * assumption worth making someone discover rather than warning them about. */
+/* app reset, zero the counter. The LED is deliberately left alone, so a test
+ * that assumes reset also turns the LED off fails (see test_markers.py). */
 static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
@@ -107,13 +97,9 @@ static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/* app, list what the backdoor offers.
- *
- * A root command with a subcommand set and a NULL handler makes the shell
- * print its own help, which is fine for a human and a poor thing to assert
- * on: the wording and the return code have both changed between Zephyr
- * releases. Printing the list ourselves costs four lines and makes the test
- * depend on this file rather than on the shell subsystem's formatting. */
+/* app, list the subcommands. With a NULL handler the shell prints its own
+ * help instead, whose wording and return code have changed between Zephyr
+ * releases, so tests would depend on shell formatting rather than this file. */
 static int cmd_app(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);

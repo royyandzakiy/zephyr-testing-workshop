@@ -1,5 +1,3 @@
-// src/dispenser.cpp
-
 #include "feeder/dispenser.hpp"
 
 #include <cerrno>
@@ -20,10 +18,8 @@ int Dispenser::feed(std::uint16_t grams)
         const int ret = auger_.run(kGramsPerTurn);
 
         if (ret != 0) {
-            // Stop here rather than carrying on. A jam usually means the
-            // hopper bridged, and the next turn would grind against the same
-            // blockage. Whatever already went out stays counted, because it
-            // really did go out.
+            // Stop on a jam: it usually means the hopper bridged, and another turn
+            // would grind the same blockage. Grams already dispensed stay counted.
             ++jams_;
             return ret;
         }

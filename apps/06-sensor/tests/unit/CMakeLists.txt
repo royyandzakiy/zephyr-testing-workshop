@@ -1,8 +1,5 @@
-# tests/unit/CMakeLists.txt
-#
-# Links the seam and nothing else. No sensor driver, no I2C, no devicetree,
-# no emulator -- climate_logic.c has no Zephyr dependencies at all, so there
-# is nothing here to configure.
+# Links only climate_logic.c, which has no Zephyr dependencies, so there is no
+# driver, bus or devicetree to configure.
 
 cmake_minimum_required(VERSION 3.20.0)
 

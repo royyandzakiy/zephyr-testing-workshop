@@ -1,10 +1,6 @@
-# The same assertions as tests/shell_pytest/pytest/test_smoke.py, driven
-# without twister.
-#
-# Compare the two files side by side. The test bodies are nearly identical;
-# what changed is that conftest.py in this directory had to grow a process, a
-# thread and a prompt parser to make `raw_shell` exist at all. That is the
-# trade twister is offering.
+# Same assertions as tests/shell_pytest/pytest/test_smoke.py, without twister.
+# The test bodies barely differ; the cost is the process, thread and prompt
+# parser that conftest.py needs to provide `raw_shell`.
 
 import pytest
 

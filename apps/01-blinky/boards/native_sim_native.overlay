@@ -1,6 +1,5 @@
-/* boards/native_sim.overlay */
 / {
-    /* GPIO emulator for native_sim - must match what test_harness expects */
+    /* Enables native_sim's emulated GPIO controller (gpio0), so the app runs with no real pins. */
     emul_gpio: gpio_emul {
         compatible = "zephyr,gpio-emul";
         status = "okay";
@@ -26,7 +25,7 @@
         compatible = "gpio-keys";
         test_button: btn_0 {
             gpios = <&emul_gpio 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            zephyr,code = <0x01>;  /* KEY_0 */
+            zephyr,code = <0x01>;  /* INPUT_KEY_ESC; the app reads the pin, not input events */
         };
     };
 

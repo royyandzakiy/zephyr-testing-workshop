@@ -1,8 +1,5 @@
-# tests/unit/CMakeLists.txt
-#
-# A test suite is just another Zephyr application. It links the *seam* --
-# blink_logic.c -- and nothing else. No blinky.c, so no GPIO driver, no
-# devicetree aliases, nothing to emulate.
+# A test suite is another Zephyr application. It links only the seam,
+# blink_logic.c, so there is no GPIO driver, alias or emulator to set up.
 
 cmake_minimum_required(VERSION 3.20.0)
 

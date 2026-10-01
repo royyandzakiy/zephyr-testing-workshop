@@ -1,13 +1,8 @@
-# tests/gtest/CMakeLists.txt
+# Zephyr test app with GoogleTest compiled into it.
 #
-# A normal Zephyr test application, with GoogleTest compiled into it.
-#
-# GoogleTest is not a Zephyr module and west knows nothing about it, so the
-# source has to come from somewhere. FetchContent downloads it once. We
-# deliberately do NOT call FetchContent_MakeAvailable: that would run
-# googletest's own CMakeLists, which sets its own compiler and standard flags
-# and fights Zephyr's. Populating the source and compiling the two fused
-# translation units ourselves keeps every flag under Zephyr's control.
+# FetchContent_Populate, not FetchContent_MakeAvailable: the latter runs
+# googletest's own CMakeLists, whose compiler and standard flags fight Zephyr's.
+# Compiling the two fused sources here keeps every flag under Zephyr's control.
 
 cmake_minimum_required(VERSION 3.20.0)
 
@@ -15,9 +10,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(feeder_gtest CXX)
 
 # --------------------------------------------------------------------------
-# GoogleTest source.
-#
-# Offline, or on a runner with no network, clone it once and pass the path:
+# GoogleTest source. Without network access, clone it once and pass the path:
 #   west build ... -- -DGTEST_SRC_DIR=/path/to/googletest
 # --------------------------------------------------------------------------
 
@@ -39,27 +32,21 @@ endif()
 message(STATUS "googletest source: ${GTEST_SRC_DIR}")
 
 # --------------------------------------------------------------------------
-# Trim GoogleTest down to what a Zephyr target can provide.
+# Trim GoogleTest to what a Zephyr target provides.
 #
-# zephyr_compile_definitions() rather than a per-file define, because these
-# change the layout of gtest's own types. GoogleTest and the tests that include
-# its headers have to agree, or you get a link that succeeds and a binary that
-# misbehaves.
+# zephyr_compile_definitions(), not a per-file define: these change the layout
+# of gtest's types, so gtest and every test including its headers must agree.
 #
-# Not GTEST_HAS_FILE_SYSTEM=0, however tempting. Turning it off removes
-# posix::Close from gtest-port.h while gtest-death-test-internal.h still calls
-# it, and the build fails inside GoogleTest's own headers. native_sim is a
-# Linux process with a real filesystem underneath it, so leave it on.
+# GTEST_HAS_FILE_SYSTEM stays on: =0 removes posix::Close, which
+# gtest-death-test-internal.h still calls, so gtest's own headers fail to build.
 # --------------------------------------------------------------------------
 
 zephyr_compile_definitions(
     GTEST_HAS_PTHREAD=0      # Zephyr threads are not pthreads as far as gtest cares
 )
 
-# Not GTEST_HAS_DEATH_TEST=0 either. gtest-port.h defines that symbol itself
-# from its own OS detection, so defining it on the command line produces a
-# "redefined" warning. Twister builds with -Werror, so the warning is a build
-# failure and the suite errors out before it runs.
+# GTEST_HAS_DEATH_TEST is left alone: gtest-port.h defines it itself, so a
+# command-line define warns "redefined", which fails Twister's -Werror build.
 
 zephyr_include_directories(
     ${GTEST_SRC_DIR}/googletest/include
@@ -67,16 +54,12 @@ zephyr_include_directories(
 )
 
 # --------------------------------------------------------------------------
-# Everything goes into `app`, GoogleTest included.
+# Everything, GoogleTest included, goes into `app`. A separate
+# zephyr_library_named(googletest) builds but is never linked, because an
+# application-level library is not added to ZEPHYR_LIBS.
 #
-# The tidy-looking alternative is zephyr_library_named(googletest) with its own
-# zephyr_library_sources(). It builds libgoogletest.a and then never links it:
-# a library declared in an application CMakeLists does not end up in
-# ZEPHYR_LIBS, so the final image has hundreds of undefined references to
-# testing::. One target has no such problem.
-#
-# src/main.cpp of the APP is not here. This directory brings its own main, and
-# MockAuger in test_dispenser.cpp is the only IAuger in this binary.
+# The app's src/main.cpp is left out: this directory brings its own main(),
+# and MockAuger in test_dispenser.cpp is the only IAuger in this binary.
 # --------------------------------------------------------------------------
 
 target_sources(app PRIVATE
@@ -95,7 +78,7 @@ target_include_directories(app PRIVATE
     ${GTEST_SRC_DIR}/googlemock
 )
 
-# Third-party source, so its warnings are not ours to read.
+# Third-party source, so its warnings are suppressed rather than fixed.
 set_source_files_properties(
     ${GTEST_SRC_DIR}/googletest/src/gtest-all.cc
     ${GTEST_SRC_DIR}/googlemock/src/gmock-all.cc

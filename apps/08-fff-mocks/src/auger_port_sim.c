@@ -1,11 +1,6 @@
-// src/auger_port_sim.c
-//
-// The shipping implementation of auger_port.h, for a laptop. Jams every third
-// call so the retry in dispenser.c is visible when you run the app.
-//
-// Worth noticing what this is NOT: it is not a test double. It ships, it
-// asserts nothing, and no test links it. On a real feeder this file is the one
-// that talks to the motor driver, and nothing above it changes.
+// The shipping auger_run() for a laptop, not a test double: no test links it.
+// Jams every third call so the dispenser's retry shows when you run the app.
+// On a real feeder this file drives the motor and nothing above it changes.
 
 #include <errno.h>
 

@@ -1,5 +1,4 @@
-# Indentation here is 4 spaces, which differs from Zephyr upstream (tabs). That is
-# a deliberate choice for this repo, see CLAUDE.md.
+# 4-space indentation, unlike Zephyr upstream (tabs). See CLAUDE.md.
 root = true
 
 [*]

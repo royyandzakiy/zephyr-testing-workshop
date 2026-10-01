@@ -1,6 +1,4 @@
-# The three assertions worth having if you only get three.
-#
-# Everything else in this directory is a variation. Start here.
+# The three most valuable assertions; the other test files are variations.
 
 import logging
 
@@ -12,9 +10,8 @@ logger = logging.getLogger(__name__)
 def test_shell_is_alive(shell: Shell):
     """The device booted and the shell answers.
 
-    Almost every red pytest run on real hardware is this, not a logic bug: the
-    board did not come up, or the serial port belongs to something else. Put
-    the cheapest possible check first so the failure says so.
+    Runs first because most red runs on real hardware are a board that did not
+    come up or the wrong serial port, not a logic bug.
     """
     lines = shell.exec_command('app led')
     assert any('led=' in line for line in lines), f'shell gave nothing usable: {lines}'

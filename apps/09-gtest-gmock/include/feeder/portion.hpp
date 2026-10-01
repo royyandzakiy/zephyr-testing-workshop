@@ -1,8 +1,5 @@
-// include/feeder/portion.hpp
-//
-// Portion sizes, and one pure function over them. `constexpr` so the compiler
-// can evaluate it: part of the table in tests/gtest/src/test_portion.cpp is
-// checked by static_assert while the file compiles, and never runs.
+// Portion sizes and the turn arithmetic over them. constexpr so
+// tests/gtest/src/test_portion.cpp can check part of its table with static_assert.
 
 #pragma once
 
@@ -23,9 +20,8 @@ enum class Portion : std::uint16_t {
     Large = 750,
 };
 
-/// std::to_underlying is C++23, from <utility>, and CONFIG_STD_CPP2B is what
-/// puts it on the menu. Before C++23 this was static_cast<std::uint16_t>(p),
-/// which works and silently compiles even when you name the wrong type.
+/// std::to_underlying is C++23 (CONFIG_STD_CPP2B). It always yields the enum's
+/// own underlying type, where static_cast compiles silently with the wrong one.
 [[nodiscard]] constexpr std::uint16_t gramsOf(Portion p) noexcept
 {
     return std::to_underlying(p);
@@ -33,8 +29,7 @@ enum class Portion : std::uint16_t {
 
 /// How many turns to get at least @p grams out.
 ///
-/// Rounds up, so the fish occasionally get a little extra. Rounding down would
-/// mean a 300 g portion silently becomes 250 g, every time, forever.
+/// Rounds up, because rounding down would shrink a 300 g portion to 250 g every time.
 [[nodiscard]] constexpr std::uint8_t turnsFor(std::uint16_t grams,
                                               std::uint16_t per_turn = kGramsPerTurn) noexcept
 {

@@ -1,9 +1,5 @@
-// tests/fff/src/main.c
-//
-// FFF, the Fake Function Framework. One header, already vendored in Zephyr as
-// <zephyr/fff.h>, so there is nothing to add to west.yml.
-//
-// For a function declared with FAKE_VALUE_FUNC or FAKE_VOID_FUNC you get:
+// FFF, the Fake Function Framework, ships with Zephyr as <zephyr/fff.h>.
+// Each FAKE_VALUE_FUNC or FAKE_VOID_FUNC gives you:
 //
 //   <fn>_fake.call_count        how many times it was called
 //   <fn>_fake.arg0_val          the first argument on the last call
@@ -12,9 +8,8 @@
 //   SET_RETURN_SEQ(<fn>, ...)   a different answer per call
 //   RESET_FAKE(<fn>)            wipe all of the above
 //
-// WHAT MAKES THIS WORK: CMakeLists.txt in this directory does not link
-// src/auger_port_sim.c. The fake below IS the definition of auger_run() for
-// this binary. No --wrap, no weak symbols, no #ifdef TEST in production code.
+// The fake below is this binary's only auger_run(), because CMakeLists.txt does
+// not link src/auger_port_sim.c. No --wrap, weak symbols or #ifdef TEST needed.
 
 #include <errno.h>
 
@@ -34,8 +29,7 @@ static void fff_before(void *f)
 {
 	ARG_UNUSED(f);
 
-	/* The fake you forget to reset is the one that makes a test pass only
-	 * when the whole suite runs in order. */
+	/* Reset every fake before each test, or results depend on test order. */
 	RESET_FAKE(auger_run);
 	FFF_RESET_HISTORY();
 
@@ -60,16 +54,15 @@ ZTEST(dispenser_fff, test_zero_grams_never_reaches_the_motor)
 {
 	zassert_equal(dispenser_feed(&d, 0), -EINVAL);
 
-	/* The assertion you cannot make by watching a motor: not "it did not
-	 * turn" but "nothing ever asked it to". */
+	/* Proves nothing asked the motor to run, which watching a motor cannot. */
 	zassert_equal(auger_run_fake.call_count, 0,
 		      "the motor was told to run for nothing");
 }
 
 ZTEST(dispenser_fff, test_a_jam_is_retried_and_the_feed_still_counts)
 {
-	/* One entry per call, in order. Getting a real motor to jam exactly
-	 * once and then recover is a morning's work. Here it is an array. */
+	/* One return value per call: jam once, then recover. A real motor cannot
+	 * be made to do that on cue. */
 	static int seq[] = {-EIO, 0};
 
 	SET_RETURN_SEQ(auger_run, seq, ARRAY_SIZE(seq));

@@ -1,11 +1,5 @@
-// src/auger_port.h
-//
-// THE SEAM. One function, and no implementation in this header.
-//
-// The dispenser knows there is something called auger_run() and nothing else.
-// Whether the thing behind it drives a motor, a servo or a printk is not its
-// problem, and that is exactly what lets a test put its own definition here
-// instead.
+// The seam: one function, no implementation here. The dispenser only knows
+// auger_run(), so a test can link its own definition in place of the real one.
 
 #ifndef AUGER_PORT_H_
 #define AUGER_PORT_H_

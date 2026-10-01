@@ -1,14 +1,6 @@
-// src/feeder.h
-//
-// A feeding schedule for a pond feeder. A handful of times of day, and one
-// question: how long until the next feed?
-//
-// Small on purpose. The point of this app is how the tests are written, not
-// how clever the module is.
-//
-// Zero Zephyr dependencies. Time of day arrives as a parameter rather than
-// being read from a clock inside, which is what lets a test ask "what happens
-// at 23:59" without waiting until 23:59.
+// Feeding schedule for a pond feeder: a few times of day, and how long until
+// the next feed. No Zephyr dependencies, and the time of day is a parameter
+// rather than read from a clock, so a test can ask about 23:59 without waiting.
 
 #ifndef FEEDER_H_
 #define FEEDER_H_
@@ -45,9 +37,8 @@ int feeder_count(const struct feeder *f);
  * @retval true  *minutes_until was written; 0 means feed now
  * @retval false the schedule is empty and *minutes_until is untouched
  *
- * Returning a bool rather than a sentinel is a testability decision. Zero is a
- * perfectly good answer, so there is no spare value left to mean "nothing
- * scheduled".
+ * Returns a bool rather than a sentinel because 0 is a valid answer, leaving
+ * no spare value to mean "nothing scheduled".
  */
 bool feeder_next(const struct feeder *f, uint16_t now_minute, uint16_t *minutes_until);
 

@@ -1,8 +1,6 @@
-# Proves: firmware from this repo builds, flashes and passes its tests on a real
-# board. Needs a self-hosted runner with the board attached, so it is manual.
-#
-# Two things to change for your own hardware:
-#   BOARD below, and apps/04-shell-pytest/hardware-map.yaml
+# Proves this repo's firmware builds, flashes and passes its tests on a real board.
+# Manual, since it needs a self-hosted runner with the board attached.
+# For your own hardware, change BOARD below and apps/04-shell-pytest/hardware-map.yaml.
 
 name: Tests (hardware)
 
@@ -17,8 +15,7 @@ jobs:
     runs-on: [self-hosted, linux]
     timeout-minutes: 30
 
-    # One board, one job at a time. Two runs flashing the same board would
-    # interleave and both would fail in confusing ways.
+    # One job at a time: two runs flashing the same board would interleave and both fail.
     concurrency:
       group: hardware
       cancel-in-progress: false
@@ -30,17 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # west reads the board out of the build directory and picks the runner
-      # itself, so this line is the same for nRF, ESP32 and Nucleo. With a single
-      # probe attached it needs no serial number.
+      # west picks the runner from the build directory, so this works for nRF, ESP32
+      # and Nucleo alike. With one probe attached no serial number is needed.
       - name: Build and flash an app
         run: |
           set -euo pipefail
           west build -b "$BOARD" apps/01-blinky -d build -p
           west flash -d build
 
-      # Twister does its own build and flash. The probe and the serial port come
-      # from the hardware map, which is the only place they are written down.
+      # Twister builds and flashes itself, with the probe and serial port from the hardware map.
       - name: Run the shell and emul suite on the board
         run: |
           set -euo pipefail
@@ -48,9 +43,7 @@ jobs:
             --hardware-map apps/04-shell-pytest/hardware-map.yaml \
             -T apps/04-shell-pytest
 
-      # A hardware failure cannot be reproduced without the board, so keep the
-      # evidence. Unlike the native_sim workflow this keeps the whole of
-      # twister-out/, since there is only one scenario and no local rerun.
+      # Keeps all of twister-out/, since a hardware failure cannot be rerun without the board.
       - name: Upload twister output on failure
         if: failure()
         uses: actions/upload-artifact@v4

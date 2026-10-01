@@ -1,9 +1,5 @@
-// src/main.c
-//
-// Same application as apps/04-shell-pytest, with one addition: it keeps a
-// press counter and exposes its state through src/app_state.h. No shell
-// commands are registered here. The backdoor lives entirely in the test
-// build, which is the point.
+// Same app as apps/04-shell-pytest plus a press counter, with state exposed
+// through app_state.h. No shell commands here; the backdoor is test-build only.
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>

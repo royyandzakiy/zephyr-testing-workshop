@@ -1,16 +1,7 @@
-// tests/emul/src/main.c
-//
-// The application's own sensor code, the real Bosch BME280 driver, and the
-// real Zephyr I2C stack -- all of it unmodified. Underneath sits an emulated
-// controller and 200 lines of fake chip, and app.overlay is the only thing
-// that said so.
-//
-// Note what is NOT asserted here: exact engineering values. The driver runs
-// Bosch's fixed-point compensation over the calibration blob, so pinning an
-// expected temperature would mean reimplementing that math in the test, and
-// then the test would only be checking our arithmetic against itself. What is
-// asserted instead are properties that hold regardless of the math:
-// monotonicity, plausible range, and channel independence.
+// The app's sensor code, the Bosch driver and the Zephyr I2C stack, unmodified,
+// over an emulated chip. Tests assert properties (range, monotonicity, channel
+// independence) rather than exact values, which would mean reimplementing the
+// driver's compensation math. The one exception is the datasheet example.
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
@@ -18,9 +9,8 @@
 #include "bme280.h"
 #include "bme280_emul.h"
 
-/* BME280 datasheet operating ranges. A reading outside these means the
- * emulator's calibration blob is wrong, which is the failure mode worth
- * catching -- an invented blob still produces numbers, just absurd ones. */
+/* BME280 datasheet operating ranges. A reading outside them means the
+ * emulator's calibration blob is wrong; a bad blob still yields numbers. */
 #define TEMP_MIN_MC   (-40000)
 #define TEMP_MAX_MC     85000
 #define PRESS_MIN_PA    30000  /*  300 hPa */
@@ -32,10 +22,8 @@ static void emul_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
-	/* Put the fake chip back to its default codes so the tests below do
-	 * not depend on the order ztest happens to run them in. Unlike
-	 * gpio_emul, setting registers here fires no callbacks, so a plain
-	 * per-test reset is safe. */
+	/* Restore the default codes so tests do not depend on run order.
+	 * Setting these registers fires no callbacks, unlike gpio_emul. */
 	bme280_emul_set_raw(BME280_EMUL_ADC_TEMP_DEFAULT,
 			    BME280_EMUL_ADC_PRESS_DEFAULT,
 			    BME280_EMUL_ADC_HUM_DEFAULT);
@@ -65,12 +53,9 @@ ZTEST(climate_emul, test_reading_is_plausible)
 
 ZTEST(climate_emul, test_temperature_is_monotonic_in_the_raw_code)
 {
-	/* A real property of the compensation formula, and it needs no
-	 * arithmetic to state: a larger raw code must not report a colder
-	 * room. Where the range check only asks whether one number looks
-	 * sane, this pins the shape of the whole transfer function -- so it
-	 * still bites on a sign inversion or a swapped byte pair that happens
-	 * to leave every individual reading inside the sensor's range. */
+	/* A larger raw code must not report a colder room. Unlike the range
+	 * check, this catches a sign inversion or swapped byte pair that still
+	 * leaves every individual reading inside the sensor's range. */
 	static const int32_t codes[] = {300000, 400000, 519888, 600000, 700000};
 	int32_t prev_mc = INT32_MIN;
 
@@ -92,9 +77,9 @@ ZTEST(climate_emul, test_temperature_is_monotonic_in_the_raw_code)
 
 ZTEST(climate_emul, test_humidity_does_not_move_temperature)
 {
-	/* Channel independence. The 8-byte burst carries pressure, temperature
-	 * and humidity back to back, so an off-by-one in the emulator's
-	 * packing shows up as one channel bleeding into another. */
+	/* The 8-byte burst carries pressure, temperature and humidity back to
+	 * back, so an off-by-one in the emulator's packing bleeds one channel
+	 * into another. */
 	struct climate_reading a, b;
 
 	zassert_ok(bme280_read_once(&a));
@@ -116,17 +101,10 @@ ZTEST(climate_emul, test_humidity_does_not_move_temperature)
 
 ZTEST(climate_emul, test_datasheet_worked_example)
 {
-	/* A characterization test, and worth being explicit about what that
-	 * means: these two numbers are the published result of the Bosch
-	 * datasheet worked example (section 4.2.3) for adc_T = 519888 and
-	 * adc_P = 415148 with the calibration blob in bme280_emul.c. Because
-	 * the emulator serves that exact blob and those exact codes, the whole
-	 * chain -- register packing, calibration encoding, driver math,
-	 * climate_milli() -- has to be right end to end to land here.
-	 *
-	 * Humidity is deliberately left out: the datasheet publishes no worked
-	 * example for it, so any number here would be recorded from our own
-	 * run and would prove nothing beyond "unchanged since last time".
+	/* The published result of the Bosch datasheet worked example (section
+	 * 4.2.3), for the default codes and calibration blob the emulator
+	 * serves. Packing, calibration encoding, driver math and climate_milli()
+	 * all have to be right to land here. Humidity has no published example.
 	 */
 	struct climate_reading r;
 

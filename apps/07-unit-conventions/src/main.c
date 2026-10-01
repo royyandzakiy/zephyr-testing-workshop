@@ -1,8 +1,5 @@
-// src/main.c
-//
-// Walks a clock through one day and prints how long until the next feed, so
-// the app does something you can watch. The schedule below is the same one
-// most of the tests use.
+// Walks a clock through one day and prints the time to the next feed, using
+// the same schedule as most of the tests.
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>

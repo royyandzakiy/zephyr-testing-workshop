@@ -1,17 +1,7 @@
-// src/sensors/bme280_emul.c
-//
-// An emulated BME280 hanging off the native_sim I2C emulation controller.
-//
-// Zephyr ships emulators for a handful of sensors (bmi160, bma4xx, f75303,
-// akm09918c, ...) but NOT for the BME280, so this one is ours. It is modelled
-// on drivers/sensor/f75303/f75303_emul.c, and the precedent for shipping an
-// emulator next to the application rather than upstream is
-// tests/drivers/sensor/ina230/src/ina230_emul.c.
-//
-// The point of the exercise: src/sensors/bme280.c is not modified, and neither
-// is the Bosch driver. The devicetree decides whether the bus underneath is
-// real or fake -- the same trick boards/native_sim_native.overlay already
-// plays for the LED and button with gpio_emul, one layer further down.
+// An emulated BME280 on the native_sim I2C emulation controller. Zephyr has no
+// upstream BME280 emulator; this one follows drivers/sensor/f75303/f75303_emul.c.
+// Neither src/sensors/bme280.c nor the Bosch driver changes; the devicetree
+// decides whether the bus is real or emulated.
 
 #define DT_DRV_COMPAT bosch_bme280
 
@@ -27,9 +17,8 @@
 
 LOG_MODULE_REGISTER(bme280_emul, CONFIG_SENSOR_LOG_LEVEL);
 
-/* Register map -- the subset the Bosch driver actually touches. Repeated here
- * rather than including the driver private bme280.h, which is not on the
- * application include path. */
+/* The registers the Bosch driver touches. Defined here because the driver's
+ * private bme280.h is not on the application include path. */
 #define REG_COMP_START      0x88  /* dig_T1..T3, dig_P1..P9, 24 bytes LE  */
 #define REG_HUM_COMP_PART1  0xA1  /* dig_H1, 1 byte                       */
 #define REG_ID              0xD0  /* must read back as CHIP_ID            */
@@ -37,8 +26,8 @@ LOG_MODULE_REGISTER(bme280_emul, CONFIG_SENSOR_LOG_LEVEL);
 #define REG_STATUS          0xF3
 #define REG_PRESS_MSB       0xF7  /* 8-byte burst: P[3] T[3] H[2]         */
 
-#define CHIP_ID             0x60  /* anything else and the driver returns
-                                   * -ENOTSUP at init, and skips humidity */
+#define CHIP_ID             0x60  /* BME280; any other ID fails driver init
+                                   * or drops humidity (BMP280) */
 
 #define NUM_REGS 256
 
@@ -49,8 +38,8 @@ struct bme280_emul_data {
 struct bme280_emul_cfg {
 };
 
-/* Every board overlay in this app declares exactly one BME280, so a single
- * instance pointer is enough for the test-facing setter below. */
+/* One BME280 per devicetree in this app, so one instance pointer serves the
+ * test-facing setter. */
 static struct bme280_emul_data *the_emul_data;
 
 static void put_le16(uint8_t *dst, uint16_t v)
@@ -60,13 +49,9 @@ static void put_le16(uint8_t *dst, uint16_t v)
 }
 
 /*
- * Calibration blob.
- *
- * Reference values from the Bosch datasheet worked compensation example,
- * which is also where the default raw ADC codes come from. They have to be
- * self-consistent, not merely non-zero: the driver runs the real fixed-point
- * compensation over them, so an invented blob yields readings that are wildly
- * out of range. The range assertions in tests/emul are what catch that.
+ * Calibration blob from the Bosch datasheet worked compensation example, the
+ * same source as the default ADC codes. The driver runs the real compensation
+ * over it, so invented values give wildly out-of-range readings.
  */
 static void load_calibration(struct bme280_emul_data *data)
 {
@@ -95,15 +80,15 @@ static void load_calibration(struct bme280_emul_data *data)
 
 	data->reg[REG_HUM_COMP_PART1] = 75;  /* dig_H1           */
 
-	/* Humidity calibration is split across two ranges AND bit-packed. The
+	/* Humidity calibration is split across two ranges and bit-packed. The
 	 * driver unpacks it as:
 	 *   dig_h2 = (h[1] << 8) | h[0]
 	 *   dig_h3 =  h[2]
 	 *   dig_h4 = (h[3] << 4) | (h[4] & 0x0F)
 	 *   dig_h5 = ((h[4] >> 4) & 0x0F) | (h[5] << 4)
 	 *   dig_h6 =  h[6]
-	 * so h4 and h5 share the low and high nibbles of h[4]. Encoding those
-	 * two backwards is the easiest mistake to make in this whole file.
+	 * h4 and h5 share the low and high nibbles of h[4]; swapping them is
+	 * the easy mistake here.
 	 */
 	h = &data->reg[REG_HUM_COMP_PART2];
 	put_le16(h + 0, (uint16_t)dig_h2);
@@ -145,9 +130,8 @@ static void bme280_emul_reset(struct bme280_emul_data *data)
 
 	data->reg[REG_ID] = CHIP_ID;
 
-	/* STATUS must read 0. The driver spins on the MEASURING and IM_UPDATE
-	 * bits and gives up with -EAGAIN if they never clear, so leaving junk
-	 * here makes every fetch fail with no hint as to why. */
+	/* STATUS must read 0. The driver waits for the MEASURING and IM_UPDATE
+	 * bits to clear, so anything else fails every fetch with no hint why. */
 	data->reg[REG_STATUS] = 0x00;
 
 	load_calibration(data);
@@ -165,10 +149,9 @@ static int bme280_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 
 	switch (num_msgs) {
 	case 1:
-		/* A register write. i2c_reg_write_byte_dt() sends ONE message
-		 * carrying [reg, value] -- not two. Handling only the
-		 * two-message shape below is why a from-scratch emulator NAKs
-		 * every write it is given. */
+		/* A register write. i2c_reg_write_byte_dt() sends one message
+		 * carrying [reg, value], not two. An emulator that handles only
+		 * the two-message shape below rejects every write. */
 		if (msgs->flags & I2C_MSG_READ) {
 			LOG_ERR("unexpected bare read");
 			return -EIO;
@@ -182,8 +165,8 @@ static int bme280_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 
 	case 2:
 		/* A burst read: write the start address, then read N bytes.
-		 * i2c_burst_read_dt() asks for 24 at 0x88, 7 at 0xE1 and 8 at
-		 * 0xF7, so this has to serve arbitrary lengths. */
+		 * The driver reads 24 at 0x88, 7 at 0xE1 and 8 at 0xF7, so any
+		 * length is served. */
 		if (msgs->flags & I2C_MSG_READ) {
 			LOG_ERR("unexpected read in msg0");
 			return -EIO;
@@ -233,10 +216,9 @@ static const struct i2c_emul_api bme280_emul_api_i2c = {
 	.transfer = bme280_emul_transfer_i2c,
 };
 
-/* The node already has a DEVICE_DT_DEFINE from the real Bosch driver
- * (CONFIG_BME280=y), so no EMUL_STUB_DEVICE is needed. The trailing NULL is
- * the optional emul_sensor_driver_api backend -- see bme280_emul.h for why we
- * do not implement it. */
+/* The real Bosch driver (CONFIG_BME280=y) already defines the device, so no
+ * EMUL_STUB_DEVICE. The trailing NULL is the optional emul_sensor_driver_api,
+ * left out because tests set raw codes (see bme280_emul.h). */
 #define BME280_EMUL(n)                                                        \
 	static const struct bme280_emul_cfg bme280_emul_cfg_##n;              \
 	static struct bme280_emul_data bme280_emul_data_##n;                  \

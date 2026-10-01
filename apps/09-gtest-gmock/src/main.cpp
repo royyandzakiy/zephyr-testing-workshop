@@ -1,11 +1,5 @@
-// src/main.cpp
-//
-// An ordinary Zephyr main(), written in C++, wiring an auger to a dispenser
-// and feeding once a second.
-//
-// This is the composition root: the only place that knows both which auger
-// implementation exists and which dispenser uses it. tests/gtest brings its
-// own main and its own auger, which is why the dispenser never had to know.
+// Composition root: wires a BeltAuger to a Dispenser and feeds once a second.
+// tests/gtest brings its own main() and auger, so the dispenser never has to know.
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>

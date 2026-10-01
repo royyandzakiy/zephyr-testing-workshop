@@ -1,6 +1,6 @@
 tests:
   app03.blink.emul:
-    # gpio_emul only exists in a build that has no real pins to drive.
+    # native_sim only: the suite drives emulated pins and needs no real board.
     platform_allow:
       - native_sim
     tags:

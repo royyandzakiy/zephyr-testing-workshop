@@ -1,8 +1,5 @@
-# tests/emul/CMakeLists.txt
-#
-# Unlike tests/unit, this suite links the app's REAL sensor code -- bme280.c,
-# unmodified -- plus the emulator. Bosch's driver is in the loop too. The only
-# thing that differs from a build for a real board is app.overlay.
+# Links the app's real sensor code (bme280.c, unmodified) and the Bosch driver,
+# plus the emulator. app.overlay puts the emulated chip on the bus.
 
 cmake_minimum_required(VERSION 3.20.0)
 

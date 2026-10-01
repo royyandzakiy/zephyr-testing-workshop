@@ -1,12 +1,10 @@
-# tests/drivers/gpio_button_toggle/pytest/test_gpio_toggle.py
-
 import logging
 from twister_harness import Shell
 
 logger = logging.getLogger(__name__)
 
-# LED starts off; every press toggles, including the first. Two presses is what
-# proves it toggles rather than sets. A third would run the same path again.
+# LED starts off and every press toggles it. Two presses prove it toggles
+# rather than sets; a third would only repeat the same path.
 EXPECTED_STATES = ('ON', 'OFF')
 
 

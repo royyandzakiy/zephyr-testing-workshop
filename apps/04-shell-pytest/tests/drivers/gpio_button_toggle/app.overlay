@@ -1,4 +1,4 @@
-/* tests/drivers/gpio_button_toggle/app.overlay */
+/* Test-only overlay for native_sim: led0 and sw0 move onto an emulated GPIO controller. */
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -32,10 +32,9 @@
         };
     };
 
-    /* BOTH aliases have to move. Reroute sw0 alone and led0 falls through to
-     * native_sim's own led_0 on &gpio0 -- a controller this build never
-     * enables -- and the first toggle from the button callback takes the
-     * process down with a SIGSEGV. */
+    /* Both aliases move. Rerouting only sw0 leaves led0 on native_sim's own
+     * &gpio0, a controller this build never initialises, and the first toggle
+     * from the button callback crashes with SIGSEGV. */
     aliases {
         sw0 = &emul_button_0;
         led0 = &emul_led_0;

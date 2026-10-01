@@ -1,5 +1,5 @@
-# A copy of Zephyr's nrf52840dk_nrf52840_defconfig (v4.4.0). A defconfig cannot include
-# another one, so if the stock file changes in a later Zephyr, this copy has to follow.
+# Copy of Zephyr v4.4.0's nrf52840dk_nrf52840_defconfig. A defconfig cannot include
+# another, so this copy must follow any change to the stock file.
 
 # Enable MPU
 CONFIG_ARM_MPU=y

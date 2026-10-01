@@ -1,11 +1,6 @@
-// src/blinky.h
-//
-// The hardware side of the seam: binds the led0/sw0 devicetree aliases and
-// wires the button interrupt to the logic in blink_logic.h.
-//
-// Note there is no main() here. That matters -- a test can link this file,
-// call blinky_init() and drive the pins, without fighting the application
-// over who owns main().
+// Hardware side of the seam: binds the led0/sw0 aliases and wires the button
+// interrupt to blink_logic.h. No main() here, so a test can link this file
+// and call blinky_init() itself.
 
 #ifndef BLINKY_H_
 #define BLINKY_H_

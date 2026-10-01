@@ -1,5 +1,3 @@
-// src/main.c
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -26,13 +24,11 @@ int main(void)
         return 0;
     }
 
-    /* The tick count comes from k_sleep(), so it only advances if the emulator
-     * models the RTC that the nRF52 kernel timer runs on. A printk() before the
-     * loop would succeed even on an emulator that models nothing but the UART.
+    /* Ticks follow k_sleep(), so they only appear if the emulator models the RTC
+     * behind the nRF52 kernel timer, not just the UART.
      */
-    /* The state is tracked here, not read back with gpio_pin_get_dt(). On nRF the
-     * driver disconnects a pin's input buffer when it is configured as an output
-     * only, so reading it back returns the same value whatever the LED is doing.
+    /* Tracked here, not read back: on nRF an output pin's input buffer is
+     * disconnected, so gpio_pin_get_dt() returns the same value either way.
      */
     bool led_on = false;
 

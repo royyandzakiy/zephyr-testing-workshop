@@ -1,10 +1,5 @@
-// src/blink_logic.h
-//
-// THE SEAM.
-//
-// Everything the application decides, with no GPIO, no devicetree and no
-// kernel in sight. Pure functions of their arguments -- which is exactly
-// what makes them testable without a board, a probe or an emulator.
+// The seam: every decision the app makes, as pure functions with no GPIO,
+// devicetree or kernel, so they can be tested without a board or emulator.
 
 #ifndef BLINK_LOGIC_H_
 #define BLINK_LOGIC_H_

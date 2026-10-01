@@ -44,7 +44,7 @@ west build -b native_sim/native -p
 For a board you own:
 
 ```bash
-west build -b nrf5340dk/nrf5340/cpuapp -p && west flash
+west build -b nrf5340dk/nrf5340/cpuapp -p always && west flash
 ```
 
 ## Expected outcome

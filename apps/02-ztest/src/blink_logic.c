@@ -1,5 +1,3 @@
-// src/blink_logic.c
-
 #include "blink_logic.h"
 
 bool blink_logic_toggle(bool led_on)

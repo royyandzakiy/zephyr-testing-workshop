@@ -1,8 +1,5 @@
-# tests/emul/CMakeLists.txt
-#
-# Unlike tests/unit, this suite links blinky.c -- the real hardware side of
-# the app, unchanged. It is only app.overlay that differs, and that is the
-# entire point: the test swaps the pins, not the code.
+# Unlike tests/unit, links the app's real blinky.c unchanged. Only app.overlay
+# differs: the test swaps the pins, not the code.
 
 cmake_minimum_required(VERSION 3.20.0)
 

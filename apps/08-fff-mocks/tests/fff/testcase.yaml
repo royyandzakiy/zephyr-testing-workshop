@@ -1,7 +1,7 @@
 tests:
   app08.dispenser.fff:
-    # No devicetree node is bound and no driver is linked, so this would run
-    # anywhere. native_sim is simply the fastest place to find out.
+    # No devicetree node or driver involved, so any platform works; native_sim
+    # is the fastest.
     platform_allow:
       - native_sim
     tags:

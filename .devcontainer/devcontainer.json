@@ -2,8 +2,8 @@
   "name": "Zephyr Development",
   "image": "ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1",
 
-  // The extension host cannot read what use-vanilla exports in a shell, so the
-  // active Zephyr and SDK have to be named here.
+  // The extension host cannot see what use-vanilla exports in a shell, so the
+  // active Zephyr and SDK are named here.
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.0/zephyr",
@@ -21,16 +21,16 @@
   ],
 
   "mounts": [
-    // Activate this to pass through usb, required only for windows machines
+    // Host /dev, so USB debug probes are visible in the container.
     "source=/dev,target=/dev,type=bind,bind-propagation=rslave",
 
-    // Store SDKs in volumes with shared name. Designed to be used by any project that needs it
-    // CMake package registry: ensuers nrf SDK extension is able to find all zephyr SDKs
+    // Shared by name across every project on the machine. The CMake package
+    // registry is what the nRF Connect extension reads to find the SDKs.
     "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
     "source=cmake-registry,target=/root/.cmake,type=volume",
 
-    // Setting actions runner as volume to not need to reconfig everytime rebuild container
+    // Keeps the Actions runner's registration across container rebuilds.
     "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume"
   ],
 

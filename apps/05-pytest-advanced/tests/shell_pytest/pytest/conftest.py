@@ -1,9 +1,5 @@
-# tests/shell_pytest/pytest/conftest.py
-#
-# Everything shared between the four test files. If you have written pytest
-# before, none of this is new; what is new is that the thing under test is a
-# device on the other end of a serial port, and twister_harness hands it to
-# you as an ordinary fixture.
+# Fixtures and helpers shared by the four test files. twister_harness hands
+# over the device on the serial port as an ordinary fixture.
 
 import logging
 import re
@@ -17,12 +13,10 @@ KV_RE = re.compile(r'(\w+)=(\S+)')
 
 
 def pytest_configure(config):
-    """Register our markers.
+    """Register the custom markers.
 
-    Without this, pytest prints a PytestUnknownMarkWarning for every custom
-    marker and `-m "not slow"` still works, so it is easy to skip. Do it
-    anyway: `--strict-markers` turns those warnings into errors, and a typo in
-    a marker name is otherwise completely silent.
+    Unregistered markers only warn, so a typo in a marker name goes unnoticed;
+    with `--strict-markers` it becomes an error.
     """
     config.addinivalue_line('markers', 'slow: takes more than a couple of seconds')
     config.addinivalue_line('markers', 'negative: asserts the device rejects bad input')
@@ -31,9 +25,8 @@ def pytest_configure(config):
 def parse_kv(lines):
     """Collapse every key=value pair in the shell output into one dict.
 
-    This is the whole reason test_harness.c prints key=value. Assertions get
-    to talk about `stats['presses']` instead of about the exact wording of a
-    printk, so rewording a log line does not break twenty tests.
+    Tests assert on `stats['presses']` rather than on printk wording, so
+    rewording a log line does not break them.
     """
     out = {}
     for line in lines:
@@ -43,15 +36,11 @@ def parse_kv(lines):
 
 @pytest.fixture()
 def app(shell: Shell):
-    """A tiny wrapper over the raw Shell fixture.
+    """A thin wrapper over the Shell fixture.
 
-    Two things happen here that are worth copying into your own suites:
-
-    1. Setup: every test starts with the press counter at zero, so tests do
-       not depend on the order pytest happened to run them in.
-    2. A narrow API. Tests call `app.press(3)`, not
-       `shell.exec_command('app btn 3')`. When the command spelling changes
-       you edit this class, not the tests.
+    Resets the press counter first, so tests do not depend on run order.
+    Tests call `app.press(3)` rather than `shell.exec_command('app btn 3')`,
+    so a change in command spelling is fixed here, not in every test.
     """
 
     class App:
@@ -85,9 +74,7 @@ def app(shell: Shell):
 def board_name(dut: DeviceAdapter) -> str:
     """The platform twister is running against.
 
-    Function-scoped, and it has to be. `dut` is function-scoped by default, and
-    a session-scoped fixture may not depend on a function-scoped one. pytest
-    catches it at setup with ScopeMismatch rather than at collection, so the
-    error arrives once you run, not once you write it.
+    Function-scoped because `dut` is. A session-scoped version fails with
+    ScopeMismatch, and only at test setup, not at collection.
     """
     return dut.device_config.platform

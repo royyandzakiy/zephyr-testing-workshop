@@ -1,5 +1,3 @@
-// tests/unit/src/main.c
-
 #include <zephyr/ztest.h>
 
 #include "blink_logic.h"
@@ -14,15 +12,14 @@ ZTEST(blink_logic, test_toggle_flips_the_state)
 
 ZTEST(blink_logic, test_str_matches_what_we_print)
 {
-    /* These are the exact words that end up in the log line, so the string
-     * the device prints is now something a test can pin down. */
+    /* The exact words in the device's log line, so a test can pin them down. */
     zassert_str_equal(blink_logic_str(true), "ON");
     zassert_str_equal(blink_logic_str(false), "OFF");
 }
 
 ZTEST(blink_logic, test_five_presses_from_off)
 {
-    /* The LED starts off, and every press toggles -- including the first. */
+    /* The LED starts off and every press toggles, including the first. */
     static const char *const expected[] = {"ON", "OFF", "ON", "OFF", "ON"};
     bool led_on = false;
 

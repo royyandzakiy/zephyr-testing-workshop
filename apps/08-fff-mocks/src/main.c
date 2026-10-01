@@ -1,10 +1,5 @@
-// src/main.c
-//
-// The composition root: the only file that knows both which auger
-// implementation exists and which dispenser uses it.
-//
-// tests/fff brings its own main and its own auger_run(), which is why the
-// dispenser never had to know.
+// Composition root: the only file that picks which auger the dispenser uses.
+// tests/fff brings its own main() and auger_run() instead.
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>

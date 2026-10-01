@@ -1,8 +1,5 @@
-# Markers, skips and expected failures.
-#
-# The useful question behind this file: when a test cannot run, what do you
-# want the report to say? "Passed" is a lie, "failed" is noise, and pytest
-# gives you three honest answers instead.
+# Markers, skips and expected failures: honest outcomes for a test that cannot
+# or should not pass, instead of a false pass or a noisy fail.
 
 import logging
 
@@ -23,10 +20,8 @@ def test_reset_zeroes_the_counter(app):
 def test_reset_also_turns_the_led_off(app):
     """An assumption written down as a failing test.
 
-    strict=True is the important part. Without it, a plain xfail passes
-    whether or not the behaviour changes, so the day somebody *does* make
-    reset clear the LED, nothing tells you. With it, an unexpected pass is a
-    failure and you go delete this test.
+    strict=True turns an unexpected pass into a failure. A plain xfail would
+    stay green if reset started clearing the LED, and nothing would flag it.
     """
     app.press(1)
     app.reset()
@@ -34,17 +29,11 @@ def test_reset_also_turns_the_led_off(app):
 
 
 def test_emulated_button_only_exists_off_target(app, board_name):
-    """Skipping on a condition you only know at runtime.
+    """Skips on a condition known only at runtime, from the device that answered.
 
-    `platform_allow` is checked by twister before the build. This is checked
-    against the device that actually answered, which is not always the same
-    board.
-
-    The condition is real: app.overlay reroutes sw0 to gpio_emul for every
-    platform in the list, so this suite has only ever been run on native_sim.
-    Pointing it at a board would need that reroute moved into a
-    boards/native_sim_native.overlay first, and until someone does that, this
-    skip is what stops the run reporting a false pass.
+    `platform_allow` is checked before the build. app.overlay reroutes sw0 to
+    gpio_emul on every platform, so this only runs on native_sim until that
+    reroute moves into a boards/native_sim_native.overlay.
     """
     if not board_name.startswith('native_sim'):
         pytest.skip(f'{board_name}: the emulated button reroute is native_sim only')

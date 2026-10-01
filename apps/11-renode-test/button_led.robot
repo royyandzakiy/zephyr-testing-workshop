@@ -1,5 +1,5 @@
 *** Variables ***
-# ${CURDIR} is the folder this file is in, so renode-test can be started from anywhere.
+# ${CURDIR} is this file's folder, so renode-test can run from any directory.
 ${ELF}                        @${CURDIR}/build/zephyr/zephyr.elf
 ${RESC}                       @${CURDIR}/run_nrf52.resc
 
@@ -11,9 +11,8 @@ Boot The DK
     Create LED Tester         sysbus.gpio0.led0
     Start Emulation
     Wait For Line On Uart     Ready. Press the button to toggle LED.
-    # Renode 1.17's GPIOTE model misses the first press on a pin that rests high,
-    # such as this active-low button. One press and release after boot gets it past
-    # that. The firmware never sees it, which the first Assert LED State below checks.
+    # Renode 1.17's GPIOTE model misses the first press on a pin that rests high.
+    # This press and release absorbs it; the first Assert LED State checks the firmware missed it.
     Execute Command           sysbus.gpio0.sw0 Press
     Execute Command           sysbus.gpio0.sw0 Release
 

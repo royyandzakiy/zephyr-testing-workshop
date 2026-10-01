@@ -1,5 +1,3 @@
-// src/main.c
-
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -13,9 +11,8 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 static struct gpio_callback button_cb_data;
 
-/* Tracked here, not read back with gpio_pin_get_dt(). On nRF the driver disconnects
- * an output pin's input buffer, so reading the LED pin back returns the same value
- * whatever it is driving.
+/* Tracked here, not read back: on nRF an output pin's input buffer is disconnected,
+ * so gpio_pin_get_dt() on the LED returns the same value either way.
  */
 static bool led_on;
 

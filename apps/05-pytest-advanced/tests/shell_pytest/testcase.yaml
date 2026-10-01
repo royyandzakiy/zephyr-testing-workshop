@@ -1,12 +1,6 @@
-# tests/shell_pytest/testcase.yaml
-#
-# One directory, three scenarios. Twister builds the image once per scenario,
-# so splitting a slow suite from a fast one costs nothing but a second entry
-# here.
-#
-# `pytest_root`, which narrows a scenario to one file, is in
-# docs/reference/pytest-harness.md. A scenario for it here would only re-run
-# tests that app05.shell.pytest.full already runs.
+# Three scenarios from one directory; splitting slow from fast tests is one
+# more entry. `pytest_root`, which narrows a scenario to one file, is covered
+# in docs/reference/pytest-harness.md.
 
 common:
   build_only: false
@@ -20,8 +14,7 @@ common:
     - pytest
 
 tests:
-  # Everything except what is marked slow. This is the one you want in a
-  # pre-commit hook.
+  # Everything except tests marked slow, fast enough for a pre-commit hook.
   app05.shell.pytest.smoke:
     harness: pytest
     harness_config:
@@ -35,9 +28,8 @@ tests:
     tags:
       - slow
 
-  # No Python at all. The built-in shell harness does string matching and
-  # nothing more, which is often enough. It sits next to the pytest scenarios
-  # so you can compare the two.
+  # The built-in shell harness: plain string matching, no Python. Kept next to
+  # the pytest scenarios for comparison.
   app05.shell.builtin_harness:
     harness: shell
     harness_config:

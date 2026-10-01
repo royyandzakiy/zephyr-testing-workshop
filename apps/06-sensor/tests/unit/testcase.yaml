@@ -1,6 +1,6 @@
 tests:
   app06.climate.logic:
-    # Pure arithmetic. No driver, no bus, no board.
+    # Pure arithmetic, so native_sim is enough.
     platform_allow:
       - native_sim
     tags:

@@ -1,11 +1,6 @@
-// src/belt_auger.hpp
-//
-// A shipping implementation, not a test double. It jams every seventh turn so
-// src/main.cpp has something to print.
-//
-// The distinction gets blurred constantly: a fake that ships is a simulator,
-// and it is allowed to be wrong in ways a mock is not, because nobody is
-// asserting on it.
+// The app's shipping IAuger, not a test double. Jams every seventh turn so
+// src/main.cpp has something to print. Nothing asserts on it, so unlike a mock
+// it is allowed to be inaccurate.
 
 #pragma once
 

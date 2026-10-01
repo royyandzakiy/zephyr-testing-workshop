@@ -1,6 +1,5 @@
-# Proves: one app runs clean under AddressSanitizer and UndefinedBehaviorSanitizer.
-# native_sim only. The sanitizers are host-toolchain features, so a cross-compiled
-# Cortex-M build has no equivalent.
+# Proves one app runs clean under ASAN and UBSAN. native_sim only, since the
+# sanitizers are host-toolchain features with no Cortex-M equivalent.
 
 name: Sanitizers
 
@@ -21,12 +20,11 @@ jobs:
         shell: bash
 
     env:
-      # Any app works. 01-blinky is the smallest one that gives the sanitizers
-      # something to chew on: GPIO driver, gpio_emul, an interrupt callback.
-      # 00-hello is two printk calls, so a green run there would prove nothing.
+      # Smallest app with real work for the sanitizers: GPIO driver, gpio_emul and
+      # an interrupt callback. 00-hello is two printk calls and would prove nothing.
       APP: apps/01-blinky
-      # Simulated seconds before native_sim stops itself. Without it the app sits
-      # in k_sleep(K_FOREVER), has to be killed, and LeakSanitizer never reports.
+      # Simulated seconds before native_sim stops. Without it the app sleeps forever,
+      # gets killed, and LeakSanitizer never reports.
       STOP_AT: 2
 
     steps:
@@ -41,8 +39,8 @@ jobs:
       - name: Assert the sanitizers actually got enabled
         run: |
           set -euo pipefail
-          # A wrong EXTRA_CONF_FILE path is silently ignored by CMake, which would
-          # leave this job passing while sanitizing nothing.
+          # CMake silently ignores a wrong EXTRA_CONF_FILE path, which would leave
+          # this job passing while sanitizing nothing.
           grep -q '^CONFIG_ASAN=y'  build/zephyr/.config || { echo "::error::CONFIG_ASAN not set, sanitize.conf was not applied"; exit 1; }
           grep -q '^CONFIG_UBSAN=y' build/zephyr/.config || { echo "::error::CONFIG_UBSAN not set, sanitize.conf was not applied"; exit 1; }
 
@@ -53,8 +51,8 @@ jobs:
           export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1"
           ./build/zephyr/zephyr.exe "-stop_at=$STOP_AT" > run.log 2>&1
           cat run.log
-          # The load-bearing check. ASAN can be built to report and continue, so a
-          # clean exit code on its own is not evidence of a clean run.
+          # ASAN can be built to report and continue, so a clean exit code alone
+          # does not prove a clean run.
           if grep -nE "AddressSanitizer|LeakSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY: " run.log; then
             echo "::error::sanitizer reported the findings above"
             exit 1

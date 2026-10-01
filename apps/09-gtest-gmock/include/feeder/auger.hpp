@@ -1,16 +1,9 @@
-// include/feeder/auger.hpp
+// The auger seam from apps/08-fff-mocks/src/auger_port.h as a C++ interface.
 //
-// The same seam as apps/08-fff-mocks/src/auger_port.h, expressed the way C++
-// does it: an abstract base class with a pure virtual function.
-//
-// In C the seam was a header with no implementation attached and the
-// substitution happened at link time. Here it happens at run time through a
-// vtable, so two implementations can be alive in the same binary and each test
-// can hand the dispenser a different one. FFF cannot do that, because a
-// program has exactly one symbol called auger_run.
-//
-// The cost is a vtable pointer per object and an indirect call per use. On a
-// Cortex-M4 that is usually nothing. Measure before assuming either way.
+// FFF substitutes at link time, so a binary has exactly one auger_run(). A
+// virtual call substitutes at run time, so each test can hand the dispenser its
+// own auger. The cost, a vtable pointer per object and an indirect call per use,
+// is usually negligible on a Cortex-M4; measure before assuming either way.
 
 #pragma once
 

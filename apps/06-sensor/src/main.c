@@ -9,7 +9,6 @@ int main(void)
 
 	bme280_start();
 
-	/* The sensor thread does all the work from here. */
 	while (1) {
 		k_sleep(K_FOREVER);
 	}

@@ -4,8 +4,8 @@
   // roughly 3-5x slower. No /dev passthrough, so no USB debug probes.
   "image": "ghcr.io/royyandzakiy/zephyr-devcontainer-devel:z4.4.0-sdk1.0.1",
 
-  // The extension host cannot read what use-vanilla exports in a shell, so the
-  // active Zephyr and SDK have to be named here.
+  // The extension host cannot see what use-vanilla exports in a shell, so the
+  // active Zephyr and SDK are named here.
   "containerEnv": {
     "RUNNER_ALLOW_RUNASROOT": "1",
     "ZEPHYR_BASE": "/workdir/zephyr-sdks/v4.4.0/zephyr",
@@ -27,9 +27,8 @@
     // Shared by name across every project on the machine.
     "source=zephyr-sdks,target=/workdir/zephyr-sdks,type=volume",
     "source=ncs-sdks,target=/workdir/ncs-sdks,type=volume",
-    // CMake package registry. The nRF Connect SDK picker reads it, and
-    // setup-sdks.sh rewrites it too late for a fresh container to see it. Shared
-    // across projects like the SDK volumes, since every entry points into them.
+    // CMake package registry, read by the nRF Connect SDK picker. A shared volume,
+    // since setup-sdks.sh rewrites it too late for a fresh container to see.
     "source=cmake-registry,target=/root/.cmake,type=volume",
     "source=${localWorkspaceFolderBasename}-actions-runner,target=/actions-runner,type=volume"
   ],

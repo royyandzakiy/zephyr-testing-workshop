@@ -1,12 +1,9 @@
-// src/feeder.c
-
 #include "feeder.h"
 
 void feeder_clear(struct feeder *f)
 {
-	/* Only the count. The slot values are left where they are, because
-	 * nothing can read them once count is zero. That is also why a test
-	 * suite without a `before` hook can see yesterday's schedule. */
+	/* Resets only the count. Old slot values stay in memory but are
+	 * unreachable once count is zero. */
 	f->count = 0;
 }
 
@@ -39,16 +36,10 @@ bool feeder_next(const struct feeder *f, uint16_t now_minute, uint16_t *minutes_
 	}
 
 	for (int i = 0; i < f->count; i++) {
-		/* Add a full day before subtracting, then take the remainder.
-		 * A slot earlier in the day than now belongs to tomorrow, and
-		 * this is the line that says so.
-		 *
-		 * The tempting version is `f->slots[i] - now_minute`. These are
-		 * unsigned, so 06:00 seen from 22:00 does not come out negative,
-		 * it comes out as 64576. That never beats the initialiser below,
-		 * so the function returns 1440 and the caller is told the next
-		 * feed is a whole day away. Nothing looks wrong. The feeder just
-		 * stops feeding. */
+		/* Add a day before subtracting, so a slot earlier than now counts as tomorrow.
+		 * The tempting `f->slots[i] - now_minute` wraps in unsigned `gap`: 06:00 seen
+		 * from 22:00 becomes 64576, never beats the initialiser, and the caller is told
+		 * the next feed is a day away. The feeder silently stops feeding. */
 		uint16_t gap = (f->slots[i] + MINUTES_PER_DAY - now_minute) % MINUTES_PER_DAY;
 
 		if (gap < best) {

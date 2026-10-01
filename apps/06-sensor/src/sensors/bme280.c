@@ -6,9 +6,8 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/printk.h>
 
-/* Whatever the devicetree points this label at. On nrf5340dk and the esp32s3
- * that is a real BME280 on a real I2C bus; on native_sim it is the emulated
- * one from bme280_emul.c. Nothing below knows the difference. */
+/* A real BME280 on the board overlays, the emulated one from bme280_emul.c on
+ * native_sim. The code below is the same for both. */
 #define BME280_NODE DT_NODELABEL(bme280)
 static const struct device *bme280_dev = DEVICE_DT_GET(BME280_NODE);
 
@@ -47,8 +46,8 @@ int bme280_read_once(struct climate_reading *out)
 		return ret;
 	}
 
-	/* The driver hands back degrees C, kPa and %RH as val1 + val2/1e6.
-	 * climate_milli() is the seam, and note milli-kPa happens to be Pa. */
+	/* The driver returns degrees C, kPa and %RH as val1 + val2/1e6.
+	 * Milli-kPa is Pa. */
 	out->temp_mc = climate_milli(temp.val1, temp.val2);
 	out->press_mpa = climate_milli(press.val1, press.val2);
 	out->hum_mrh = climate_milli(humidity.val1, humidity.val2);

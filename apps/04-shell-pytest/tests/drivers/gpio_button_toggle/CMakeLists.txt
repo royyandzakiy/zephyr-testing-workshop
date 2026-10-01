@@ -1,4 +1,4 @@
-# tests/drivers/gpio_button_toggle/CMakeLists.txt
+# The app's own main.c, unmodified, plus the test-only shell backdoor.
 
 cmake_minimum_required(VERSION 3.20.0)
 

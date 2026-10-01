@@ -1,9 +1,5 @@
-# Parametrization: one test body, many cases.
-#
-# The lesson is not that @pytest.mark.parametrize exists. It is that a
-# parametrized test reports each case as its own pass or fail, so a red run
-# tells you *which* input broke. A for-loop inside one test stops at the first
-# failure and tells you nothing about the rest.
+# Parametrization reports each case as its own result, so a red run shows which
+# input broke. A for-loop in one test stops at the first failure and hides the rest.
 
 import logging
 
@@ -27,11 +23,7 @@ def test_led_state_after_n_presses(app, presses, expected):
 @pytest.mark.parametrize('presses', [1, 2, 5, 20],
                          ids=['single', 'double', 'handful', 'max'])
 def test_press_counter_matches(app, presses):
-    """ids= is worth the extra line.
-
-    Without it pytest names these `test_press_counter_matches[20]`. With it
-    you get `[max]`, and a CI log that reads like a sentence.
-    """
+    """ids= names the cases `[max]` instead of `[20]`, so the CI log reads clearly."""
     app.press(presses)
     assert int(app.stats()['presses']) == presses
 
@@ -41,12 +33,7 @@ def test_press_counter_matches(app, presses):
                          ids=['zero', 'over-max', 'not-a-number',
                               'negative', 'float'])
 def test_bad_press_count_is_rejected(app, arg):
-    """Negative cases deserve the same treatment.
-
-    An embedded shell that silently accepts nonsense is a bug you find in the
-    field. Each of these is a separate result, so you can see at a glance that
-    it is the float case that slipped through and not all five.
-    """
+    """Each bad input is its own result, so the one that slipped through is obvious."""
     lines = app.raw(f'app btn {arg}')
     assert any('err=bad_arg' in line for line in lines), \
         f'device accepted {arg!r}: {lines}'
@@ -55,11 +42,9 @@ def test_bad_press_count_is_rejected(app, arg):
 @pytest.mark.slow
 @pytest.mark.parametrize('cycle', range(1, 4))
 def test_toggle_is_stable_over_many_cycles(app, cycle):
-    """Marked slow, so `-m "not slow"` skips every cycle.
+    """Marked slow for real boards on a 115200 baud UART; native_sim is fast.
 
-    Repeating a toggle is not actually slow on native_sim. It is slow on a
-    board over a 115200 baud UART, which is the case the marker is there for.
-    Three cycles, because the tenth would exercise the same path as the second.
+    Three cycles, because more would only repeat the same path.
     """
     app.press(2)
     assert app.led() == 'off', f'cycle {cycle} left the LED on'

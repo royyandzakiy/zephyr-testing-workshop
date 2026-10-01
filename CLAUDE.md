@@ -101,9 +101,12 @@ spaced hyphen, parentheses, or two sentences.
 Prose docs have their own rules, which live in the `repo-docs` skill. Load it before
 touching any `README.md` or `EXERCISE.md` under `apps/`, or anything under `docs/`.
 
-Code comments explain *why*, especially where a line exists to avoid a specific bug.
-`apps/07-unit-conventions/src/feeder.c` is the model: the comment says what the
-tempting wrong version does and what it would cost.
+Code comments state the decision and its reason in one or two lines: what a line or
+setting does, and what it is required for. No investigation history, no narration, no
+comments that only restate the code, no file-path headers. Where a line exists to avoid
+a specific bug, say what the tempting wrong version does and what it costs, in two to
+four plain sentences. `apps/07-unit-conventions/src/feeder.c` is the model for that case.
+Exercise files under `exercises/` keep their hints as written.
 
 C and C++ are 4 spaces, no tabs, 100 columns, recorded in `.editorconfig` and
 `.clang-format`. That differs from Zephyr upstream, which uses tabs, and is deliberate.

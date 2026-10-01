@@ -1,7 +1,4 @@
-# tests/ztest/CMakeLists.txt
-#
-# An ordinary Zephyr test app. Links feeder.c and nothing else. No main.c, so
-# no kernel timers and no printk loop to wait for.
+# Links feeder.c only. ztest provides main(), so the app's main.c stays out.
 
 cmake_minimum_required(VERSION 3.20.0)
 
